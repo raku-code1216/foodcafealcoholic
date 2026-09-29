@@ -184,42 +184,121 @@
       <!-- 細分選單 -->
       <div class="flex flex-wrap items-center gap-2.5 pt-1 text-xs">
         
-        <!-- 地區篩選 -->
+        <!-- 地區篩選 (精細劃分) -->
         <div class="flex items-center gap-1.5">
           <span class="text-zinc-400 font-medium">📍 地區：</span>
-          <select id="districtRegionSelect" onchange="onRegionChange(this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2 py-1 focus:outline-none focus:border-brand-yellow">
-            <option value="all">所有大區</option>
-            <option value="港島">港島 (中環/銅鑼灣/灣仔)</option>
-            <option value="九龍">九龍 (旺角/尖沙咀/深水埗)</option>
-            <option value="新界">新界 (沙田/元朗/屯門)</option>
-            <option value="海外">海外 / 台北 / 澳門</option>
+          <select id="districtRegionSelect" onchange="onDistrictChange(this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-brand-yellow font-medium">
+            <option value="all">🗺️ 全港所有地區 (All)</option>
+            
+            <optgroup label="── 快速大區 ──">
+              <option value="region:港島">🇭🇰 港島全區 (Hong Kong Island)</option>
+              <option value="region:九龍">🏮 九龍全區 (Kowloon)</option>
+              <option value="region:新界">🌳 新界全區 (New Territories)</option>
+              <option value="region:海外">✈️ 離島 / 海外 / 深圳 (Overseas)</option>
+            </optgroup>
+
+            <optgroup label="── 港島熱門商圈 ──">
+              <option value="中環">中環 (Central)</option>
+              <option value="上環">上環 (Sheung Wan)</option>
+              <option value="灣仔">灣仔 (Wan Chai)</option>
+              <option value="銅鑼灣">銅鑼灣 (Causeway Bay)</option>
+              <option value="天后">天后 / 炮台山</option>
+              <option value="太古">太古 / 鰂魚涌</option>
+              <option value="西環">西環 / 堅尼地城 / 西營盤</option>
+              <option value="黃竹坑">黃竹坑 / 南區</option>
+            </optgroup>
+
+            <optgroup label="── 九龍熱門商圈 ──">
+              <option value="尖沙咀">尖沙咀 (Tsim Sha Tsui)</option>
+              <option value="佐敦">佐敦 / 油麻地</option>
+              <option value="旺角">旺角 (Mong Kok)</option>
+              <option value="太子">太子 (Prince Edward)</option>
+              <option value="深水埗">深水埗 (Sham Shui Po)</option>
+              <option value="紅磡">紅磡 / 黃埔</option>
+              <option value="九龍城">九龍城 / 新蒲崗</option>
+              <option value="觀塘">觀塘 (Kwun Tong)</option>
+              <option value="大角咀">大角咀 (Tai Kok Tsui)</option>
+            </optgroup>
+
+            <optgroup label="── 新界熱門商圈 ──">
+              <option value="荃灣">荃灣 (Tsuen Wan)</option>
+              <option value="沙田">沙田 / 大圍</option>
+              <option value="元朗">元朗 (Yuen Long)</option>
+              <option value="屯門">屯門 (Tuen Mun)</option>
+              <option value="大埔">大埔 (Tai Po)</option>
+              <option value="將軍澳">將軍澳 (Tseung Kwan O)</option>
+              <option value="西貢">西貢 (Sai Kung)</option>
+            </optgroup>
+
+            <optgroup label="── 離島及外遊 ──">
+              <option value="東涌">東涌 / 長洲 / 離島</option>
+              <option value="深圳">深圳 (Shenzhen)</option>
+              <option value="澳門">澳門 (Macau)</option>
+              <option value="台北">台北 / 台灣</option>
+              <option value="日本">日本 (東京/大阪/沖繩)</option>
+            </optgroup>
           </select>
         </div>
 
         <!-- 價錢分類 -->
         <div class="flex items-center gap-1.5">
           <span class="text-zinc-400 font-medium">💰 預算：</span>
-          <select id="priceSelect" onchange="setFilter('price', this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2 py-1 focus:outline-none focus:border-brand-yellow">
-            <option value="all">不限</option>
-            <option value="under100">$100 以下</option>
-            <option value="100-300">$101 - $300</option>
-            <option value="300-500">$301 - $500</option>
-            <option value="above500">$500 以上</option>
+          <select id="priceSelect" onchange="setFilter('price', this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-brand-yellow font-medium">
+            <option value="all">不限預算 (All Prices)</option>
+            <option value="under100">🟢 $ 平民日常 (Under $100)</option>
+            <option value="100-300">🟡 $$ 人氣聚會 ($100 - $300)</option>
+            <option value="300-600">🟠 $$$ 精緻格調 ($300 - $600)</option>
+            <option value="above600">👑 $$$$ 奢華享受 ($600+)</option>
           </select>
         </div>
 
-        <!-- 菜式種類 -->
+        <!-- 菜式種類 (精細劃分) -->
         <div class="flex items-center gap-1.5">
           <span class="text-zinc-400 font-medium">🍜 菜式：</span>
-          <select id="cuisineSelect" onchange="setFilter('cuisine', this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2 py-1 focus:outline-none focus:border-brand-yellow">
-            <option value="all">所有菜式</option>
-            <option value="日本菜">日式料理 / 壽司 / 燒肉</option>
-            <option value="Cafe">Cafe / 文青咖啡 / 輕食</option>
-            <option value="火鍋">火鍋 / 雞煲 / 放題</option>
-            <option value="西式">西式 / 牛扒 / 意粉</option>
-            <option value="泰國菜">泰國菜 / 東南亞</option>
-            <option value="甜品">甜品 / 蛋糕</option>
-            <option value="中菜">粵菜 / 大牌檔 / 川菜</option>
+          <select id="cuisineSelect" onchange="setFilter('cuisine', this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-brand-yellow font-medium">
+            <option value="all">🍽️ 所有菜式種類 (All Cuisines)</option>
+            
+            <optgroup label="── 🇯🇵 日本料理 ──">
+              <option value="日本菜">日式綜合料理</option>
+              <option value="壽司">壽司 / 刺身 / 廚師發辦 (Omakase)</option>
+              <option value="燒肉">日式燒肉 / 居酒屋 / 串燒</option>
+              <option value="拉麵">日式拉麵 / 沾麵 / 烏冬</option>
+            </optgroup>
+
+            <optgroup label="── ☕ Cafe & 烘焙甜點 ──">
+              <option value="Cafe">文青精品咖啡 / Brunch 早午餐</option>
+              <option value="烘焙">烘焙麵包 / 牛角包 / 糕點 (Bakery)</option>
+              <option value="甜品">精緻蛋糕 / 蛋撻 / 甜品</option>
+              <option value="糖水">港式糖水 / 刨冰 / 梳乎厘</option>
+            </optgroup>
+
+            <optgroup label="── 🥩 西式 & 歐陸特色 ──">
+              <option value="西式">西式綜合料理</option>
+              <option value="牛扒">炭火牛扒 / 扒房 (Steakhouse)</option>
+              <option value="意式">意大利菜 / 手工意粉 / Pizza</option>
+              <option value="法國菜">法式料理 / 西班牙 Bistro</option>
+              <option value="漢堡">美式漢堡 / 輕食快餐</option>
+              <option value="酒吧">酒吧 / 手工啤酒 / 調酒 (Alcoholic)</option>
+            </optgroup>
+
+            <optgroup label="── 🍲 火鍋 & 放題聚會 ──">
+              <option value="火鍋">麻辣火鍋 / 打邊爐 / 雞煲</option>
+              <option value="放題">任食放題 / 刺身燒肉放題 / 自助餐</option>
+            </optgroup>
+
+            <optgroup label="── 🌶️ 亞洲 & 東南亞風味 ──">
+              <option value="泰國菜">泰國菜 (冬陰功/泰國粉麵)</option>
+              <option value="越南菜">越南菜 (越式生牛肉湯河/法包)</option>
+              <option value="韓國">韓國料理 / 韓式炸雞 / 韓燒</option>
+              <option value="台灣菜">台灣料理 / 滷肉飯 / 夜市小吃</option>
+            </optgroup>
+
+            <optgroup label="── 🥢 中菜 & 港式地道 ──">
+              <option value="中菜">粵菜小炒 / 大牌檔 / 點心飲茶</option>
+              <option value="川菜">川湘菜 / 麻辣酸菜魚</option>
+              <option value="冰室">港式冰室 / 傳統茶餐廳</option>
+              <option value="粉麵">車仔麵 / 港式粉麵 / 街頭小食</option>
+            </optgroup>
           </select>
         </div>
 
@@ -574,6 +653,7 @@
     let filters = {
       search: "",
       region: "all",
+      district: "all",
       occasion: "all",
       price: "all",
       cuisine: "all"
@@ -601,6 +681,52 @@
     function onImageError(imgElement) {
       imgElement.onerror = null;
       imgElement.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
+    }
+
+    // 方案 1：智能預算區間容錯解析器 (Budget Tier Normalizer)
+    function parseBudgetTier(rawPrice, cuisine = "") {
+      if (!rawPrice || rawPrice === 'None' || rawPrice === 'null' || rawPrice.trim() === '') {
+        // 若完全沒寫價錢，根據菜系做智能容錯預測
+        if (/omakase|廚師發辦|懷石|fine dining|頂級牛扒/i.test(cuisine)) {
+          return { tier: 'above600', symbol: '$$$$', label: '$$$$ 奢華享受 ($600+)', isEstimated: true };
+        }
+        if (/茶餐廳|冰室|車仔麵|粉麵|小食/i.test(cuisine)) {
+          return { tier: 'under100', symbol: '$', label: '$ 平民日常 (Under $100)', isEstimated: true };
+        }
+        return { tier: 'all', symbol: '📋', label: '依現場菜單', isEstimated: false };
+      }
+
+      const str = String(rawPrice).toLowerCase().replace(/,/g, '');
+      
+      // 提取所有數字
+      const numbers = str.match(/\d+/g);
+      if (!numbers || numbers.length === 0) {
+        if (str.includes('平') || str.includes('平民') || str.includes('抵食')) {
+          return { tier: 'under100', symbol: '$', label: '$ 平民日常 (Under $100)', isEstimated: false };
+        }
+        if (str.includes('貴') || str.includes('奢華') || str.includes('高級')) {
+          return { tier: 'above600', symbol: '$$$$', label: '$$$$ 奢華享受 ($600+)', isEstimated: false };
+        }
+        return { tier: 'all', symbol: '📋', label: '依現場菜單', isEstimated: false };
+      }
+
+      // 取合理均值 (若有區間取平均，或取最後一個最高標示)
+      const numValues = numbers.map(n => parseInt(n, 10)).filter(n => n > 15 && n < 50000);
+      if (numValues.length === 0) {
+        return { tier: 'all', symbol: '📋', label: '依現場菜單', isEstimated: false };
+      }
+
+      const avg = numValues.reduce((a, b) => a + b, 0) / numValues.length;
+
+      if (avg < 100) {
+        return { tier: 'under100', symbol: '$', label: '$ 平民日常 (Under $100)', isEstimated: false };
+      } else if (avg <= 300) {
+        return { tier: '100-300', symbol: '$$', label: '$$ 人氣聚會 ($100 - $300)', isEstimated: false };
+      } else if (avg <= 600) {
+        return { tier: '300-600', symbol: '$$$', label: '$$$ 精緻格調 ($300 - $600)', isEstimated: false };
+      } else {
+        return { tier: 'above600', symbol: '$$$$', label: '$$$$ 奢華享受 ($600+)', isEstimated: false };
+      }
     }
 
     // 將 Instagram 圖片網址加上免費 Proxy，確保直讀不報錯
@@ -683,7 +809,11 @@
             ` : ''}
 
             <div class="flex items-center justify-between text-[11px] text-zinc-400 pt-1.5 border-t border-brand-border">
-              <span class="text-brand-yellow font-semibold">${item.price || '平民價'}</span>
+              <span class="text-brand-yellow font-semibold flex items-center gap-1">
+                <span>${item.priceInfo ? item.priceInfo.symbol : '💰'}</span>
+                <span>${item.priceInfo ? item.priceInfo.label.split(' ')[0] : '中價位'}</span>
+                <span class="text-[10px] text-zinc-400">${item.priceInfo ? (item.priceInfo.label.split(' ')[1] || '') : ''}</span>
+              </span>
               <span class="text-[10px] text-zinc-500">🔥 ${item.views || 999} 次查看</span>
             </div>
           </div>
@@ -717,12 +847,14 @@
 
       item.views = (item.views || 0) + 1;
 
+      const priceDisplay = item.priceInfo ? item.priceInfo.label : (item.price || '依現場菜單');
+
       document.getElementById('modalTitle').innerText = item.restaurant_name;
       document.getElementById('modalMeta').innerText = `${item.district || '地區未註明'} • ${item.cuisine || '美食'}`;
       document.getElementById('modalOccasionTag').innerText = item.occasion || '必試推介';
       document.getElementById('modalDistrict').innerText = `📍 ${item.district || '地區未註明'}`;
       document.getElementById('modalCuisine').innerText = `🍽 ${item.cuisine || '特色菜'}`;
-      document.getElementById('modalPrice').innerText = `💰 ${item.price || '依現場菜單'}`;
+      document.getElementById('modalPrice').innerText = `💰 預算: ${priceDisplay}`;
       document.getElementById('modalMustTry').innerText = item.must_try || '請參考下方食評詳細推介。';
       document.getElementById('modalCaption').innerText = item.caption || '暫無詳細食評內容。';
 
@@ -850,23 +982,47 @@
     function renderApp() {
       updateFavBadge();
 
-      const isFiltering = filters.search || filters.region !== 'all' || filters.occasion !== 'all' || filters.price !== 'all' || filters.cuisine !== 'all';
+      const isFiltering = filters.search || filters.region !== 'all' || filters.district !== 'all' || filters.occasion !== 'all' || filters.price !== 'all' || filters.cuisine !== 'all';
       const notice = document.getElementById('activeFilterNotice');
       if (notice) notice.classList.toggle('hidden', !isFiltering);
 
       let filtered = restaurants.filter(item => {
+        // 關鍵字搜尋比對 (名稱、地區、菜系、招牌菜、食評內容)
         if (filters.search) {
           const q = filters.search.toLowerCase();
           const matchName = (item.restaurant_name || '').toLowerCase().includes(q);
           const matchDistrict = (item.district || '').toLowerCase().includes(q);
           const matchCuisine = (item.cuisine || '').toLowerCase().includes(q);
           const matchMustTry = (item.must_try || '').toLowerCase().includes(q);
-          if (!matchName && !matchDistrict && !matchCuisine && !matchMustTry) return false;
+          const matchCaption = (item.caption || '').toLowerCase().includes(q);
+          if (!matchName && !matchDistrict && !matchCuisine && !matchMustTry && !matchCaption) return false;
         }
+
+        // 大區篩選比對
         if (filters.region !== 'all' && item.region !== filters.region) return false;
+
+        // 細分地區比對 (比對 district 欄位以及食評內文提及)
+        if (filters.district !== 'all') {
+          const dTerm = filters.district.toLowerCase();
+          const inDistrict = (item.district || '').toLowerCase().includes(dTerm);
+          const inCaption = (item.caption || '').toLowerCase().includes(dTerm);
+          if (!inDistrict && !inCaption) return false;
+        }
+
+        // 場景比對
         if (filters.occasion !== 'all' && !(item.occasion || '').includes(filters.occasion)) return false;
+
+        // 預算比對
         if (filters.price !== 'all' && item.priceCategory !== filters.price) return false;
-        if (filters.cuisine !== 'all' && !(item.cuisine || '').includes(filters.cuisine)) return false;
+
+        // 菜式種類比對 (支援多關鍵字深層比對：如搜尋「燒肉」會同時比對菜系、必食菜式、內文)
+        if (filters.cuisine !== 'all') {
+          const cTerm = filters.cuisine.toLowerCase();
+          const inCuisine = (item.cuisine || '').toLowerCase().includes(cTerm);
+          const inMustTry = (item.must_try || '').toLowerCase().includes(cTerm);
+          const inCaption = (item.caption || '').toLowerCase().includes(cTerm);
+          if (!inCuisine && !inMustTry && !inCaption) return false;
+        }
 
         return true;
       });
@@ -919,22 +1075,22 @@
       window.open(whatsappUrl, '_blank');
     }
 
-    function setFilter(type, value, btnElement) {
-      filters[type] = value;
-      if (btnElement && btnElement.classList.contains('filter-pill')) {
-        document.querySelectorAll(`.${type}-pill`).forEach(el => el.classList.remove('pill-active'));
-        btnElement.classList.add('pill-active');
+    function onDistrictChange(val) {
+      if (val === 'all') {
+        filters.region = 'all';
+        filters.district = 'all';
+      } else if (val.startsWith('region:')) {
+        filters.region = val.replace('region:', '');
+        filters.district = 'all';
+      } else {
+        filters.region = 'all';
+        filters.district = val;
       }
       renderApp();
     }
 
-    function onRegionChange(val) {
-      filters.region = val;
-      renderApp();
-    }
-
     function resetAllFilters() {
-      filters = { search: "", region: "all", occasion: "all", price: "all", cuisine: "all" };
+      filters = { search: "", region: "all", district: "all", occasion: "all", price: "all", cuisine: "all" };
       const searchInp = document.getElementById('searchInput');
       if (searchInp) searchInp.value = "";
       const regSel = document.getElementById('districtRegionSelect');
@@ -968,15 +1124,20 @@
           const code = r.shortCode || r.shortcode || extractShortcode(postUrl);
           const rawImg = r.displayUrl || r.display_url || r.imageUrl || r.image_url || r.thumbnailUrl || (r.images ? r.images.split(',')[0] : null);
           const directVid = r.videoUrl || r.video_url || null;
+          const cuisineStr = r.cuisine || '美食';
+
+          // 計算智能價錢分級
+          const priceInfo = parseBudgetTier(r.price, cuisineStr);
 
           return {
             id: `csv_${i}`,
             restaurant_name: r.restaurant_name,
             district: r.district || '未註明',
             region: r.region || '港島',
-            cuisine: r.cuisine || '美食',
-            price: r.price || '$100-$300',
-            priceCategory: r.priceCategory || '100-300',
+            cuisine: cuisineStr,
+            price: r.price,
+            priceInfo: priceInfo,
+            priceCategory: priceInfo.tier,
             occasion: r.occasion || '聚會',
             must_try: r.must_try || r.signature_dishes || '主廚私心推薦菜式',
             isEditorPick: i % 4 === 0,
@@ -1001,7 +1162,7 @@
         document.getElementById('heroCuisineBadge').innerText = `🔥 ${first.cuisine}`;
         document.getElementById('heroOccasionBadge').innerText = `✨ ${first.occasion}`;
         document.getElementById('heroCaption').innerText = first.caption;
-        document.getElementById('heroPrice').innerText = `💰 預算: ${first.price}`;
+        document.getElementById('heroPrice').innerText = `💰 預算: ${first.priceInfo ? first.priceInfo.label : first.price}`;
         document.getElementById('heroReadBtn').onclick = () => openModalById(first.id);
 
         renderApp();

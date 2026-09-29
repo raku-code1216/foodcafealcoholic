@@ -485,8 +485,7 @@
       <span class="text-zinc-400">|</span>
       <span class="text-white font-bold tracking-wider sans-brand">FOODCAFEALCOHOLIC</span>
     </div>
-    <p>@foodcafealcoholic 官方美食指南 • 黑白金黃官方識別版</p>
-    <p class="mt-1 text-zinc-600">支援載入由 Colab 處理之 cleaned_data_final.csv 檔案</p>
+    <p>© 2026 @foodcafealcoholic • All Rights Reserved</p>
   </footer>
 
   <script>
@@ -623,6 +622,14 @@
     let savedFavorites = loadFavorites();
     let currentModalItem = null;
 
+    // 全域圖片防破圖備援函式 (確保立即在全域可用)
+    function onImageError(img) {
+      if (!img) return;
+      img.onerror = null; // 防止遞迴重試
+      img.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
+    }
+    window.onImageError = onImageError;
+
     let filters = {
       search: "",
       region: "all",
@@ -635,28 +642,44 @@
     const cuisineFallbacks = {
       '日本菜': 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=700&q=80',
       'Cafe': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=700&q=80',
-      '火鍋': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=700&q=80',
       '西式': 'https://images.unsplash.com/photo-1544025162-d76694265947?w=700&q=80',
-      '泰國菜': 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=700&q=80',
+      '火鍋': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=700&q=80',
       '甜品': 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=700&q=80',
+      '酒吧': 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=700&q=80',
+      '東南亞': 'https://images.unsplash.com/photo-1559847844-5315695dadae?w=700&q=80',
       '中菜': 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=700&q=80',
       'default': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80'
     };
 
     function getCuisineImage(cuisine) {
       if (!cuisine) return cuisineFallbacks['default'];
-      for (const key of Object.keys(cuisineFallbacks)) {
-        if (cuisine.includes(key)) return cuisineFallbacks[key];
+      for (const [key, url] of Object.entries(cuisineFallbacks)) {
+        if (cuisine.includes(key)) return url;
       }
       return cuisineFallbacks['default'];
     }
 
-    function onImageError(imgElement) {
-      imgElement.onerror = null;
-      imgElement.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
+    // 地區區域智能映射表 (District to Region Mapper)
+    const REGION_MAP = {
+      '港島': ['中環', '上環', '西環', '西營盤', '堅尼地城', '灣仔', '銅鑼灣', '天后', '炮台山', '北角', '鰂魚涌', '太古', '筲箕灣', '柴灣', '金鐘', '黃竹坑', '鴨脷洲', '香港仔', '淺水灣', '赤柱'],
+      '九龍': ['尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '大角咀', '紅磡', '黃埔', '九龍城', '土瓜灣', '新蒲崗', '黃大仙', '鑽石山', '樂富', '慈雲山', '觀塘', '九龍灣', '牛頭角', '藍田', '油塘', '長沙灣', '荔枝角', '美孚'],
+      '新界': ['荃灣', '沙田', '大圍', '火炭', '馬鞍山', '元朗', '屯門', '天水圍', '大埔', '粉嶺', '上水', '將軍澳', '坑口', '寶琳', '調景嶺', '康城', '西貢', '清水灣', '深井', '青衣', '葵芳', '葵涌'],
+      '海外': ['東涌', '長洲', '大澳', '愉景灣', '南丫島', '坪洲', '機場', '深圳', '廣州', '珠海', '澳門', '台北', '台中', '高雄', '日本', '東京', '大阪', '京都', '沖繩', '福岡', '曼谷', '首爾', '韓國', '泰國']
+    };
+
+    function inferRegion(district, caption = "") {
+      const text = `${district || ''} ${caption || ''}`.toLowerCase();
+      for (const [region, districts] of Object.entries(REGION_MAP)) {
+        for (const d of districts) {
+          if (text.includes(d.toLowerCase())) {
+            return region;
+          }
+        }
+      }
+      return '港島'; // 預設歸屬
     }
 
-    // 方案 1：智能預算區間容錯解析器 (Budget Tier Normalizer)
+    // 智能預算區間容錯解析器 (Budget Tier Normalizer)
     function parseBudgetTier(rawPrice, cuisine = "") {
       if (!rawPrice || rawPrice === 'None' || rawPrice === 'null' || rawPrice.trim() === '') {
         // 若完全沒寫價錢，根據菜系做智能容錯預測
@@ -977,17 +1000,26 @@
       let filtered = restaurants.filter(item => {
         // 1. 關鍵字搜尋比對
         if (filters.search) {
-          const q = filters.search.toLowerCase();
-          const matchName = (item.restaurant_name || '').toLowerCase().includes(q);
-          const matchDistrict = (item.district || '').toLowerCase().includes(q);
-          const matchCuisine = (item.cuisine || '').toLowerCase().includes(q);
-          const matchMustTry = (item.must_try || '').toLowerCase().includes(q);
-          const matchCaption = (item.caption || '').toLowerCase().includes(q);
-          if (!matchName && !matchDistrict && !matchCuisine && !matchMustTry && !matchCaption) return false;
+          const s = filters.search.toLowerCase();
+          const matchName = (item.restaurant_name || '').toLowerCase().includes(s);
+          const matchDist = (item.district || '').toLowerCase().includes(s);
+          const matchCuis = (item.cuisine || '').toLowerCase().includes(s);
+          const matchCap = (item.caption || '').toLowerCase().includes(s);
+          const matchMust = (item.must_try || '').toLowerCase().includes(s);
+          if (!matchName && !matchDist && !matchCuis && !matchCap && !matchMust) return false;
         }
 
-        // 2. 大區篩選比對
-        if (filters.region !== 'all' && item.region !== filters.region) return false;
+        // 2. 大區篩選比對 (使用智能推導映射)
+        if (filters.region !== 'all') {
+          const itemRegion = item.region || inferRegion(item.district, item.caption);
+          const targetDistricts = REGION_MAP[filters.region] || [];
+          const text = `${item.district || ''} ${item.caption || ''}`.toLowerCase();
+          
+          const inTargetDistrictList = targetDistricts.some(d => text.includes(d.toLowerCase()));
+          const matchDirectRegion = (itemRegion === filters.region);
+          
+          if (!matchDirectRegion && !inTargetDistrictList) return false;
+        }
 
         // 3. 細分地區比對
         if (filters.district !== 'all') {
@@ -1166,6 +1198,11 @@
           const rawImg = r.displayUrl || r.display_url || r.imageUrl || r.image_url || r.thumbnailUrl || (r.images ? r.images.split(',')[0] : null);
           const directVid = r.videoUrl || r.video_url || null;
           const cuisineStr = r.cuisine || '美食';
+          const distStr = r.district || '未註明';
+          const captionStr = r.caption || '';
+
+          // 自動推導香港大區
+          const inferredRegion = r.region && r.region !== 'None' ? r.region : inferRegion(distStr, captionStr);
 
           // 計算智能價錢分級
           const priceInfo = parseBudgetTier(r.price, cuisineStr);
@@ -1173,8 +1210,8 @@
           return {
             id: `csv_${i}`,
             restaurant_name: r.restaurant_name,
-            district: r.district || '未註明',
-            region: r.region || '港島',
+            district: distStr,
+            region: inferredRegion,
             cuisine: cuisineStr,
             price: r.price,
             priceInfo: priceInfo,
@@ -1183,7 +1220,7 @@
             must_try: r.must_try || r.signature_dishes || '主廚私心推薦菜式',
             isEditorPick: i % 4 === 0,
             views: Math.floor(Math.random() * 4000) + 500,
-            caption: r.caption || '',
+            caption: captionStr,
             url: postUrl,
             shortCode: code,
             videoUrl: directVid,

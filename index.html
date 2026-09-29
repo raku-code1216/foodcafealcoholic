@@ -10,6 +10,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Montserrat:wght@700;800;900&family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
   <script>
+    // 在 head 頂部最先宣告圖片備援函式，防止 DOM 解析期間觸發 ReferenceError
+    function onImageError(img) {
+      if (!img) return;
+      img.onerror = null;
+      img.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
+    }
+    window.onImageError = onImageError;
+
     tailwind.config = {
       theme: {
         extend: {
@@ -166,7 +174,7 @@
     </div>
   </header>
 
-  <!-- 需求 1: 智能多維度篩選系統 -->
+  <!-- 智能多維度篩選系統 -->
   <section class="sticky top-14 z-40 bg-[#0A0A0A]/95 backdrop-blur-md border-y border-brand-border px-4 sm:px-8 lg:px-12 py-3 shadow-xl">
     <div class="space-y-2.5 text-xs">
       
@@ -188,50 +196,50 @@
         <div class="flex items-center gap-1.5">
           <span class="text-zinc-400 font-medium">📍 地區：</span>
           <select id="districtRegionSelect" onchange="onDistrictChange(this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-brand-yellow font-medium">
-            <option value="all">🗺️ 全港所有地區 (All)</option>
+            <option value="all" id="opt-all">🗺️ 全港所有地區 (All)</option>
             
             <optgroup label="── 快速大區 ──">
-              <option value="region:港島">🇭🇰 港島全區 (Hong Kong Island)</option>
-              <option value="region:九龍">🏮 九龍全區 (Kowloon)</option>
-              <option value="region:新界">🌳 新界全區 (New Territories)</option>
-              <option value="region:海外">✈️ 離島 / 海外 / 深圳 (Overseas)</option>
+              <option value="region:港島" id="opt-reg-hk">🇭🇰 港島全區 (Hong Kong Island)</option>
+              <option value="region:九龍" id="opt-reg-kln">🏮 九龍全區 (Kowloon)</option>
+              <option value="region:新界" id="opt-reg-nt">🌳 新界全區 (New Territories)</option>
+              <option value="region:海外" id="opt-reg-os">✈️ 離島 / 海外 / 深圳 (Overseas)</option>
             </optgroup>
 
             <optgroup label="── 港島熱門商圈 ──">
-              <option value="中環">中環 (Central)</option>
-              <option value="上環">上環 (Sheung Wan)</option>
-              <option value="灣仔">灣仔 (Wan Chai)</option>
-              <option value="銅鑼灣">銅鑼灣 (Causeway Bay)</option>
-              <option value="天后">天后 / 炮台山</option>
+              <option value="中環">中環 (Central / SOHO / 大館)</option>
+              <option value="上環">上環 (Sheung Wan / PMQ)</option>
+              <option value="灣仔">灣仔 (Wan Chai / 利東街)</option>
+              <option value="銅鑼灣">銅鑼灣 (Causeway Bay / 時代廣場)</option>
+              <option value="天后">天后 / 炮台山 / 北角</option>
               <option value="太古">太古 / 鰂魚涌</option>
               <option value="西環">西環 / 堅尼地城 / 西營盤</option>
               <option value="黃竹坑">黃竹坑 / 南區</option>
             </optgroup>
 
             <optgroup label="── 九龍熱門商圈 ──">
-              <option value="尖沙咀">尖沙咀 (Tsim Sha Tsui)</option>
+              <option value="尖沙咀">尖沙咀 (Tsim Sha Tsui / K11 / 海港城)</option>
               <option value="佐敦">佐敦 / 油麻地</option>
-              <option value="旺角">旺角 (Mong Kok)</option>
+              <option value="旺角">旺角 (Mong Kok / 朗豪坊)</option>
               <option value="太子">太子 (Prince Edward)</option>
-              <option value="深水埗">深水埗 (Sham Shui Po)</option>
+              <option value="深水埗">深水埗 (Sham Shui Po / 大南街)</option>
               <option value="紅磡">紅磡 / 黃埔</option>
-              <option value="九龍城">九龍城 / 新蒲崗</option>
-              <option value="觀塘">觀塘 (Kwun Tong)</option>
+              <option value="九龍城">九龍城 / 啟德 (AIRSIDE)</option>
+              <option value="觀塘">觀塘 / 九龍灣</option>
               <option value="大角咀">大角咀 (Tai Kok Tsui)</option>
             </optgroup>
 
             <optgroup label="── 新界熱門商圈 ──">
-              <option value="荃灣">荃灣 (Tsuen Wan)</option>
-              <option value="沙田">沙田 / 大圍</option>
-              <option value="元朗">元朗 (Yuen Long)</option>
+              <option value="荃灣">荃灣 (Tsuen Wan / 南豐紗廠)</option>
+              <option value="沙田">沙田 / 大圍 (圍方 The Wai)</option>
+              <option value="元朗">元朗 (Yuen Long / YOHO)</option>
               <option value="屯門">屯門 (Tuen Mun)</option>
-              <option value="大埔">大埔 (Tai Po)</option>
-              <option value="將軍澳">將軍澳 (Tseung Kwan O)</option>
+              <option value="大埔">大埔 / 太和 (Tai Po / Tai Wo)</option>
+              <option value="將軍澳">將軍澳 (Tseung Kwan O / 康城)</option>
               <option value="西貢">西貢 (Sai Kung)</option>
             </optgroup>
 
             <optgroup label="── 離島及外遊 ──">
-              <option value="東涌">東涌 / 長洲 / 離島</option>
+              <option value="東涌">東涌 / 離島 (長洲/大澳/愉景灣)</option>
               <option value="深圳">深圳 (Shenzhen)</option>
               <option value="澳門">澳門 (Macau)</option>
               <option value="台北">台北 / 台灣</option>
@@ -252,7 +260,7 @@
           </select>
         </div>
 
-        <!-- 菜式種類 (實用精簡主流分類) -->
+        <!-- 菜式種類 -->
         <div class="flex items-center gap-1.5">
           <span class="text-zinc-400 font-medium">🍜 菜式：</span>
           <select id="cuisineSelect" onchange="setFilter('cuisine', this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-brand-yellow font-medium">
@@ -293,7 +301,7 @@
       <span class="hidden sm:inline text-zinc-500">左右滑動探索美食</span>
     </div>
 
-    <!-- 需求 2.1: 每週最多點擊排行榜 -->
+    <!-- 每週最多點擊排行榜 -->
     <section id="leaderboard-section">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 tracking-wide text-white">
@@ -304,7 +312,7 @@
       <div id="railLeaderboard" class="flex space-x-4 overflow-x-auto no-scrollbar py-3 scroll-smooth"></div>
     </section>
 
-    <!-- 需求 2.2: 專屬嚴選推介 -->
+    <!-- 專屬嚴選推介 -->
     <section id="editor-section">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 tracking-wide text-white">
@@ -315,7 +323,7 @@
       <div id="railEditor" class="flex space-x-4 overflow-x-auto no-scrollbar py-3 scroll-smooth"></div>
     </section>
 
-    <!-- 需求 2.3: 最新上架 -->
+    <!-- 最新上架 -->
     <section id="new-section">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 tracking-wide text-white">
@@ -331,7 +339,7 @@
       <div class="flex items-center justify-between mb-4 border-b border-zinc-800 pb-3">
         <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 tracking-wide text-white">
           <span class="text-brand-yellow">🎯</span> 符合條件的餐廳清單
-          <span id="filteredMatchCount" class="text-xs bg-brand-yellow text-black font-extrabold px-2 py-0.5 rounded-full ml-1">0</span>
+          <span id="filteredMatchCount" class="text-xs bg-brand-yellow text-black font-extrabold px-2.5 py-0.5 rounded-full ml-1">0 間</span>
         </h2>
         <button onclick="resetAllFilters()" class="text-xs text-brand-yellow hover:underline flex items-center gap-1">
           <span>✕</span> 清除所有篩選
@@ -341,7 +349,7 @@
     </section>
   </main>
 
-  <!-- 詳情視窗 (Detail Modal) - 升級原生短片與實拍播放器 -->
+  <!-- 詳情視窗 (Detail Modal) -->
   <div id="detailModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
     <div class="bg-brand-card border border-brand-border rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-2xl relative flex flex-col">
       <button onclick="closeModal()" class="absolute top-4 right-4 bg-black/70 hover:bg-zinc-800 text-zinc-300 w-8 h-8 rounded-full flex items-center justify-center transition z-30 border border-zinc-700">✕</button>
@@ -364,10 +372,8 @@
 
             <!-- 媒體播放器視窗 -->
             <div id="videoContainer" class="reel-container border border-zinc-800 flex items-center justify-center bg-zinc-950">
-              <!-- 原生 HTML5 影片播放器 (若 CSV 含有 videoUrl 則優先使用) -->
               <video id="modalDirectVideo" class="w-full h-full object-contain hidden" controls playsinline></video>
               
-              <!-- Instagram 官方 Embed 播放器 (若無直連 MP4 則使用) -->
               <iframe id="modalReelIframe" 
                       class="w-full h-full border-0 rounded-xl"
                       src="" 
@@ -377,7 +383,6 @@
                       scrolling="no">
               </iframe>
 
-              <!-- 當短片加載失敗時的平滑回退畫面 -->
               <div id="modalVideoFallback" class="hidden flex-col items-center justify-center p-6 text-center text-xs text-zinc-400 space-y-3">
                 <span class="text-3xl">🎬</span>
                 <p>點擊下方按鈕即可於 Instagram App 直接觀看完整 Reel 原片與留言！</p>
@@ -387,7 +392,7 @@
             <!-- 靜態封面圖視窗 -->
             <div id="photoFrameContainer" class="hidden relative rounded-xl overflow-hidden bg-zinc-950 border border-zinc-800 h-[480px] flex items-center justify-center group">
               <img id="modalFoodImg" class="w-full h-full object-cover rounded-xl transition duration-500 group-hover:scale-105" 
-                   src="" 
+                   src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E" 
                    alt="餐廳實拍相片" 
                    onerror="onImageError(this)" />
             </div>
@@ -435,7 +440,7 @@
             </div>
           </div>
 
-          <!-- 實用轉化操作列 -->
+          <!-- 實用操作列 -->
           <div class="pt-4 border-t border-brand-border flex flex-wrap items-center justify-between gap-2.5">
             <div class="flex items-center gap-2">
               <button id="modalFavBtn" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-3 py-2 rounded-lg border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1.5">
@@ -478,7 +483,7 @@
     </div>
   </div>
 
-  <!-- 頁尾 -->
+  <!-- 頁尾：簡潔專業品牌版權 -->
   <footer class="bg-black border-t border-brand-border py-8 px-6 text-center text-xs text-zinc-500 mt-auto">
     <div class="flex justify-center items-center gap-2 mb-2">
       <span class="text-brand-yellow font-black serif-brand text-sm">FCA</span>
@@ -489,7 +494,7 @@
   </footer>
 
   <script>
-    // 預設示範資料集（示範安全預設值，不載入不存在的 fake iframe）
+    // 預設示範資料集（涵蓋港島、九龍、新界與海外）
     let restaurants = [
       {
         id: "r1",
@@ -498,12 +503,12 @@
         region: "港島",
         cuisine: "西式",
         price: "$400 - $800",
-        priceCategory: "300-500",
+        priceCategory: "300-600",
         occasion: "拍拖約會",
         must_try: "🔥 熟成黑安格斯肉眼、直火炭烤海鮮、煙燻手工調酒",
         isEditorPick: true,
         views: 3482,
-        caption: "中環全新炭火直烤餐廳！招牌熟成黑安格斯肉眼外焦內嫩，肉汁超豐富，炭香味極濃。配搭煙燻手工調酒，環境昏暗浪漫極有格調！適合約會拍拖或慶祝生日。",
+        caption: "中環全新炭火直烤餐廳！招牌熟成黑安格斯肉眼外焦內嫩，肉汁超豐富，炭香味極濃。配搭煙燻手工調酒，環境昏暗浪漫極有格調！適合約會拍拖或慶祝生日。 #fca_central",
         url: "https://instagram.com/foodcafealcoholic",
         shortCode: null,
         videoUrl: null,
@@ -513,7 +518,7 @@
         id: "r2",
         restaurant_name: "Homeland",
         district: "旺角",
-        region: "九料",
+        region: "九龍",
         cuisine: "Cafe",
         price: "$100 - $200",
         priceCategory: "100-300",
@@ -521,7 +526,7 @@
         must_try: "🍝 黑松露忌廉手工意粉、伯爵茶戚風蛋糕、特調燕麥拿鐵",
         isEditorPick: false,
         views: 2891,
-        caption: "旺角高質文青主題 Cafe！裝修充滿異國打卡色彩，手工意粉軟硬適中，松露忌廉汁香濃惹味，打卡甜品推介伯爵茶戚風蛋糕，姊妹聚會好去處！",
+        caption: "旺角高質文青主題 Cafe！裝修充滿異國打卡色彩，手工意粉軟硬適中，松露忌廉汁香濃惹味，打卡甜品推介伯爵茶戚風蛋糕，姊妹聚會好去處！ #fca_mk",
         url: "https://instagram.com/foodcafealcoholic",
         shortCode: null,
         videoUrl: null,
@@ -529,35 +534,35 @@
       },
       {
         id: "r3",
-        restaurant_name: "饗 A Joy",
-        district: "信義區",
-        region: "海外",
-        cuisine: "日本菜",
-        price: "$800+",
-        priceCategory: "above500",
-        occasion: "聚會",
-        must_try: "🦀 炙燒帝王蟹腳、北海道黑鮪魚大腹、現開海膽手卷",
+        restaurant_name: "L'amour",
+        district: "太和",
+        region: "新界",
+        cuisine: "西式",
+        price: "$300 - $500",
+        priceCategory: "300-600",
+        occasion: "拍拖約會",
+        must_try: "🥩 法式低溫慢煮牛柳、黑松露法式油封鴨腿",
         isEditorPick: true,
-        views: 4520,
-        caption: "全台最高奢華海鮮放題！帝王蟹腳、黑鮪魚、頂級海膽壽司任食，坐在高空俯瞰台北無敵景觀，體驗極為頂級，大班人慶祝盛宴之選！",
+        views: 3120,
+        caption: "大埔太和隱世浪漫法式小館！主廚曾於多間星級酒店任職，慢煮牛柳肉嫩香濃，環境靜謐有氣氛，新界拍拖必去之選。 #fca_taipo",
         url: "https://instagram.com/foodcafealcoholic",
         shortCode: null,
         videoUrl: null,
-        image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=700&q=80"
+        image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=700&q=80"
       },
       {
         id: "r4",
         restaurant_name: "Yappari Steak",
         district: "尖沙咀",
         region: "九龍",
-        cuisine: "日本菜",
+        cuisine: "日本",
         price: "$100 - $180",
         priceCategory: "100-300",
         occasion: "深夜食堂",
         must_try: "🥩 熔岩火山石板厚切牛扒、無限續碗牛肉黑咖喱飯",
         isEditorPick: false,
         views: 1980,
-        caption: "沖繩人氣火山石板牛扒插旗尖沙咀！熱辣辣石板自己控制生熟度，白飯沙律湯品無限量續加，厚切肉質juicy，性價比極高，宵夜平民之選！",
+        caption: "沖繩人氣火山石板牛扒插旗尖沙咀！熱辣辣石板自己控制生熟度，白飯沙律湯品無限量續加，厚切肉質juicy，性價比極高，宵夜平民之選！ #fca_tst",
         url: "https://instagram.com/foodcafealcoholic",
         shortCode: null,
         videoUrl: null,
@@ -565,17 +570,17 @@
       },
       {
         id: "r5",
-        restaurant_name: "Tailor",
-        district: "尖沙咀",
-        region: "九龍",
+        restaurant_name: "木衛二鑄茶所",
+        district: "荃灣",
+        region: "新界",
         cuisine: "Cafe",
-        price: "$80 - $150",
-        priceCategory: "100-300",
+        price: "$60 - $120",
+        priceCategory: "under100",
         occasion: "打卡Cafe",
-        must_try: "☕ 濃厚冰滴 Dirty、法式香草牛角窩夫 (Croffle)",
+        must_try: "🍵 炭焙烏龍奶茶、手工茶香生乳捲",
         isEditorPick: false,
-        views: 2150,
-        caption: "隱世西裝主題精品咖啡店，特調 dirty 入口醇厚香滑，層次感極佳。環境安靜好適合打卡影相同嘆咖啡放鬆，亦歡迎毛孩（寵物友善）。",
+        views: 2650,
+        caption: "荃灣文青聚腳點！主打現場慢萃台灣高山茶與手工茶點，環境木質極簡風格，非常適合下午茶工作放空。 #fca_tsuenwan",
         url: "https://instagram.com/foodcafealcoholic",
         shortCode: null,
         videoUrl: null,
@@ -593,7 +598,7 @@
         must_try: "🥧 焦糖燉蛋蛋撻、經典港式厚切西多士、茶走",
         isEditorPick: true,
         views: 3820,
-        caption: "五十年老字號冰室活化成懷舊精品 Cafe！結合傳統蛋撻與法式焦糖燉蛋，港式奶茶香滑醇厚。充滿老香港情懷，打卡一流。",
+        caption: "五十年老字號冰室活化成懷舊精品 Cafe！結合傳統蛋撻與法式焦糖燉蛋，港式奶茶香滑醇厚。充滿老香港情懷，打卡一流。 #fca_ymt",
         url: "https://instagram.com/foodcafealcoholic",
         shortCode: null,
         videoUrl: null,
@@ -608,7 +613,7 @@
       } catch (e) {
         console.warn('LocalStorage unavailable:', e);
       }
-      return new Set(["r1", "r6"]);
+      return new Set(["r1", "r3"]);
     }
 
     function saveFavorites() {
@@ -622,14 +627,6 @@
     let savedFavorites = loadFavorites();
     let currentModalItem = null;
 
-    // 全域圖片防破圖備援函式 (確保立即在全域可用)
-    function onImageError(img) {
-      if (!img) return;
-      img.onerror = null; // 防止遞迴重試
-      img.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
-    }
-    window.onImageError = onImageError;
-
     let filters = {
       search: "",
       region: "all",
@@ -640,7 +637,7 @@
     };
 
     const cuisineFallbacks = {
-      '日本菜': 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=700&q=80',
+      '日本': 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=700&q=80',
       'Cafe': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=700&q=80',
       '西式': 'https://images.unsplash.com/photo-1544025162-d76694265947?w=700&q=80',
       '火鍋': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=700&q=80',
@@ -659,81 +656,152 @@
       return cuisineFallbacks['default'];
     }
 
-    // 地區區域智能映射表 (District to Region Mapper)
+    // 全港 18 區、熱門商場地標及 IG Hashtag 完備映射庫 (徹底移除短字串干擾)
     const REGION_MAP = {
-      '港島': ['中環', '上環', '西環', '西營盤', '堅尼地城', '灣仔', '銅鑼灣', '天后', '炮台山', '北角', '鰂魚涌', '太古', '筲箕灣', '柴灣', '金鐘', '黃竹坑', '鴨脷洲', '香港仔', '淺水灣', '赤柱'],
-      '九龍': ['尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '大角咀', '紅磡', '黃埔', '九龍城', '土瓜灣', '新蒲崗', '黃大仙', '鑽石山', '樂富', '慈雲山', '觀塘', '九龍灣', '牛頭角', '藍田', '油塘', '長沙灣', '荔枝角', '美孚'],
-      '新界': ['荃灣', '沙田', '大圍', '火炭', '馬鞍山', '元朗', '屯門', '天水圍', '大埔', '粉嶺', '上水', '將軍澳', '坑口', '寶琳', '調景嶺', '康城', '西貢', '清水灣', '深井', '青衣', '葵芳', '葵涌'],
-      '海外': ['東涌', '長洲', '大澳', '愉景灣', '南丫島', '坪洲', '機場', '深圳', '廣州', '珠海', '澳門', '台北', '台中', '高雄', '日本', '東京', '大阪', '京都', '沖繩', '福岡', '曼谷', '首爾', '韓國', '泰國']
+      '港島': [
+        '港島', 'hong kong island', 'hk island', '#fca_hk',
+        // 商圈
+        '中環', 'central', '#fca_central', '金鐘', 'admiralty', '上環', 'sheung wan', '#fca_sheungwan',
+        '灣仔', 'wan chai', 'wanchai', '#fca_wanchai', '銅鑼灣', 'causeway bay', 'cwb', '#fca_cwb', '銅鑼',
+        '天后', 'tin hau', '#fca_tinhau', '炮台山', 'fortress hill', '北角', 'north point',
+        '鰂魚涌', 'quarry bay', '太古', 'tai koo', 'taikoo', '#fca_taikoo', '西灣河', '筲箕灣', '柴灣', '杏花邨',
+        '西環', 'sai wan', '西營盤', 'sai ying pun', '#fca_saiyingpun', '堅尼地城', 'kennedy town', '#fca_kennedytown', '石塘咀',
+        '黃竹坑', 'wong chuk hang', '#fca_wch', '香港仔', 'aberdeen', '鴨脷洲', '海怡半島', '淺水灣', '赤柱', '石澳', '大坑', '跑馬地',
+        // 地標與商場
+        'ifc', '國金', '置地', 'landmark', '太古廣場', 'pacific place', '時代廣場', 'times square', '希慎', 'hysan',
+        'sogo', '崇光', '大館', 'tai kwun', 'pmq', '中環街市', 'soho', '蘇豪', '蘭桂坊', 'lkf', '利東街', '藍屋'
+      ],
+      '九龍': [
+        '九龍', 'kowloon', '#fca_kln',
+        // 商圈
+        '尖沙咀', 'tsim sha tsui', 'tst', '#fca_tst', '尖東', '佐敦', 'jordan', '#fca_jordan',
+        '油麻地', 'yaumatei', 'yau ma tei', 'ymt', '#fca_ymt', '旺角', 'mong kok', 'mongkok', '#fca_mk', '#fca_mongkok',
+        '太子', 'prince edward', '#fca_pe', '深水埗', 'sham shui po', 'ssp', '#fca_ssp',
+        '長沙灣', 'cheung sha wan', '荔枝角', 'lai chi kok', '美孚', 'mei foo', '石硤尾', '大角咀', 'tai kok tsui', '#fca_tkt',
+        '紅磡', 'hung hom', 'hunghom', '#fca_hunghom', '黃埔', 'whampoa', '何文田', '土瓜灣',
+        '九龍城', 'kowloon city', '#fca_kc', '啟德', 'kai tak', '新蒲崗', 'san po kong',
+        '黃大仙', '樂富', '鑽石山', '慈雲山',
+        '觀塘', 'kwun tong', '#fca_kwuntong', '九龍灣', 'kowloon bay', '牛頭角', '藍田', '油塘',
+        // 地標與商場
+        '海港城', 'harbour city', 'k11', 'k11 musea', '朗豪坊', 'langham place', '圓方', 'elements',
+        'm+', '西九', 'west kowloon', 'airside', '大南街', '裕民坊', 'ym2', 'apm', '又一城', 'festival walk',
+        '波鞋街', '女人街', '花園街', '廟街', '奧海城', 'olympian city', 'd2 place'
+      ],
+      '新界': [
+        '新界', 'new territories', '#fca_nt',
+        // 商圈
+        '荃灣', 'tsuen wan', '#fca_tsuenwan', '葵芳', 'kwaifong', 'kwai fong', '#fca_kwaifong', '葵涌', 'kwai chung', '葵興', '青衣', 'tsing yi', '荔景',
+        '沙田', 'shatin', 'sha tin', '#fca_shatin', '大圍', 'tai wai', '#fca_taiwai', '火炭', '馬鞍山', 'ma on shan', '石門', 'shek mun', '烏溪沙',
+        '元朗', 'yuen long', '#fca_yuenlong', '屯門', 'tuen mun', '#fca_tuenmun', '天水圍', 'tin shui wai', '錦田', '朗屏', '兆康',
+        '大埔', 'tai po', '#fca_taipo', '太和', 'tai wo', '粉嶺', 'fanling', '上水', 'sheung shui', '落馬洲',
+        '將軍澳', 'tseung kwan o', 'tko', '#fca_tko', '坑口', '寶琳', '調景嶺', '康城', '日出康城', 'the lohas',
+        '西貢', 'sai kung', '#fca_saikung', '清水灣', '深井', '汀九', '青龍頭',
+        // 地標與商場
+        '圍方', 'the wai', '新城市廣場', 'new town plaza', '南豐紗廠', 'the mills', '愉景新城', 'd-park', '荃灣廣場',
+        '葵廣', '葵涌廣場', '形點', 'yoho', 'v city', '屯市', '屯門市廣場', 'popcorn', '東港城', '將軍澳中心', '青衣城'
+      ],
+      '海外': [
+        '海外', 'overseas', '外遊', '#fca_travel', '#fca_overseas',
+        '東涌', 'tung chung', '#fca_tungchung', '機場', '長洲', 'cheung chau', '#fca_cheungchau', '大澳', '愉景灣', '南丫島', '坪洲', '迪士尼', '離島',
+        '深圳', 'shenzhen', '#fca_shenzhen', '福田', '南山', '羅湖', '萬象城', '壹方城', '廣州', '珠海',
+        '澳門', 'macau', 'macao', '#fca_macau', '氹仔',
+        '台北', 'taipei', '#fca_taiwan', '台灣', 'taiwan', '台中', '台南', '高雄',
+        '日本', 'japan', '#fca_japan', '東京', 'tokyo', '大阪', 'osaka', '京都', 'kyoto', '沖繩', 'okinawa', '福岡', '北海道',
+        '曼谷', 'bangkok', '#fca_bangkok', '泰國', 'thailand', '首爾', 'seoul', '#fca_seoul', '韓國', 'korea'
+      ]
     };
 
-    function inferRegion(district, caption = "") {
-      const text = `${district || ''} ${caption || ''}`.toLowerCase();
-      for (const [region, districts] of Object.entries(REGION_MAP)) {
-        for (const d of districts) {
-          if (text.includes(d.toLowerCase())) {
+    // 全方位大區推導函式 (先檢 district，再檢餐廳名，最後檢整篇 Caption Hashtag)
+    function inferRegionFromItem(item) {
+      if (!item) return '港島';
+      const cleanDistrict = String(item.district || '').toLowerCase();
+      const cleanName = String(item.restaurant_name || '').toLowerCase();
+      const fullCaption = String(item.caption || '').toLowerCase();
+
+      // 1. 優先精確檢查 district
+      if (cleanDistrict && cleanDistrict !== 'none' && cleanDistrict !== 'null' && cleanDistrict !== '未註明') {
+        for (const [region, keywords] of Object.entries(REGION_MAP)) {
+          for (const kw of keywords) {
+            if (cleanDistrict.includes(kw) || kw === cleanDistrict) {
+              return region;
+            }
+          }
+        }
+      }
+
+      // 2. 檢查餐廳名稱 (如：太和分店、深圳分店、中環店)
+      for (const [region, keywords] of Object.entries(REGION_MAP)) {
+        for (const kw of keywords) {
+          if (cleanName.includes(kw)) {
             return region;
           }
         }
       }
-      return '港島'; // 預設歸屬
+
+      // 3. 檢查全文中的 #fca_ 專屬標籤與關鍵地標
+      for (const [region, keywords] of Object.entries(REGION_MAP)) {
+        for (const kw of keywords) {
+          // 只針對長度 >= 2 的有效字詞進行內文搜尋
+          if (kw.length >= 2 && fullCaption.includes(kw)) {
+            return region;
+          }
+        }
+      }
+
+      // 若完全無任何線索，依據中環/尖沙咀等主流預設歸入港島
+      return '港島';
     }
 
-    // 智能預算區間容錯解析器 (Budget Tier Normalizer)
     function parseBudgetTier(rawPrice, cuisine = "") {
       if (!rawPrice || rawPrice === 'None' || rawPrice === 'null' || rawPrice.trim() === '') {
-        // 若完全沒寫價錢，根據菜系做智能容錯預測
         if (/omakase|廚師發辦|懷石|fine dining|頂級牛扒/i.test(cuisine)) {
-          return { tier: 'above600', symbol: '$$$$', text: '奢華享受 ($600+)', label: '$$$$ 奢華享受 ($600+)', isEstimated: true };
+          return { tier: 'above600', symbol: '$$$$', text: '奢華享受 ($600+)', label: '$$$$ 奢華享受 ($600+)' };
         }
         if (/茶餐廳|冰室|車仔麵|粉麵|小食/i.test(cuisine)) {
-          return { tier: 'under100', symbol: '$', text: '平民日常 (<$100)', label: '$ 平民日常 (<$100)', isEstimated: true };
+          return { tier: 'under100', symbol: '$', text: '平民日常 (<$100)', label: '$ 平民日常 (<$100)' };
         }
-        return { tier: 'all', symbol: '📋', text: '依現場菜單', label: '📋 依現場菜單', isEstimated: false };
+        return { tier: 'all', symbol: '📋', text: '依現場菜單', label: '📋 依現場菜單' };
       }
 
       const str = String(rawPrice).toLowerCase().replace(/,/g, '');
-      
-      // 提取所有數字
       const numbers = str.match(/\d+/g);
+      
       if (!numbers || numbers.length === 0) {
         if (str.includes('平') || str.includes('平民') || str.includes('抵食')) {
-          return { tier: 'under100', symbol: '$', text: '平民日常 (<$100)', label: '$ 平民日常 (<$100)', isEstimated: false };
+          return { tier: 'under100', symbol: '$', text: '平民日常 (<$100)', label: '$ 平民日常 (<$100)' };
         }
         if (str.includes('貴') || str.includes('奢華') || str.includes('高級')) {
-          return { tier: 'above600', symbol: '$$$$', text: '奢華享受 ($600+)', label: '$$$$ 奢華享受 ($600+)', isEstimated: false };
+          return { tier: 'above600', symbol: '$$$$', text: '奢華享受 ($600+)', label: '$$$$ 奢華享受 ($600+)' };
         }
-        return { tier: 'all', symbol: '📋', text: '依現場菜單', label: '📋 依現場菜單', isEstimated: false };
+        return { tier: 'all', symbol: '📋', text: '依現場菜單', label: '📋 依現場菜單' };
       }
 
-      // 取合理均值 (若有區間取平均，或取最後一個最高標示)
       const numValues = numbers.map(n => parseInt(n, 10)).filter(n => n > 15 && n < 50000);
       if (numValues.length === 0) {
-        return { tier: 'all', symbol: '📋', text: '依現場菜單', label: '📋 依現場菜單', isEstimated: false };
+        return { tier: 'all', symbol: '📋', text: '依現場菜單', label: '📋 依現場菜單' };
       }
 
       const avg = numValues.reduce((a, b) => a + b, 0) / numValues.length;
 
       if (avg < 100) {
-        return { tier: 'under100', symbol: '$', text: '平民日常 (<$100)', label: '$ 平民日常 (<$100)', isEstimated: false };
+        return { tier: 'under100', symbol: '$', text: '平民日常 (<$100)', label: '$ 平民日常 (<$100)' };
       } else if (avg <= 300) {
-        return { tier: '100-300', symbol: '$$', text: '人氣聚會 ($100-$300)', label: '$$ 人氣聚會 ($100-$300)', isEstimated: false };
+        return { tier: '100-300', symbol: '$$', text: '人氣聚會 ($100-$300)', label: '$$ 人氣聚會 ($100-$300)' };
       } else if (avg <= 600) {
-        return { tier: '300-600', symbol: '$$$', text: '精緻格調 ($300-$600)', label: '$$$ 精緻格調 ($300-$600)', isEstimated: false };
+        return { tier: '300-600', symbol: '$$$', text: '精緻格調 ($300-$600)', label: '$$$ 精緻格調 ($300-$600)' };
       } else {
-        return { tier: 'above600', symbol: '$$$$', text: '奢華享受 ($600+)', label: '$$$$ 奢華享受 ($600+)', isEstimated: false };
+        return { tier: 'above600', symbol: '$$$$', text: '奢華享受 ($600+)', label: '$$$$ 奢華享受 ($600+)' };
       }
     }
 
-    // 為預設示範資料自動補全 priceInfo 與 priceCategory
     restaurants.forEach(r => {
       if (!r.priceInfo) {
         r.priceInfo = parseBudgetTier(r.price, r.cuisine);
         r.priceCategory = r.priceInfo.tier;
       }
+      r.region = inferRegionFromItem(r);
     });
 
-    // 將 Instagram 圖片網址加上免費 Proxy，確保直讀不報錯
     function proxyImageUrl(url) {
       if (!url) return null;
       if (url.includes('unsplash.com') || url.includes('placehold.co')) return url;
@@ -748,7 +816,6 @@
       return null;
     }
 
-    // 取得真實封面（優先調用真實 displayUrl）
     function getReelThumbnail(item) {
       const rawImg = item.image || item.displayUrl || item.imageUrl || item.thumbnailUrl;
       if (rawImg && rawImg.startsWith('http')) {
@@ -757,13 +824,15 @@
       return getCuisineImage(item.cuisine);
     }
 
-    function createCard(item, index, rankBadge = null) {
+    function createCard(item, index, rankBadge = null, isGrid = false) {
       const img = getReelThumbnail(item);
       const isFav = savedFavorites.has(item.id);
 
+      const widthClass = isGrid ? 'w-full' : 'flex-none w-56 sm:w-64';
+
       return `
         <div onclick='openModalById("${item.id}")'
-             class="flex-none w-56 sm:w-64 bg-brand-surface rounded-xl overflow-hidden cursor-pointer card-zoom shadow-lg border border-brand-border group relative flex flex-col">
+             class="${widthClass} bg-brand-surface rounded-xl overflow-hidden cursor-pointer card-zoom shadow-lg border border-brand-border group relative flex flex-col">
           
           <div class="h-32 sm:h-36 bg-zinc-900 relative overflow-hidden">
             <img src="${img}" alt="${item.restaurant_name}" 
@@ -865,31 +934,25 @@
       const iframeEl = document.getElementById('modalReelIframe');
       const fallbackEl = document.getElementById('modalVideoFallback');
 
-      // 優先權 1：若有直接 MP4 影片串流
       if (item.videoUrl && item.videoUrl.startsWith('http')) {
         directVideo.src = item.videoUrl;
         directVideo.classList.remove('hidden');
         iframeEl.classList.add('hidden');
         fallbackEl.classList.add('hidden');
         directVideo.play().catch(() => {});
-      } 
-      // 優先權 2：若有真實 Instagram shortcode
-      else if (item.shortCode) {
+      } else if (item.shortCode) {
         directVideo.pause();
         directVideo.classList.add('hidden');
         fallbackEl.classList.add('hidden');
         iframeEl.classList.remove('hidden');
         iframeEl.src = `https://www.instagram.com/reel/${item.shortCode}/embed/`;
-      } 
-      // 優先權 3：若為預設 Mock 資料或無有效代碼，顯示優雅提示，不載入報錯 iframe
-      else {
+      } else {
         directVideo.pause();
         directVideo.classList.add('hidden');
         iframeEl.classList.add('hidden');
         fallbackEl.classList.remove('hidden');
       }
 
-      // 載入封面圖
       const realImg = getReelThumbnail(item);
       document.getElementById('modalFoodImg').src = realImg;
 
@@ -982,6 +1045,31 @@
       openModalById(id);
     }
 
+    // 更新下拉選單中的各區真實數量
+    function updateDropdownCounts() {
+      const counts = { '港島': 0, '九龍': 0, '新界': 0, '海外': 0 };
+      restaurants.forEach(r => {
+        const reg = r.region || inferRegionFromItem(r);
+        if (counts[reg] !== undefined) {
+          counts[reg]++;
+        } else {
+          counts['港島']++;
+        }
+      });
+
+      const optAll = document.getElementById('opt-all');
+      const optHk = document.getElementById('opt-reg-hk');
+      const optKln = document.getElementById('opt-reg-kln');
+      const optNt = document.getElementById('opt-reg-nt');
+      const optOs = document.getElementById('opt-reg-os');
+
+      if (optAll) optAll.innerText = `🗺️ 全港所有地區 (共 ${restaurants.length} 間)`;
+      if (optHk) optHk.innerText = `🇭🇰 港島全區 (${counts['港島']} 間)`;
+      if (optKln) optKln.innerText = `🏮 九龍全區 (${counts['九龍']} 間)`;
+      if (optNt) optNt.innerText = `🌳 新界全區 (${counts['新界']} 間)`;
+      if (optOs) optOs.innerText = `✈️ 離島 / 海外 / 深圳 (${counts['海外']} 間)`;
+    }
+
     function renderApp() {
       updateFavBadge();
 
@@ -1005,28 +1093,40 @@
           const matchDist = (item.district || '').toLowerCase().includes(s);
           const matchCuis = (item.cuisine || '').toLowerCase().includes(s);
           const matchCap = (item.caption || '').toLowerCase().includes(s);
-          const matchMust = (item.must_try || '').toLowerCase().includes(s);
-          if (!matchName && !matchDist && !matchCuis && !matchCap && !matchMust) return false;
+          if (!matchName && !matchDist && !matchCuis && !matchCap) return false;
         }
 
-        // 2. 大區篩選比對 (使用智能推導映射)
+        // 2. 大區篩選比對
         if (filters.region !== 'all') {
-          const itemRegion = item.region || inferRegion(item.district, item.caption);
-          const targetDistricts = REGION_MAP[filters.region] || [];
-          const text = `${item.district || ''} ${item.caption || ''}`.toLowerCase();
+          const targetRegion = filters.region;
+          const itemRegion = item.region || inferRegionFromItem(item);
           
-          const inTargetDistrictList = targetDistricts.some(d => text.includes(d.toLowerCase()));
-          const matchDirectRegion = (itemRegion === filters.region);
-          
-          if (!matchDirectRegion && !inTargetDistrictList) return false;
+          if (itemRegion !== targetRegion) {
+            // 雙向防護：再檢查 district 或 caption 是否命中該大區關鍵字
+            const targetKeywords = REGION_MAP[targetRegion] || [];
+            const cleanDist = String(item.district || '').toLowerCase();
+            const cleanCap = String(item.caption || '').toLowerCase();
+            
+            const matchedFallback = targetKeywords.some(kw => {
+              if (kw.length < 2) return false;
+              return cleanDist.includes(kw) || cleanCap.includes(kw);
+            });
+            if (!matchedFallback) return false;
+          }
         }
 
-        // 3. 細分地區比對
+        // 3. 細分商圈比對
         if (filters.district !== 'all') {
           const dTerm = filters.district.toLowerCase();
-          const inDistrict = (item.district || '').toLowerCase().includes(dTerm);
-          const inCaption = (item.caption || '').toLowerCase().includes(dTerm);
-          if (!inDistrict && !inCaption) return false;
+          const cleanItemDist = String(item.district || '').toLowerCase();
+          const cleanName = String(item.restaurant_name || '').toLowerCase();
+          const cleanCaption = String(item.caption || '').toLowerCase();
+          
+          const inDistrict = cleanItemDist.includes(dTerm) || 
+                             cleanName.includes(dTerm) || 
+                             cleanCaption.includes(dTerm) ||
+                             cleanCaption.includes(`#fca_${dTerm}`);
+          if (!inDistrict) return false;
         }
 
         // 4. 場景比對
@@ -1036,13 +1136,13 @@
           if (!matchOcc) return false;
         }
 
-        // 5. 預算比對 (以 normalized tier 進行比對)
+        // 5. 預算比對
         if (filters.price !== 'all') {
           const itemTier = item.priceCategory || (item.priceInfo ? item.priceInfo.tier : null);
           if (itemTier !== filters.price) return false;
         }
 
-        // 6. 菜式種類比對 (主流歸類智能比對)
+        // 6. 菜式種類比對
         if (filters.cuisine !== 'all') {
           const cTarget = filters.cuisine;
           const fullText = `${item.cuisine || ''} ${item.must_try || ''} ${item.caption || ''} ${item.restaurant_name || ''}`.toLowerCase();
@@ -1103,8 +1203,7 @@
                 <p>試下放寬地區或預算條件，或者點擊「清除所有篩選」重新探索。</p>
               </div>`;
           } else {
-            // 篩選網格卡片呈現
-            filteredGrid.innerHTML = filtered.map((item, idx) => createCard(item, idx)).join('');
+            filteredGrid.innerHTML = filtered.map((item, idx) => createCard(item, idx, null, true)).join('');
           }
         }
       } else {
@@ -1198,14 +1297,19 @@
           const rawImg = r.displayUrl || r.display_url || r.imageUrl || r.image_url || r.thumbnailUrl || (r.images ? r.images.split(',')[0] : null);
           const directVid = r.videoUrl || r.video_url || null;
           const cuisineStr = r.cuisine || '美食';
-          const distStr = r.district || '未註明';
+          const distStr = (r.district && r.district !== 'None' && r.district !== 'null') ? r.district.trim() : '未註明';
           const captionStr = r.caption || '';
 
-          // 自動推導香港大區
-          const inferredRegion = r.region && r.region !== 'None' ? r.region : inferRegion(distStr, captionStr);
-
-          // 計算智能價錢分級
           const priceInfo = parseBudgetTier(r.price, cuisineStr);
+
+          const tempItem = {
+            restaurant_name: r.restaurant_name,
+            district: distStr,
+            cuisine: cuisineStr,
+            caption: captionStr
+          };
+
+          const inferredRegion = inferRegionFromItem(tempItem);
 
           return {
             id: `csv_${i}`,
@@ -1230,6 +1334,8 @@
 
       if (parsed.length > 0) {
         restaurants = parsed;
+        updateDropdownCounts();
+
         const first = restaurants[0];
         const heroEl = document.getElementById('hero');
         const heroImg = getReelThumbnail(first);
@@ -1247,10 +1353,9 @@
       }
     }
 
-    // 自動嘗試載入同目錄下的 cleaned_data_final.csv (適用於 GitHub Pages / Web Server)
+    // 自動嘗試載入同目錄下的 cleaned_data_final.csv
     function autoFetchCsv() {
       if (window.location.protocol === 'file:') {
-        console.log('當前為本地 file:// 協議，請手動點擊右上角「載入 CSV」按鈕選取檔案。');
         return;
       }
       fetch('cleaned_data_final.csv')
@@ -1283,7 +1388,6 @@
         skipEmptyLines: true,
         complete: function(results) {
           processCsvData(results.data);
-          alert(`🎉 成功手動載入 ${results.data.length} 筆資料！`);
         }
       });
     });
@@ -1291,7 +1395,8 @@
     document.getElementById('heroReadBtn').onclick = () => openModalById("r1");
     document.getElementById('heroFavBtn').onclick = () => toggleFavorite("r1");
 
-    // 初始化渲染預設資料，並嘗試自動載入伺服器 CSV
+    // 初始化渲染並自動嘗試載入
+    updateDropdownCounts();
     renderApp();
     autoFetchCsv();
   </script>

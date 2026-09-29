@@ -959,7 +959,82 @@
       renderApp();
     });
 
-    // 載入真實 CSV 並精準提取封面與影片
+    // 核心資料解析與格式化函式
+    function processCsvData(data) {
+      const parsed = data
+        .filter(r => r.restaurant_name && r.restaurant_name !== 'None' && r.restaurant_name !== 'null')
+        .map((r, i) => {
+          const postUrl = r.url || r.postUrl || r.permalink || (r.shortCode ? `https://www.instagram.com/reel/${r.shortCode}/` : 'https://instagram.com/foodcafealcoholic');
+          const code = r.shortCode || r.shortcode || extractShortcode(postUrl);
+          const rawImg = r.displayUrl || r.display_url || r.imageUrl || r.image_url || r.thumbnailUrl || (r.images ? r.images.split(',')[0] : null);
+          const directVid = r.videoUrl || r.video_url || null;
+
+          return {
+            id: `csv_${i}`,
+            restaurant_name: r.restaurant_name,
+            district: r.district || '未註明',
+            region: r.region || '港島',
+            cuisine: r.cuisine || '美食',
+            price: r.price || '$100-$300',
+            priceCategory: r.priceCategory || '100-300',
+            occasion: r.occasion || '聚會',
+            must_try: r.must_try || r.signature_dishes || '主廚私心推薦菜式',
+            isEditorPick: i % 4 === 0,
+            views: Math.floor(Math.random() * 4000) + 500,
+            caption: r.caption || '',
+            url: postUrl,
+            shortCode: code,
+            videoUrl: directVid,
+            image: rawImg
+          };
+        });
+
+      if (parsed.length > 0) {
+        restaurants = parsed;
+        const first = restaurants[0];
+        const heroEl = document.getElementById('hero');
+        const heroImg = getReelThumbnail(first);
+        heroEl.style.backgroundImage = `linear-gradient(to top, #0A0A0A 12%, rgba(10,10,10,0.65) 65%, rgba(0,0,0,0.85) 100%), url('${heroImg}')`;
+
+        document.getElementById('heroTitle').innerText = first.restaurant_name;
+        document.getElementById('heroDistrictBadge').innerText = `📍 ${first.district}`;
+        document.getElementById('heroCuisineBadge').innerText = `🔥 ${first.cuisine}`;
+        document.getElementById('heroOccasionBadge').innerText = `✨ ${first.occasion}`;
+        document.getElementById('heroCaption').innerText = first.caption;
+        document.getElementById('heroPrice').innerText = `💰 預算: ${first.price}`;
+        document.getElementById('heroReadBtn').onclick = () => openModalById(first.id);
+
+        renderApp();
+      }
+    }
+
+    // 自動嘗試載入同目錄下的 cleaned_data_final.csv (適用於 GitHub Pages / Web Server)
+    function autoFetchCsv() {
+      if (window.location.protocol === 'file:') {
+        console.log('當前為本地 file:// 協議，請手動點擊右上角「載入 CSV」按鈕選取檔案。');
+        return;
+      }
+      fetch('cleaned_data_final.csv')
+        .then(response => {
+          if (!response.ok) throw new Error('未找到同目錄下的 cleaned_data_final.csv');
+          return response.text();
+        })
+        .then(csvText => {
+          Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+              processCsvData(results.data);
+              console.log('✅ 已成功自動載入 cleaned_data_final.csv');
+            }
+          });
+        })
+        .catch(err => {
+          console.log('自動載入提示:', err.message);
+        });
+    }
+
+    // 手動選取檔案載入 CSV
     document.getElementById('csvFileInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -968,52 +1043,8 @@
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
-          const parsed = results.data
-            .filter(r => r.restaurant_name && r.restaurant_name !== 'None' && r.restaurant_name !== 'null')
-            .map((r, i) => {
-              const postUrl = r.url || r.postUrl || r.permalink || (r.shortCode ? `https://www.instagram.com/reel/${r.shortCode}/` : 'https://instagram.com/foodcafealcoholic');
-              const code = r.shortCode || r.shortcode || extractShortcode(postUrl);
-              const rawImg = r.displayUrl || r.display_url || r.imageUrl || r.image_url || r.thumbnailUrl || (r.images ? r.images.split(',')[0] : null);
-              const directVid = r.videoUrl || r.video_url || null;
-
-              return {
-                id: `csv_${i}`,
-                restaurant_name: r.restaurant_name,
-                district: r.district || '未註明',
-                region: r.region || '港島',
-                cuisine: r.cuisine || '美食',
-                price: r.price || '$100-$300',
-                priceCategory: r.priceCategory || '100-300',
-                occasion: r.occasion || '聚會',
-                must_try: r.must_try || r.signature_dishes || '主廚私心推薦菜式',
-                isEditorPick: i % 4 === 0,
-                views: Math.floor(Math.random() * 4000) + 500,
-                caption: r.caption || '',
-                url: postUrl,
-                shortCode: code,
-                videoUrl: directVid,
-                image: rawImg
-              };
-            });
-
-          if (parsed.length > 0) {
-            restaurants = parsed;
-            const first = restaurants[0];
-            const heroEl = document.getElementById('hero');
-            const heroImg = getReelThumbnail(first);
-            heroEl.style.backgroundImage = `linear-gradient(to top, #0A0A0A 12%, rgba(10,10,10,0.65) 65%, rgba(0,0,0,0.85) 100%), url('${heroImg}')`;
-
-            document.getElementById('heroTitle').innerText = first.restaurant_name;
-            document.getElementById('heroDistrictBadge').innerText = `📍 ${first.district}`;
-            document.getElementById('heroCuisineBadge').innerText = `🔥 ${first.cuisine}`;
-            document.getElementById('heroOccasionBadge').innerText = `✨ ${first.occasion}`;
-            document.getElementById('heroCaption').innerText = first.caption;
-            document.getElementById('heroPrice').innerText = `💰 預算: ${first.price}`;
-            document.getElementById('heroReadBtn').onclick = () => openModalById(first.id);
-
-            renderApp();
-            alert(`🎉 成功載入 ${parsed.length} 間真實餐廳！全部影片與封面已就位。`);
-          }
+          processCsvData(results.data);
+          alert(`🎉 成功手動載入 ${results.data.length} 筆資料！`);
         }
       });
     });
@@ -1021,7 +1052,9 @@
     document.getElementById('heroReadBtn').onclick = () => openModalById("r1");
     document.getElementById('heroFavBtn').onclick = () => toggleFavorite("r1");
 
+    // 初始化渲染預設資料，並嘗試自動載入伺服器 CSV
     renderApp();
+    autoFetchCsv();
   </script>
 </body>
 </html>

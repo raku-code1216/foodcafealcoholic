@@ -688,12 +688,12 @@
       if (!rawPrice || rawPrice === 'None' || rawPrice === 'null' || rawPrice.trim() === '') {
         // 若完全沒寫價錢，根據菜系做智能容錯預測
         if (/omakase|廚師發辦|懷石|fine dining|頂級牛扒/i.test(cuisine)) {
-          return { tier: 'above600', symbol: '$$$$', label: '$$$$ 奢華享受 ($600+)', isEstimated: true };
+          return { tier: 'above600', symbol: '$$$$', text: '奢華享受 ($600+)', label: '$$$$ 奢華享受 ($600+)', isEstimated: true };
         }
         if (/茶餐廳|冰室|車仔麵|粉麵|小食/i.test(cuisine)) {
-          return { tier: 'under100', symbol: '$', label: '$ 平民日常 (Under $100)', isEstimated: true };
+          return { tier: 'under100', symbol: '$', text: '平民日常 (<$100)', label: '$ 平民日常 (<$100)', isEstimated: true };
         }
-        return { tier: 'all', symbol: '📋', label: '依現場菜單', isEstimated: false };
+        return { tier: 'all', symbol: '📋', text: '依現場菜單', label: '📋 依現場菜單', isEstimated: false };
       }
 
       const str = String(rawPrice).toLowerCase().replace(/,/g, '');
@@ -702,30 +702,30 @@
       const numbers = str.match(/\d+/g);
       if (!numbers || numbers.length === 0) {
         if (str.includes('平') || str.includes('平民') || str.includes('抵食')) {
-          return { tier: 'under100', symbol: '$', label: '$ 平民日常 (Under $100)', isEstimated: false };
+          return { tier: 'under100', symbol: '$', text: '平民日常 (<$100)', label: '$ 平民日常 (<$100)', isEstimated: false };
         }
         if (str.includes('貴') || str.includes('奢華') || str.includes('高級')) {
-          return { tier: 'above600', symbol: '$$$$', label: '$$$$ 奢華享受 ($600+)', isEstimated: false };
+          return { tier: 'above600', symbol: '$$$$', text: '奢華享受 ($600+)', label: '$$$$ 奢華享受 ($600+)', isEstimated: false };
         }
-        return { tier: 'all', symbol: '📋', label: '依現場菜單', isEstimated: false };
+        return { tier: 'all', symbol: '📋', text: '依現場菜單', label: '📋 依現場菜單', isEstimated: false };
       }
 
       // 取合理均值 (若有區間取平均，或取最後一個最高標示)
       const numValues = numbers.map(n => parseInt(n, 10)).filter(n => n > 15 && n < 50000);
       if (numValues.length === 0) {
-        return { tier: 'all', symbol: '📋', label: '依現場菜單', isEstimated: false };
+        return { tier: 'all', symbol: '📋', text: '依現場菜單', label: '📋 依現場菜單', isEstimated: false };
       }
 
       const avg = numValues.reduce((a, b) => a + b, 0) / numValues.length;
 
       if (avg < 100) {
-        return { tier: 'under100', symbol: '$', label: '$ 平民日常 (Under $100)', isEstimated: false };
+        return { tier: 'under100', symbol: '$', text: '平民日常 (<$100)', label: '$ 平民日常 (<$100)', isEstimated: false };
       } else if (avg <= 300) {
-        return { tier: '100-300', symbol: '$$', label: '$$ 人氣聚會 ($100 - $300)', isEstimated: false };
+        return { tier: '100-300', symbol: '$$', text: '人氣聚會 ($100-$300)', label: '$$ 人氣聚會 ($100-$300)', isEstimated: false };
       } else if (avg <= 600) {
-        return { tier: '300-600', symbol: '$$$', label: '$$$ 精緻格調 ($300 - $600)', isEstimated: false };
+        return { tier: '300-600', symbol: '$$$', text: '精緻格調 ($300-$600)', label: '$$$ 精緻格調 ($300-$600)', isEstimated: false };
       } else {
-        return { tier: 'above600', symbol: '$$$$', label: '$$$$ 奢華享受 ($600+)', isEstimated: false };
+        return { tier: 'above600', symbol: '$$$$', text: '奢華享受 ($600+)', label: '$$$$ 奢華享受 ($600+)', isEstimated: false };
       }
     }
 
@@ -809,10 +809,9 @@
             ` : ''}
 
             <div class="flex items-center justify-between text-[11px] text-zinc-400 pt-1.5 border-t border-brand-border">
-              <span class="text-brand-yellow font-semibold flex items-center gap-1">
-                <span>${item.priceInfo ? item.priceInfo.symbol : '💰'}</span>
-                <span>${item.priceInfo ? item.priceInfo.label.split(' ')[0] : '中價位'}</span>
-                <span class="text-[10px] text-zinc-400">${item.priceInfo ? (item.priceInfo.label.split(' ')[1] || '') : ''}</span>
+              <span class="text-brand-yellow font-semibold flex items-center gap-1.5">
+                <span class="font-bold tracking-tight">${item.priceInfo ? item.priceInfo.symbol : '💰'}</span>
+                <span class="text-[10px] text-zinc-300 font-medium">${item.priceInfo ? item.priceInfo.text : (item.price || '依現場菜單')}</span>
               </span>
               <span class="text-[10px] text-zinc-500">🔥 ${item.views || 999} 次查看</span>
             </div>

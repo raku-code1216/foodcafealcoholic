@@ -1306,22 +1306,28 @@
       renderApp();
     });
 
-// 核心資料解析與格式化函式
+// 核心資料解析與格式化函式（全防呆穩定版）
     function processCsvData(data) {
+      if (!Array.isArray(data) || data.length === 0) return;
+
       const parsed = data
-        .filter(r => r.restaurant_name && r.restaurant_name !== 'None' && r.restaurant_name !== 'null')
+        .filter(r => r && r.restaurant_name && r.restaurant_name !== 'None' && r.restaurant_name !== 'null')
         .map((r, i) => {
           const postUrl = r.url || r.postUrl || r.permalink || (r.shortCode ? `https://www.instagram.com/reel/${r.shortCode}/` : 'https://instagram.com/foodcafealcoholic');
-          const code = r.shortCode || r.shortcode || (typeof extractShortcode === 'function' ? extractShortcode(postUrl) : '');
-          const rawImg = r.displayUrl || r.display_url || r.imageUrl || r.image_url || r.thumbnailUrl || (r.images ? r.images.split(',')[0] : null);
+          const code = r.shortCode || r.shortcode || '';
+          const rawImg = r.displayUrl || r.display_url || r.imageUrl || r.image_url || r.thumbnailUrl || (r.images ? r.images.split(',')[0] : '');
           const directVid = r.videoUrl || r.video_url || null;
           const cuisineStr = r.cuisine || '美食';
-          const distStr = (r.district && r.district !== 'None' && r.district !== 'null') ? r.district.trim() : '未註明';
+          const distStr = (r.district && r.district !== 'None' && r.district !== 'null') ? String(r.district).trim() : '香港';
           const captionStr = r.caption || '';
 
-          const priceInfo = parseBudgetTier(r.price, cuisineStr);
+          // 防呆呼叫預算處理函式
+          let priceInfo = { tier: '$', label: r.price || '預算詳情請看內文' };
+          if (typeof parseBudgetTier === 'function') {
+            try { priceInfo = parseBudgetTier(r.price, cuisineStr); } catch (e) {}
+          }
 
-          // 核心修復 1：產生真實唯一且永久不變的 ID（以 IG shortCode 或 postUrl 為準）
+          // 永久唯一 ID
           const uniqueId = r.id || code || (postUrl ? postUrl.replace(/[^a-zA-Z0-9]/g, '') : `rest_${i}`);
 
           const tempItem = {
@@ -1332,19 +1338,22 @@
             caption: captionStr
           };
 
-          const inferredRegion = inferRegionFromItem(tempItem);
+          let inferredRegion = '九龍';
+          if (typeof inferRegionFromItem === 'function') {
+            try { inferredRegion = inferRegionFromItem(tempItem); } catch (e) {}
+          }
 
           return {
-            id: uniqueId, // ✅ 核心修復 2：改用唯一 ID，不再使用脆弱的 csv_${i}
+            id: uniqueId,
             restaurant_name: r.restaurant_name,
             district: distStr,
             region: inferredRegion,
             cuisine: cuisineStr,
-            price: r.price,
+            price: r.price || '',
             priceInfo: priceInfo,
-            priceCategory: priceInfo.tier,
+            priceCategory: priceInfo.tier || '$',
             occasion: r.occasion || '聚會',
-            must_try: r.must_try || r.signature_dishes || '主廚私心推薦菜式',
+            must_try: r.must_try || r.signature_dishes || '招牌菜式',
             isEditorPick: i % 4 === 0,
             views: Math.floor(Math.random() * 4000) + 500,
             caption: captionStr,
@@ -1357,42 +1366,52 @@
 
       if (parsed.length > 0) {
         restaurants = parsed;
-        updateDropdownCounts();
+
+        if (typeof updateDropdownCounts === 'function') {
+          try { updateDropdownCounts(); } catch (e) {}
+        }
 
         const first = restaurants[0];
         const heroEl = document.getElementById('hero');
-        const heroImg = getReelThumbnail(first);
         if (heroEl) {
-          heroEl.style.backgroundImage = `linear-gradient(to top, #0A0A0A 12%, rgba(10,10,10,0.65) 65%, rgba(0,0,0,0.85) 100%), url('${heroImg}')`;
+          let heroImg = first.image || '';
+          if (typeof getReelThumbnail === 'function') {
+            try { heroImg = getReelThumbnail(first); } catch (e) {}
+          }
+          if (heroImg) {
+            heroEl.style.backgroundImage = `linear-gradient(to top, #0A0A0A 12%, rgba(10,10,10,0.65) 65%, rgba(0,0,0,0.85) 100%), url('${heroImg}')`;
+          }
         }
 
-        const hTitle = document.getElementById('heroTitle');
-        if (hTitle) hTitle.innerText = first.restaurant_name;
+        const setTxt = (id, val) => {
+          const el = document.getElementById(id);
+          if (el && val) el.innerText = val;
+        };
 
-        const hDist = document.getElementById('heroDistrictBadge');
-        if (hDist) hDist.innerText = `📍 ${first.district}`;
+        setTxt('heroTitle', first.restaurant_name);
+        setTxt('heroDistrictBadge', `📍 ${first.district}`);
+        setTxt('heroCuisineBadge', `🔥 ${first.cuisine}`);
+        setTxt('heroOccasionBadge', `✨ ${first.occasion}`);
+        setTxt('heroCaption', first.caption);
+        setTxt('heroPrice', `💰 預算: ${first.priceInfo ? first.priceInfo.label : (first.price || '平民美食')}`);
 
-        const hCuis = document.getElementById('heroCuisineBadge');
-        if (hCuis) hCuis.innerText = `🔥 ${first.cuisine}`;
-
-        const hOcc = document.getElementById('heroOccasionBadge');
-        if (hOcc) hOcc.innerText = `✨ ${first.occasion}`;
-
-        const hCap = document.getElementById('heroCaption');
-        if (hCap) hCap.innerText = first.caption;
-
-        const hPrice = document.getElementById('heroPrice');
-        if (hPrice) hPrice.innerText = `💰 預算: ${first.priceInfo ? first.priceInfo.label : first.price}`;
-
-        // 核心修復 3：綁定 Hero 區塊的「閱讀」與「收藏」按鈕
         const heroReadBtn = document.getElementById('heroReadBtn');
-        if (heroReadBtn) heroReadBtn.onclick = () => openModalById(first.id);
+        if (heroReadBtn) {
+          heroReadBtn.onclick = () => {
+            if (typeof openModalById === 'function') openModalById(first.id);
+            else if (typeof openModal === 'function') openModal(first);
+          };
+        }
 
         const heroFavBtn = document.getElementById('heroFavBtn');
-        if (heroFavBtn) heroFavBtn.onclick = () => toggleFavorite(first.id);
+        if (heroFavBtn) {
+          heroFavBtn.onclick = () => {
+            if (typeof toggleFavorite === 'function') toggleFavorite(first.id);
+          };
+        }
 
-        renderApp();
-        updateFavBadge(); // ✅ 同步更新右上角收藏數量徽章
+        if (typeof renderApp === 'function') renderApp();
+        if (typeof updateFavBadge === 'function') updateFavBadge();
       }
     }
 

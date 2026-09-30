@@ -160,7 +160,7 @@
           ▶ 觀看影片與食評
         </button>
         <button id="heroFavBtn" class="bg-zinc-900/90 hover:bg-zinc-800 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1.5">
-          <span>🤍</span> 收藏
+          <span id="heroFavIcon">🤍</span> <span id="heroFavText">收藏</span>
         </button>
         <span id="heroPrice" class="text-xs font-semibold bg-black/80 border border-zinc-700 px-3 py-2.5 rounded-lg text-brand-yellow">
           💰 預算: $400 - $800
@@ -191,7 +191,7 @@
         <div class="flex items-center gap-1.5">
           <span class="text-zinc-400 font-medium">📍 地區：</span>
           <select id="districtRegionSelect" onchange="onDistrictChange(this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-brand-yellow font-medium">
-            <option value="all" id="opt-all">🗺️️ 全港所有地區 (All)</option>
+            <option value="all" id="opt-all">🗺️ 全港所有地區 (All)</option>
             <optgroup label="── 快速大區 ──">
               <option value="region:港島" id="opt-reg-hk">🇭🇰 港島全區 (Hong Kong Island)</option>
               <option value="region:九龍" id="opt-reg-kln">🏮 九龍全區 (Kowloon)</option>
@@ -460,77 +460,28 @@
   </footer>
 
   <script>
-    // 1. 預設資料
-    let restaurants = [
-      {
-        id: "r1",
-        restaurant_name: "180° Modern Fire Grill",
-        district: "中環",
-        region: "港島",
-        cuisine: "西式",
-        price: "$400 - $800",
-        priceCategory: "300-600",
-        occasion: "拍拖約會",
-        must_try: "🔥 熟成黑安格斯肉眼、直火炭烤海鮮、煙燻手工調酒",
-        isEditorPick: true,
-        views: 3482,
-        caption: "中環全新炭火直烤餐廳！招牌熟成黑安格斯肉眼外焦內嫩，肉汁超豐富，炭香味極濃。配搭煙燻手工調酒，環境昏暗浪漫極有格調！適合約會拍拖或慶祝生日。 #fca_central",
-        url: "https://instagram.com/foodcafealcoholic",
-        shortCode: null,
-        videoUrl: null,
-        image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=700&q=80"
-      },
-      {
-        id: "r2",
-        restaurant_name: "Homeland",
-        district: "旺角",
-        region: "九龍",
-        cuisine: "Cafe",
-        price: "$100 - $200",
-        priceCategory: "100-300",
-        occasion: "打卡Cafe",
-        must_try: "🍝 黑松露忌廉手工意粉、伯爵茶戚風蛋糕、特調燕麥拿鐵",
-        isEditorPick: false,
-        views: 2891,
-        caption: "旺角高質文青主題 Cafe！裝修充滿異國打卡色彩，手工意粉軟硬適中，松露忌廉汁香濃惹味，打卡甜品推介伯爵茶戚風蛋糕，姊妹聚會好去處！ #fca_mk",
-        url: "https://instagram.com/foodcafealcoholic",
-        shortCode: null,
-        videoUrl: null,
-        image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=700&q=80"
-      },
-      {
-        id: "r3",
-        restaurant_name: "L'amour",
-        district: "太和",
-        region: "新界",
-        cuisine: "西式",
-        price: "$300 - $500",
-        priceCategory: "300-600",
-        occasion: "拍拖約會",
-        must_try: "🥩 法式低溫慢煮牛柳、黑松露法式油封鴨腿",
-        isEditorPick: true,
-        views: 3120,
-        caption: "大埔太和隱世浪漫法式小館！主廚曾於多間星級酒店任職，慢煮牛柳肉嫩香濃，環境靜謐有氣氛，新界拍拖必去之選。 #fca_taipo",
-        url: "https://instagram.com/foodcafealcoholic",
-        shortCode: null,
-        videoUrl: null,
-        image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=700&q=80"
-      }
-    ];
+    // 1. 預設資料庫陣列
+    let restaurants = [];
 
-    // 2. 收藏持久化儲存（唯一定義，不再重複宣告）
-    const FAVORITES_STORAGE_KEY = 'foodcafe_user_favorites';
+    // 2. 收藏持久化儲存（LocalStorage 安全加固）
+    const FAVORITES_STORAGE_KEY = 'foodcafe_user_favorites_v2';
     let savedFavorites = new Set();
-    try {
-      const cached = localStorage.getItem(FAVORITES_STORAGE_KEY);
-      if (cached) {
-        savedFavorites = new Set(JSON.parse(cached));
-      } else {
-        savedFavorites = new Set(["r1"]);
+    
+    function loadFavorites() {
+      try {
+        const cached = localStorage.getItem(FAVORITES_STORAGE_KEY);
+        if (cached) {
+          const arr = JSON.parse(cached);
+          if (Array.isArray(arr)) {
+            savedFavorites = new Set(arr.map(String));
+          }
+        }
+      } catch (e) {
+        console.warn('LocalStorage 讀取失敗:', e);
+        savedFavorites = new Set();
       }
-    } catch (e) {
-      savedFavorites = new Set(["r1"]);
     }
+    loadFavorites();
 
     function saveFavorites() {
       try {
@@ -635,14 +586,6 @@
       return { tier: 'above600', symbol: '$$$$', text: '奢華享受 ($600+)', label: '$$$$ 奢華享受 ($600+)' };
     }
 
-    restaurants.forEach(r => {
-      if (!r.priceInfo) {
-        r.priceInfo = parseBudgetTier(r.price, r.cuisine);
-        r.priceCategory = r.priceInfo.tier;
-      }
-      r.region = inferRegionFromItem(r);
-    });
-
     function proxyImageUrl(url) {
       if (!url) return null;
       if (url.includes('unsplash.com') || url.includes('placehold.co')) return url;
@@ -665,13 +608,14 @@
       return getCuisineImage(item.cuisine);
     }
 
+    // 建立卡片：使用 data-id 避免任何特殊字元破壞 onclick 屬性
     function createCard(item, index, rankBadge = null, isGrid = false) {
       const img = getReelThumbnail(item);
-      const isFav = savedFavorites.has(item.id);
+      const isFav = savedFavorites.has(String(item.id));
       const widthClass = isGrid ? 'w-full' : 'flex-none w-56 sm:w-64';
 
       return `
-        <div onclick='openModalById("${item.id}")'
+        <div data-rest-id="${item.id}" onclick="handleCardClick(this)"
              class="${widthClass} bg-brand-surface rounded-xl overflow-hidden cursor-pointer card-zoom shadow-lg border border-brand-border group relative flex flex-col">
           
           <div class="h-32 sm:h-36 bg-zinc-900 relative overflow-hidden">
@@ -690,9 +634,9 @@
               <span>🎬</span> <span>REEL</span>
             </span>
 
-            <button onclick="event.stopPropagation(); toggleFavorite('${item.id}')"
-                    class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 hover:bg-black flex items-center justify-center transition border border-zinc-700 z-10">
-              <span class="${isFav ? 'text-brand-yellow' : 'text-zinc-400'} text-xs">
+            <button type="button" data-fav-id="${item.id}" onclick="handleFavClick(event, this)"
+                    class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 hover:bg-black flex items-center justify-center transition border border-zinc-700 z-20">
+              <span class="${isFav ? 'text-brand-yellow' : 'text-zinc-400'} text-xs font-bold">
                 ${isFav ? '★' : '☆'}
               </span>
             </button>
@@ -733,6 +677,20 @@
       `;
     }
 
+    function handleCardClick(el) {
+      const id = el.getAttribute('data-rest-id');
+      if (id) openModalById(id);
+    }
+
+    function handleFavClick(e, el) {
+      if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+      const id = el.getAttribute('data-fav-id');
+      if (id) toggleFavorite(id);
+    }
+
     function switchMediaTab(tab) {
       const btnMedia = document.getElementById('btnTabMedia');
       const btnPhoto = document.getElementById('btnTabPhoto');
@@ -753,7 +711,8 @@
     }
 
     function openModalById(id) {
-      const item = restaurants.find(r => r.id === id);
+      const safeId = String(id);
+      const item = restaurants.find(r => String(r.id) === safeId);
       if (!item) return;
       currentModalItem = item;
 
@@ -823,18 +782,28 @@
       if (badge) badge.innerText = savedFavorites.size;
     }
 
+    // 收藏開關與狀態切換（加入 Console 診斷訊息）
     function toggleFavorite(id) {
-      const safeId = String(id);
+      if (!id) return;
+      const safeId = String(id).trim();
+
       if (savedFavorites.has(safeId)) {
         savedFavorites.delete(safeId);
+        console.log('❌ 已取消收藏:', safeId);
       } else {
         savedFavorites.add(safeId);
+        console.log('⭐ 成功加入收藏:', safeId);
       }
+
       saveFavorites();
       updateFavBadge();
       updateModalFavButton();
       renderApp();
-      renderMyListModal();
+      
+      const modal = document.getElementById('myListModal');
+      if (modal && !modal.classList.contains('hidden')) {
+        renderMyListModal();
+      }
     }
 
     function updateModalFavButton() {
@@ -844,6 +813,11 @@
       const text = document.getElementById('modalFavText');
       if (icon) icon.innerText = isFav ? '★' : '🤍';
       if (text) text.innerText = isFav ? '已收藏' : '收藏';
+
+      const modalFavBtn = document.getElementById('modalFavBtn');
+      if (modalFavBtn) {
+        modalFavBtn.onclick = () => toggleFavorite(currentModalItem.id);
+      }
     }
 
     function toggleMyListModal() {
@@ -857,6 +831,7 @@
     function renderMyListModal() {
       const container = document.getElementById('myListContainer');
       const favList = restaurants.filter(r => savedFavorites.has(String(r.id)));
+
       if (favList.length === 0) {
         container.innerHTML = `
           <div class="text-center py-10 text-zinc-500 text-xs">
@@ -874,7 +849,7 @@
             <h4 class="font-bold text-sm text-white hover:text-brand-yellow transition">${item.restaurant_name}</h4>
             <p class="text-xs text-zinc-400">📍 ${item.district || '香港'} • ${item.cuisine || '美食'} • <span class="text-brand-yellow">${item.price || ''}</span></p>
           </div>
-          <button onclick="toggleFavorite('${item.id}')" class="text-xs text-zinc-400 hover:text-white px-3 py-1 bg-zinc-800 border border-zinc-700 rounded-lg transition">
+          <button type="button" onclick="toggleFavorite('${item.id}')" class="text-xs text-zinc-400 hover:text-white px-3 py-1 bg-zinc-800 border border-zinc-700 rounded-lg transition">
             移除
           </button>
         </div>
@@ -890,11 +865,8 @@
       const counts = { '港島': 0, '九龍': 0, '新界': 0, '海外': 0 };
       restaurants.forEach(r => {
         const reg = r.region || inferRegionFromItem(r);
-        if (counts[reg] !== undefined) {
-          counts[reg]++;
-        } else {
-          counts['港島']++;
-        }
+        if (counts[reg] !== undefined) counts[reg]++;
+        else counts['港島']++;
       });
 
       const optAll = document.getElementById('opt-all');
@@ -1098,7 +1070,7 @@
       });
     }
 
-    // 核心資料解析與格式化
+    // 核心資料解析與格式化（保證 ID 100% 為純英數字，徹底杜絕破引號問題）
     function processCsvData(data) {
       if (!Array.isArray(data) || data.length === 0) return;
 
@@ -1114,7 +1086,10 @@
           const captionStr = r.caption || '';
 
           const priceInfo = parseBudgetTier(r.price, cuisineStr);
-          const uniqueId = r.id || code || (postUrl ? postUrl.replace(/[^a-zA-Z0-9]/g, '') : `rest_${i}`);
+
+          // 核心加固：純英數字 ID 生成，保證永久不變且絕對不會衝破 HTML 字串
+          const rawIdBase = String(r.id || code || postUrl || `rest_${i}`);
+          const uniqueId = rawIdBase.replace(/[^a-zA-Z0-9]/g, '') || `item_${i}`;
 
           const tempItem = {
             id: uniqueId,
@@ -1176,9 +1151,17 @@
         if (heroReadBtn) heroReadBtn.onclick = () => openModalById(first.id);
 
         const heroFavBtn = document.getElementById('heroFavBtn');
-        if (heroFavBtn) heroFavBtn.onclick = () => toggleFavorite(first.id);
+        if (heroFavBtn) {
+          heroFavBtn.onclick = () => toggleFavorite(first.id);
+          const isFav = savedFavorites.has(String(first.id));
+          const hIcon = document.getElementById('heroFavIcon');
+          const hText = document.getElementById('heroFavText');
+          if (hIcon) hIcon.innerText = isFav ? '★' : '🤍';
+          if (hText) hText.innerText = isFav ? '已收藏' : '收藏';
+        }
 
         renderApp();
+        console.log(`✅ 成功載入並渲染 ${restaurants.length} 間餐廳，當前收藏數: ${savedFavorites.size}`);
       }
     }
 
@@ -1196,7 +1179,6 @@
             skipEmptyLines: true,
             complete: function(results) {
               processCsvData(results.data);
-              console.log('✅ 已成功自動載入 cleaned_data_final.csv');
             }
           });
         })
@@ -1205,7 +1187,7 @@
         });
     }
 
-    // 手動選取檔案載入 CSV（加入防崩潰判斷）
+    // 手動選取檔案載入 CSV（備用）
     const csvInputEl = document.getElementById('csvFileInput');
     if (csvInputEl) {
       csvInputEl.addEventListener('change', function(e) {
@@ -1221,12 +1203,6 @@
         });
       });
     }
-
-    const initHeroReadBtn = document.getElementById('heroReadBtn');
-    if (initHeroReadBtn) initHeroReadBtn.onclick = () => openModalById("r1");
-
-    const initHeroFavBtn = document.getElementById('heroFavBtn');
-    if (initHeroFavBtn) initHeroFavBtn.onclick = () => toggleFavorite("r1");
 
     // 電腦端滑鼠滾輪支援：支援排行榜、嚴選、最新上架橫向滾動
     function enableHorizontalWheelScroll() {

@@ -1398,6 +1398,30 @@
     updateDropdownCounts();
     renderApp();
     autoFetchCsv();
+    // === 電腦端滑鼠滾輪支援：支援排行榜、嚴選、最新上架橫向滾動 ===
+function enableHorizontalWheelScroll() {
+  const railIds = ['railLeaderboard', 'railEditor', 'railNew'];
+  
+  railIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    
+    el.addEventListener('wheel', (evt) => {
+      // 只有當使用者滾動滾輪，且容器確實有內容可以橫向滾動時觸發
+      if (evt.deltaY !== 0) {
+        evt.preventDefault();
+        el.scrollLeft += evt.deltaY * 1.5; // 乘上 1.5 讓滑動手感更順暢快速
+      }
+    }, { passive: false });
+  });
+}
+
+// 確保頁面載入後自動啟用
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', enableHorizontalWheelScroll);
+} else {
+  enableHorizontalWheelScroll();
+}
   </script>
 </body>
 </html>

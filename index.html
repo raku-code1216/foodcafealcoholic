@@ -977,6 +977,26 @@
       document.getElementById('detailModal').classList.add('hidden');
     }
 
+    // === 收藏持久化儲存（修復重新整理後遺失問題） ===
+    const FAVORITES_STORAGE_KEY = 'foodcafe_user_favorites';
+    let savedFavorites = new Set();
+    try {
+      const cached = localStorage.getItem(FAVORITES_STORAGE_KEY);
+      if (cached) {
+        savedFavorites = new Set(JSON.parse(cached));
+      }
+    } catch (e) {
+      savedFavorites = new Set();
+    }
+
+    function saveFavorites() {
+      try {
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(Array.from(savedFavorites)));
+      } catch (e) {
+        console.error('儲存收藏失敗:', e);
+      }
+    }
+    
     function updateFavBadge() {
       const badge = document.getElementById('favCountBadge');
       if (badge) badge.innerText = savedFavorites.size;
@@ -1286,13 +1306,13 @@
       renderApp();
     });
 
-    // 核心資料解析與格式化函式
+// 核心資料解析與格式化函式
     function processCsvData(data) {
       const parsed = data
         .filter(r => r.restaurant_name && r.restaurant_name !== 'None' && r.restaurant_name !== 'null')
         .map((r, i) => {
           const postUrl = r.url || r.postUrl || r.permalink || (r.shortCode ? `https://www.instagram.com/reel/${r.shortCode}/` : 'https://instagram.com/foodcafealcoholic');
-          const code = r.shortCode || r.shortcode || extractShortcode(postUrl);
+          const code = r.shortCode || r.shortcode || (typeof extractShortcode === 'function' ? extractShortcode(postUrl) : '');
           const rawImg = r.displayUrl || r.display_url || r.imageUrl || r.image_url || r.thumbnailUrl || (r.images ? r.images.split(',')[0] : null);
           const directVid = r.videoUrl || r.video_url || null;
           const cuisineStr = r.cuisine || '美食';
@@ -1301,7 +1321,11 @@
 
           const priceInfo = parseBudgetTier(r.price, cuisineStr);
 
+          // 核心修復 1：產生真實唯一且永久不變的 ID（以 IG shortCode 或 postUrl 為準）
+          const uniqueId = r.id || code || (postUrl ? postUrl.replace(/[^a-zA-Z0-9]/g, '') : `rest_${i}`);
+
           const tempItem = {
+            id: uniqueId,
             restaurant_name: r.restaurant_name,
             district: distStr,
             cuisine: cuisineStr,
@@ -1311,7 +1335,7 @@
           const inferredRegion = inferRegionFromItem(tempItem);
 
           return {
-            id: `csv_${i}`,
+            id: uniqueId, // ✅ 核心修復 2：改用唯一 ID，不再使用脆弱的 csv_${i}
             restaurant_name: r.restaurant_name,
             district: distStr,
             region: inferredRegion,
@@ -1338,17 +1362,37 @@
         const first = restaurants[0];
         const heroEl = document.getElementById('hero');
         const heroImg = getReelThumbnail(first);
-        heroEl.style.backgroundImage = `linear-gradient(to top, #0A0A0A 12%, rgba(10,10,10,0.65) 65%, rgba(0,0,0,0.85) 100%), url('${heroImg}')`;
+        if (heroEl) {
+          heroEl.style.backgroundImage = `linear-gradient(to top, #0A0A0A 12%, rgba(10,10,10,0.65) 65%, rgba(0,0,0,0.85) 100%), url('${heroImg}')`;
+        }
 
-        document.getElementById('heroTitle').innerText = first.restaurant_name;
-        document.getElementById('heroDistrictBadge').innerText = `📍 ${first.district}`;
-        document.getElementById('heroCuisineBadge').innerText = `🔥 ${first.cuisine}`;
-        document.getElementById('heroOccasionBadge').innerText = `✨ ${first.occasion}`;
-        document.getElementById('heroCaption').innerText = first.caption;
-        document.getElementById('heroPrice').innerText = `💰 預算: ${first.priceInfo ? first.priceInfo.label : first.price}`;
-        document.getElementById('heroReadBtn').onclick = () => openModalById(first.id);
+        const hTitle = document.getElementById('heroTitle');
+        if (hTitle) hTitle.innerText = first.restaurant_name;
+
+        const hDist = document.getElementById('heroDistrictBadge');
+        if (hDist) hDist.innerText = `📍 ${first.district}`;
+
+        const hCuis = document.getElementById('heroCuisineBadge');
+        if (hCuis) hCuis.innerText = `🔥 ${first.cuisine}`;
+
+        const hOcc = document.getElementById('heroOccasionBadge');
+        if (hOcc) hOcc.innerText = `✨ ${first.occasion}`;
+
+        const hCap = document.getElementById('heroCaption');
+        if (hCap) hCap.innerText = first.caption;
+
+        const hPrice = document.getElementById('heroPrice');
+        if (hPrice) hPrice.innerText = `💰 預算: ${first.priceInfo ? first.priceInfo.label : first.price}`;
+
+        // 核心修復 3：綁定 Hero 區塊的「閱讀」與「收藏」按鈕
+        const heroReadBtn = document.getElementById('heroReadBtn');
+        if (heroReadBtn) heroReadBtn.onclick = () => openModalById(first.id);
+
+        const heroFavBtn = document.getElementById('heroFavBtn');
+        if (heroFavBtn) heroFavBtn.onclick = () => toggleFavorite(first.id);
 
         renderApp();
+        updateFavBadge(); // ✅ 同步更新右上角收藏數量徽章
       }
     }
 
@@ -1378,18 +1422,22 @@
     }
 
     // 手動選取檔案載入 CSV
-    document.getElementById('csvFileInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+// 手動選取檔案載入 CSV（加入防崩潰判斷）
+const csvInputEl = document.getElementById('csvFileInput');
+if (csvInputEl) {
+  csvInputEl.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
 
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-          processCsvData(results.data);
-        }
-      });
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        processCsvData(results.data);
+      }
     });
+  });
+}
 
     document.getElementById('heroReadBtn').onclick = () => openModalById("r1");
     document.getElementById('heroFavBtn').onclick = () => toggleFavorite("r1");

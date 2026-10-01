@@ -919,12 +919,19 @@
           }
         }
 
+        // 3. 細分商圈比對（優先看精確地區，內文僅限專屬 hashtag）
         if (filters.district !== 'all') {
           const dTerm = filters.district.toLowerCase();
           const cleanItemDist = String(item.district || '').toLowerCase();
           const cleanName = String(item.restaurant_name || '').toLowerCase();
           const cleanCaption = String(item.caption || '').toLowerCase();
-          const inDistrict = cleanItemDist.includes(dTerm) || cleanName.includes(dTerm) || cleanCaption.includes(dTerm) || cleanCaption.includes(`#fca_${dTerm}`);
+
+          // 核心修正：只比對 district 欄位、店名後綴、或精確 hashtag，不再直接全文模糊搜尋
+          const inDistrict = cleanItemDist.includes(dTerm) || 
+                             cleanName.includes(dTerm) || 
+                             cleanCaption.includes(`#fca_${dTerm}`) ||
+                             cleanCaption.includes(`#${dTerm}美食`);
+          
           if (!inDistrict) return false;
         }
 
@@ -939,20 +946,38 @@
           if (itemTier !== filters.price) return false;
         }
 
+        // 6. 菜式種類比對（以結構化 cuisine 欄位為主，避免 caption 干擾）
         if (filters.cuisine !== 'all') {
           const cTarget = filters.cuisine;
-          const fullText = `${item.cuisine || ''} ${item.must_try || ''} ${item.caption || ''} ${item.restaurant_name || ''}`.toLowerCase();
+          const cleanCuisine = String(item.cuisine || '').toLowerCase();
+          const cleanName = String(item.restaurant_name || '').toLowerCase();
+
           let matched = false;
-          if (cTarget === '日本') matched = /日本|日式|壽司|刺身|omakase|居酒屋|燒肉|拉麵|沾麵|烏冬|天婦羅|和牛/.test(fullText);
-          else if (cTarget === 'Cafe') matched = /cafe|咖啡|coffee|brunch|早午餐|輕食|焙茶|抹茶|打卡cafe/.test(fullText);
-          else if (cTarget === '西式') matched = /西式|扒房|牛扒|steak|意粉|pasta|pizza|意大利|法國|西班牙|bistro|漢堡|burger/.test(fullText);
-          else if (cTarget === '火鍋') matched = /火鍋|打邊爐|雞煲|麻辣鍋|放題|任食|自助餐|buffet/.test(fullText);
-          else if (cTarget === '東南亞') matched = /泰國|泰式|冬陰|越南|越式|生牛肉河|南洋|馬來西亞|新加坡|肉骨茶/.test(fullText);
-          else if (cTarget === '中菜') matched = /中菜|粵菜|小炒|大牌檔|點心|飲茶|川菜|麻辣|酸菜魚|湖南|北京|上海/.test(fullText);
-          else if (cTarget === '甜品') matched = /甜品|蛋糕|蛋撻|烘焙|bakery|麵包|牛角包|croffle|糖水|刨冰|梳乎厘|雪糕/.test(fullText);
-          else if (cTarget === '酒吧') matched = /酒吧|bar|pub|cocktail|特調|調酒|啤酒|手工啤|alcoholic|wine|微醺/.test(fullText);
-          else if (cTarget === '快餐') matched = /小食|粉麵|車仔麵|茶餐廳|冰室|快餐|街頭/.test(fullText);
-          else matched = fullText.includes(cTarget.toLowerCase());
+
+          // 優先比對 CSV 自身的 cuisine 欄位與店名
+          if (cleanCuisine.includes(cTarget.toLowerCase()) || cleanName.includes(cTarget.toLowerCase())) {
+            matched = true;
+          } else if (cTarget === '日本') {
+            matched = /日本|日式|壽司|居酒屋|拉麵|燒肉|omakase|刺身|天婦羅/.test(cleanCuisine);
+          } else if (cTarget === 'Cafe') {
+            matched = /cafe|咖啡|coffee|早午餐|brunch/.test(cleanCuisine);
+          } else if (cTarget === '西式') {
+            matched = /西式|扒房|牛扒|steak|意粉|pasta|pizza|意大利|法國|西班牙|bistro/.test(cleanCuisine);
+          } else if (cTarget === '火鍋') {
+            matched = /火鍋|打邊爐|雞煲|放題/.test(cleanCuisine);
+          } else if (cTarget === '東南亞') {
+            matched = /東南亞|泰國|泰式|越南|越式|南洋|馬來西亞|新加坡/.test(cleanCuisine);
+          } else if (cTarget === '中菜') {
+            // 排除日式和牛、西式等容易混淆的詞彙
+            matched = /中菜|中式|粵菜|大牌檔|點心|川菜|京川滬|點心|私房菜/.test(cleanCuisine) && !cleanCuisine.includes('日本');
+          } else if (cTarget === '甜品') {
+            matched = /甜品|蛋糕|烘焙|糖水|雪糕|麵包/.test(cleanCuisine);
+          } else if (cTarget === '酒吧') {
+            matched = /酒吧|bar|pub|cocktail|調酒|微醺/.test(cleanCuisine);
+          } else if (cTarget === '快餐') {
+            matched = /快餐|茶餐廳|冰室|車仔麵|小食|漢堡/.test(cleanCuisine);
+          }
+
           if (!matched) return false;
         }
 

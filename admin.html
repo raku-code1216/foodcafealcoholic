@@ -76,28 +76,23 @@
         <input type="hidden" id="editIndex" value="-1" />
         <input type="hidden" id="postId" value="" />
 
-        <!-- IG 網址與 AI 全自動提取按鈕 -->
+        <!-- 步驟 1: IG 網址 -->
         <div>
-          <label class="block text-brand-yellow font-black mb-1">🔗 Instagram 貼文 / Reel 網址 (貼上後點右邊按鈕)</label>
-          <div class="flex gap-2">
-            <input type="url" id="post_url" placeholder="https://www.instagram.com/reel/Cxxxxxx/"
-                   class="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
-            <button type="button" id="btnAiFetch" onclick="fullAutoGenerateFromIG()" 
-                    class="bg-brand-yellow hover:bg-brand-yellowHover text-black font-black px-3.5 py-2 rounded-lg text-xs whitespace-nowrap transition flex items-center gap-1 shadow">
-              ⚡ AI 自動填寫
-            </button>
-          </div>
+          <label class="block text-brand-yellow font-black mb-1">1. Instagram 貼文 / Reel 網址 (URL)</label>
+          <input type="url" id="post_url" placeholder="https://www.instagram.com/reel/Cxxxxxx/"
+                 onchange="handleUrlChange(this.value)"
+                 class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-zinc-400 font-bold mb-1">IG Reel ShortCode</label>
-            <input type="text" id="shortCode" placeholder="自動提取"
+            <input type="text" id="shortCode" placeholder="貼上網址自動生成"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
           </div>
           <div>
             <label class="block text-zinc-400 font-bold mb-1">封面圖片網址 (Image URL)</label>
-            <input type="url" id="imageUrl" placeholder="自動配對"
+            <input type="url" id="imageUrl" placeholder="自動配置"
                    oninput="updateImagePreview(this.value)"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
           </div>
@@ -112,48 +107,56 @@
           </div>
         </div>
 
+        <!-- 步驟 2: 貼上 IG 內文並讓 AI 解析 -->
+        <div class="p-3 bg-zinc-900/60 rounded-xl border border-zinc-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-brand-yellow font-black">2. 食評內文 (Caption / 貼文文字)</label>
+            <button type="button" id="btnAiExtract" onclick="runAiExtraction()"
+                    class="bg-brand-yellow hover:bg-brand-yellowHover text-black font-black px-3 py-1 rounded-md text-[11px] transition shadow flex items-center gap-1">
+              ⚡ 讓 AI 智能提取所有欄位
+            </button>
+          </div>
+          <textarea id="caption" rows="4" placeholder="請直接貼上 Instagram 的貼文文字內容（整段複製過來即可，包含 hashtag），然後點擊右上角的「⚡ 讓 AI 智能提取」按鈕..."
+                    class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow leading-relaxed text-xs"></textarea>
+        </div>
+
+        <!-- 步驟 3: 自動填入的結果 (亦可手動微調) -->
         <div>
-          <label class="block text-zinc-400 font-bold mb-1">餐廳名稱 * (AI 自動提取)</label>
-          <input type="text" id="restaurant_name" required placeholder="例如：180° Modern Fire Grill"
+          <label class="block text-zinc-400 font-bold mb-1">餐廳名稱 *</label>
+          <input type="text" id="restaurant_name" required placeholder="AI 自動填寫或手動修改"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">地區 * (AI 自動提取)</label>
-            <input type="text" id="district" required placeholder="例如：中環、尖沙咀"
+            <label class="block text-zinc-400 font-bold mb-1">地區 *</label>
+            <input type="text" id="district" required placeholder="AI 自動填寫 (例：中環)"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">菜式種類 * (AI 自動提取)</label>
-            <input type="text" id="cuisine" required placeholder="例如：西式、日本料理、酒吧"
+            <label class="block text-zinc-400 font-bold mb-1">菜式種類 *</label>
+            <input type="text" id="cuisine" required placeholder="AI 自動填寫 (例：西式)"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">預算 / 人均價格 (AI 自動提取)</label>
-            <input type="text" id="price" placeholder="例如：$200 - $400"
+            <label class="block text-zinc-400 font-bold mb-1">預算 / 人均價格</label>
+            <input type="text" id="price" placeholder="AI 自動填寫 (例：$200 - $400)"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">適合場景 (AI 自動提取)</label>
-            <input type="text" id="occasion" placeholder="例如：拍拖約會、朋友聚會"
+            <label class="block text-zinc-400 font-bold mb-1">適合場景</label>
+            <input type="text" id="occasion" placeholder="AI 自動填寫 (例：拍拖約會)"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
         </div>
 
         <div>
-          <label class="block text-zinc-400 font-bold mb-1">招牌菜式 / 必食推介 (AI 自動提取)</label>
-          <input type="text" id="must_try" placeholder="例如：熟成黑安格斯肉眼、特調調酒"
+          <label class="block text-zinc-400 font-bold mb-1">招牌菜式 / 必食推介</label>
+          <input type="text" id="must_try" placeholder="AI 自動填寫招牌菜式"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
-        </div>
-
-        <div>
-          <label class="block text-zinc-400 font-bold mb-1">食評詳細內文 (Caption / 介紹)</label>
-          <textarea id="caption" rows="4" placeholder="AI 自動帶入貼文心得全文..."
-                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow leading-relaxed"></textarea>
         </div>
 
         <button type="submit" id="submitBtn"
@@ -368,77 +371,42 @@
       }
     }
 
-    // ⭐ 核心：AI 智能自動萃取並填滿所有欄位
-    async function fullAutoGenerateFromIG() {
-      const postUrl = document.getElementById('post_url').value.trim();
+    // 當輸入或貼上 IG 網址時，自動抓取 ShortCode 與官方直連封面
+    function handleUrlChange(postUrl) {
+      if (!postUrl) return;
+      const match = postUrl.match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/);
+      if (match && match[1]) {
+        const code = match[1];
+        document.getElementById('shortCode').value = code;
+        const officialMediaUrl = `https://www.instagram.com/p/${code}/media/?size=l`;
+        document.getElementById('imageUrl').value = officialMediaUrl;
+        updateImagePreview(officialMediaUrl);
+      }
+    }
+
+    // ⭐ 點擊按鈕直接呼叫 Gemini 進行結構化填表
+    async function runAiExtraction() {
+      const textToAnalyze = document.getElementById('caption').value.trim();
       const cfg = loadConfig();
 
-      if (!postUrl) {
-        alert('請先在輸入框貼上 Instagram 貼文或 Reel 網址！');
+      if (!textToAnalyze) {
+        alert('請先在下方「食評內文」框貼上 IG 貼文文字（整段複製貼上即可）！');
         return;
       }
 
-      const match = postUrl.match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/);
-      if (!match) {
-        alert('無法識別網址，請確認是 Instagram 貼文或 Reel 連結！');
+      if (!cfg.geminiKey) {
+        alert('尚未設定 Gemini API Key！請點擊右上角「⚙️ 系統與 API 設定」填入金鑰。');
+        openConfigModal();
         return;
       }
 
-      const code = match[1];
-      document.getElementById('shortCode').value = code;
-
-      // 自動配置封面直連
-      const officialMediaUrl = `https://www.instagram.com/p/${code}/media/?size=l`;
-      document.getElementById('imageUrl').value = officialMediaUrl;
-      updateImagePreview(officialMediaUrl);
-
-      const btn = document.getElementById('btnAiFetch');
+      const btn = document.getElementById('btnAiExtract');
       const originalText = btn.innerText;
-      btn.innerText = '🤖 AI 解析中...';
+      btn.innerText = '🤖 AI 正在精準提取資料...';
       btn.disabled = true;
 
       try {
-        let textToAnalyze = '';
-
-        // 嘗試透過無跨域代理抓取 Meta Caption
-        try {
-          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.instagram.com/p/${code}/`)}`;
-          const pageRes = await fetch(proxyUrl);
-          if (pageRes.ok) {
-            const pageData = await pageRes.json();
-            const matchMeta = pageData.contents.match(/<meta\s+property="og:description"\s+content="([^"]*)"/i);
-            if (matchMeta && matchMeta[1]) {
-              textToAnalyze = matchMeta[1]
-                .replace(/^[0-9,]+ likes, [0-9,]+ comments - [^:]+: "/, '')
-                .replace(/"$/, '');
-            }
-          }
-        } catch (e) {
-          console.warn('代理抓取跳過');
-        }
-
-        // 若 IG 防護阻擋無法自動抓取文字，彈出輸入框請使用者貼入貼文內容
-        if (!textToAnalyze || textToAnalyze.length < 5) {
-          textToAnalyze = prompt('已為你提取封面圖片！請在下方貼上此貼文的食評文字（Caption），AI 將為你自動提取所有欄位：');
-          if (!textToAnalyze) {
-            btn.innerText = originalText;
-            btn.disabled = false;
-            return;
-          }
-        }
-
-        document.getElementById('caption').value = textToAnalyze;
-
-        if (!cfg.geminiKey) {
-          alert('封面圖片與文字已填入！\n\n提示：若要自動識別「餐廳名稱、地區、菜式、預算」，請點擊右上角「⚙️ 系統與 API 設定」填入免費的 Gemini API Key。');
-          btn.innerText = originalText;
-          btn.disabled = false;
-          return;
-        }
-
-        // 呼叫 Gemini AI 進行結構化提取
-        const promptText = `
-你是一位香港美食指南資料庫整理專員。請從以下美食 IG 貼文內容中，提取資料並僅回傳純 JSON，不得加上任何 Markdown 語法標籤（如不要加 \`\`\`json）：
+        const promptText = `你是一位香港美食指南資料庫專員。請從以下美食 IG 貼文內容中，提取資料並僅回傳純 JSON，不得加上任何 Markdown 語法標籤（不要加 \`\`\`json）：
 {
   "restaurant_name": "餐廳名稱 (去除多餘形容詞或店鋪代號)",
   "district": "地區 (例如：中環、銅鑼灣、尖沙咀、旺角、觀塘，若未明確說明請推斷)",
@@ -449,32 +417,26 @@
 }
 
 貼文內容如下：
-${textToAnalyze}
-`;
+${textToAnalyze}`;
 
-// 呼叫 Gemini 1.5 Flash API (支援 v1beta 與原生 JSON 模式)
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cfg.geminiKey}`;
-        
+
         const aiRes = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }],
-            generationConfig: {
-              responseMimeType: "application/json"
-            }
+            contents: [{ parts: [{ text: promptText }] }]
           })
         });
 
         const aiData = await aiRes.json();
 
-        // 檢查 API 是否有報錯訊息
         if (aiData.error) {
-          throw new Error(`Google API 錯誤 (${aiData.error.code}): ${aiData.error.message}`);
+          throw new Error(`Google API 錯誤: ${aiData.error.message}`);
         }
 
         if (!aiData.candidates || aiData.candidates.length === 0) {
-          throw new Error('AI 未能產生內容，請檢查貼文內容是否觸發內容安全限制。');
+          throw new Error('AI 未能產生內容，請稍後重試。');
         }
 
         let rawJson = aiData.candidates[0].content.parts[0].text.trim();
@@ -490,7 +452,7 @@ ${textToAnalyze}
 
         alert(`🎉 AI 已成功為你填妥所有欄位！\n\n餐廳名：${extracted.restaurant_name}\n地區：${extracted.district}`);
       } catch (err) {
-        alert('AI 解析過程發生問題：' + err.message);
+        alert('AI 解析異常: ' + err.message);
       } finally {
         btn.innerText = originalText;
         btn.disabled = false;

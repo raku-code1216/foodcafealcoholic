@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FCA 後台管理系統 | AI 智能自動填表版</title>
+  <title>FCA 後台管理系統 | Foodcafealcoholic Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -371,7 +371,6 @@
       }
     }
 
-    // 當輸入或貼上 IG 網址時，自動抓取 ShortCode 與官方直連封面
     function handleUrlChange(postUrl) {
       if (!postUrl) return;
       const match = postUrl.match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/);
@@ -384,7 +383,7 @@
       }
     }
 
-    // ⭐ 點擊按鈕直接呼叫 Gemini 進行結構化填表
+    // ⭐ 點擊按鈕呼叫 Gemini 進行結構化填表 (支援最新 Gemini 3 系列)
     async function runAiExtraction() {
       const textToAnalyze = document.getElementById('caption').value.trim();
       const cfg = loadConfig();
@@ -419,15 +418,12 @@
 貼文內容如下：
 ${textToAnalyze}`;
 
-// 依序嘗試最新可用的 Flash 模型
-        const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
-        let aiData = null;
-        let lastError = null;
-
-        for (const model of candidateModels) {
-          try {
-// 自動嘗試最新支援的 Gemini Flash 模型 (包含 gemini-2.5-flash, gemini-2.0-flash)
-        const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-pro'];
+        const candidateModels = [
+          'gemini-3.1-pro-preview',
+          'gemini-3-flash-preview',
+          'gemini-2.5-flash'
+        ];
+        
         let aiData = null;
         let lastErrorMsg = '';
 
@@ -455,28 +451,6 @@ ${textToAnalyze}`;
 
         if (!aiData) {
           throw new Error(lastErrorMsg || '所有可用模型均呼叫失敗，請確認 API Key 是否有效。');
-        }
-            if (res.ok && data.candidates && data.candidates.length > 0) {
-              aiData = data;
-              break;
-            } else if (data.error) {
-              lastError = data.error.message;
-            }
-          } catch (e) {
-            lastError = e.message;
-          }
-        }
-
-        if (!aiData) {
-          throw new Error(lastError || '無法透過可用模型生成內容，請確認 API Key 是否有效。');
-        }
-
-        if (aiData.error) {
-          throw new Error(`Google API 錯誤: ${aiData.error.message}`);
-        }
-
-        if (!aiData.candidates || aiData.candidates.length === 0) {
-          throw new Error('AI 未能產生內容，請稍後重試。');
         }
 
         let rawJson = aiData.candidates[0].content.parts[0].text.trim();

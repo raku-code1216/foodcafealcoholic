@@ -559,12 +559,22 @@ ${textToAnalyze}`;
       document.getElementById('imagePreviewBox').classList.add('hidden');
     }
 
-    async function autoUploadToGitHub() {
+async function autoUploadToGitHub() {
       const cfg = loadConfig();
       if (!cfg.owner || !cfg.repo || !cfg.token) {
         alert('尚未設定 GitHub 憑證，請先點擊「⚙️ 系統與 API 設定」填寫！');
         openConfigModal();
         return;
+      }
+
+      // ⭐ 安全保護機制：防止意外把整個資料庫清空覆蓋
+      if (adminList.length < 50) {
+        const confirmClear = confirm(
+          `⚠️ 安全警告：目前清單內只有 ${adminList.length} 筆資料！\n` +
+          `如果直接上傳，原本的數百筆餐廳資料將會被覆蓋移除！\n\n` +
+          `是否確認真的要強制覆蓋？（若否請按取消，重新整理頁面讀取完整資料）`
+        );
+        if (!confirmClear) return;
       }
 
       const uploadBtn = document.getElementById('btnAutoUpload');
@@ -614,9 +624,9 @@ ${textToAnalyze}`;
           throw new Error(errData.message || 'GitHub API 回應錯誤');
         }
 
-        alert('🎉 成功自動上傳並 Commit 至 GitHub！\n\n約 30-45 秒後前台網站將會自動更新。');
+        alert(`🎉 成功同步！資料庫現共有 ${adminList.length} 間餐廳，網站約 30-45 秒後完成更新。`);
       } catch (err) {
-        alert('❌ 上傳失敗: ' + err.message + '\n\n請檢查 GitHub Token 權限是否包含 repo。');
+        alert('❌ 上傳失敗: ' + err.message);
       } finally {
         uploadBtn.disabled = false;
         uploadBtn.innerText = '🚀 一鍵自動同步到網站';

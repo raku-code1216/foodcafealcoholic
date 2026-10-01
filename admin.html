@@ -426,6 +426,13 @@ ${textToAnalyze}`;
 
         for (const model of candidateModels) {
           try {
+// 自動嘗試最新支援的 Gemini Flash 模型 (包含 gemini-2.5-flash, gemini-2.0-flash)
+        const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-pro'];
+        let aiData = null;
+        let lastErrorMsg = '';
+
+        for (const model of candidateModels) {
+          try {
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cfg.geminiKey}`;
             const res = await fetch(apiUrl, {
               method: 'POST',
@@ -435,6 +442,20 @@ ${textToAnalyze}`;
               })
             });
             const data = await res.json();
+            if (res.ok && data.candidates && data.candidates.length > 0) {
+              aiData = data;
+              break;
+            } else if (data.error) {
+              lastErrorMsg = data.error.message;
+            }
+          } catch (err) {
+            lastErrorMsg = err.message;
+          }
+        }
+
+        if (!aiData) {
+          throw new Error(lastErrorMsg || '所有可用模型均呼叫失敗，請確認 API Key 是否有效。');
+        }
             if (res.ok && data.candidates && data.candidates.length > 0) {
               aiData = data;
               break;

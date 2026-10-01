@@ -419,17 +419,36 @@
 貼文內容如下：
 ${textToAnalyze}`;
 
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cfg.geminiKey}`;
+// 依序嘗試最新可用的 Flash 模型
+        const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'];
+        let aiData = null;
+        let lastError = null;
 
-        const aiRes = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }]
-          })
-        });
+        for (const model of candidateModels) {
+          try {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cfg.geminiKey}`;
+            const res = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: promptText }] }]
+              })
+            });
+            const data = await res.json();
+            if (res.ok && data.candidates && data.candidates.length > 0) {
+              aiData = data;
+              break;
+            } else if (data.error) {
+              lastError = data.error.message;
+            }
+          } catch (e) {
+            lastError = e.message;
+          }
+        }
 
-        const aiData = await aiRes.json();
+        if (!aiData) {
+          throw new Error(lastError || '無法透過可用模型生成內容，請確認 API Key 是否有效。');
+        }
 
         if (aiData.error) {
           throw new Error(`Google API 錯誤: ${aiData.error.message}`);

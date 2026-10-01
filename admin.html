@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FCA 後台管理系統 | Foodcafealcoholic Admin</title>
+  <title>FCA 後台管理系統 | AI 智能自動填表版</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,18 +39,18 @@
   <header class="bg-brand-card border-b border-brand-border px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
     <div class="flex items-center gap-3">
       <span class="text-xl font-black text-brand-yellow tracking-wider">FCA ADMIN</span>
-      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評後台 • IG 一鍵解析與自動同步</span>
+      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">AI 貼文自動提取 • 一鍵同步至網站</span>
     </div>
     
     <div class="flex items-center gap-2 sm:gap-3">
       <a href="index.html" target="_blank" class="text-xs text-zinc-400 hover:text-brand-yellow transition px-2 py-1">
-        ↗ 查看前台網站
+        ↗ 查看前台
       </a>
       <button onclick="openConfigModal()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs px-3 py-1.5 rounded-lg border border-zinc-700 transition flex items-center gap-1">
-        ⚙️ GitHub 連線設定
+        ⚙️ 系統與 API 設定
       </button>
       <button onclick="exportCsvLocal()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs px-3 py-1.5 rounded-lg border border-zinc-700 transition">
-        📥 備份至電腦
+        📥 備份 CSV
       </button>
       <button id="btnAutoUpload" onclick="autoUploadToGitHub()" class="bg-brand-yellow hover:bg-brand-yellowHover text-black text-xs font-black px-4 py-1.5 rounded-lg transition shadow-lg flex items-center gap-1.5">
         🚀 一鍵自動同步到網站
@@ -61,11 +61,11 @@
   <!-- 主要工作區 -->
   <main class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
     
-    <!-- 左側：發布 / 編輯表單 (完整編輯欄位) -->
+    <!-- 左側：發布 / 編輯表單 -->
     <section class="lg:col-span-5 bg-brand-card border border-brand-border rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
       <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
         <h2 id="formTitle" class="text-base font-extrabold text-white flex items-center gap-2">
-          <span class="text-brand-yellow">➕</span> 新增餐廳食評
+          <span class="text-brand-yellow">✨</span> 新增餐廳食評
         </h2>
         <button id="cancelEditBtn" onclick="resetForm()" class="hidden text-xs text-zinc-400 hover:text-white underline">
           取消編輯
@@ -76,15 +76,15 @@
         <input type="hidden" id="editIndex" value="-1" />
         <input type="hidden" id="postId" value="" />
 
-        <!-- IG 網址與智能提取 -->
+        <!-- IG 網址與 AI 全自動提取按鈕 -->
         <div>
-          <label class="block text-zinc-400 font-bold mb-1">Instagram 貼文 / Reel 網址 (URL)</label>
+          <label class="block text-brand-yellow font-black mb-1">🔗 Instagram 貼文 / Reel 網址 (貼上後點右邊按鈕)</label>
           <div class="flex gap-2">
             <input type="url" id="post_url" placeholder="https://www.instagram.com/reel/Cxxxxxx/"
                    class="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
-            <button type="button" onclick="autoFetchFromInstagram()" 
-                    class="bg-brand-yellow hover:bg-brand-yellowHover text-black font-extrabold px-3 py-2 rounded-lg text-xs whitespace-nowrap transition flex items-center gap-1 shadow">
-              ⚡ 自動提取
+            <button type="button" id="btnAiFetch" onclick="fullAutoGenerateFromIG()" 
+                    class="bg-brand-yellow hover:bg-brand-yellowHover text-black font-black px-3.5 py-2 rounded-lg text-xs whitespace-nowrap transition flex items-center gap-1 shadow">
+              ⚡ AI 自動填寫
             </button>
           </div>
         </div>
@@ -92,67 +92,67 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-zinc-400 font-bold mb-1">IG Reel ShortCode</label>
-            <input type="text" id="shortCode" placeholder="貼上 IG 網址後點提取"
+            <input type="text" id="shortCode" placeholder="自動提取"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
           </div>
           <div>
             <label class="block text-zinc-400 font-bold mb-1">封面圖片網址 (Image URL)</label>
-            <input type="url" id="imageUrl" placeholder="自動生成或手動自訂"
+            <input type="url" id="imageUrl" placeholder="自動配對"
                    oninput="updateImagePreview(this.value)"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
           </div>
         </div>
 
-        <!-- 封面圖片預覽框 -->
-        <div id="imagePreviewBox" class="hidden p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center gap-3">
-          <img id="imagePreviewThumb" src="" alt="封面預覽" class="w-14 h-14 object-cover rounded-lg border border-zinc-700 bg-zinc-800" />
+        <!-- 封面圖片即時預覽 -->
+        <div id="imagePreviewBox" class="hidden p-2 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center gap-3">
+          <img id="imagePreviewThumb" src="" alt="封面預覽" class="w-12 h-12 object-cover rounded-lg border border-zinc-700 bg-zinc-800" />
           <div class="text-[11px] text-zinc-400 overflow-hidden">
-            <p class="text-brand-yellow font-bold flex items-center gap-1"><span>🖼️</span> 封面圖片載入成功</p>
-            <p class="truncate text-zinc-500 max-w-[220px]" id="imagePreviewUrlText"></p>
+            <p class="text-brand-yellow font-bold">🖼️ 封面圖片已載入</p>
+            <p class="truncate text-zinc-500 max-w-[200px]" id="imagePreviewUrlText"></p>
           </div>
         </div>
 
         <div>
-          <label class="block text-zinc-400 font-bold mb-1">餐廳名稱 *</label>
+          <label class="block text-zinc-400 font-bold mb-1">餐廳名稱 * (AI 自動提取)</label>
           <input type="text" id="restaurant_name" required placeholder="例如：180° Modern Fire Grill"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">地區 *</label>
-            <input type="text" id="district" required placeholder="例如：中環、尖沙咀、旺角"
+            <label class="block text-zinc-400 font-bold mb-1">地區 * (AI 自動提取)</label>
+            <input type="text" id="district" required placeholder="例如：中環、尖沙咀"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">菜式種類 *</label>
-            <input type="text" id="cuisine" required placeholder="例如：西式、日本料理、Cafe、酒吧"
+            <label class="block text-zinc-400 font-bold mb-1">菜式種類 * (AI 自動提取)</label>
+            <input type="text" id="cuisine" required placeholder="例如：西式、日本料理、酒吧"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">預算 / 人均價格</label>
+            <label class="block text-zinc-400 font-bold mb-1">預算 / 人均價格 (AI 自動提取)</label>
             <input type="text" id="price" placeholder="例如：$200 - $400"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">適合場景</label>
-            <input type="text" id="occasion" placeholder="例如：拍拖約會、朋友聚會、深夜小酌"
+            <label class="block text-zinc-400 font-bold mb-1">適合場景 (AI 自動提取)</label>
+            <input type="text" id="occasion" placeholder="例如：拍拖約會、朋友聚會"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
         </div>
 
         <div>
-          <label class="block text-zinc-400 font-bold mb-1">招牌菜式 / 必食推介</label>
-          <input type="text" id="must_try" placeholder="例如：熟成黑安格斯肉眼扒、手切薯條、黑松露調酒"
+          <label class="block text-zinc-400 font-bold mb-1">招牌菜式 / 必食推介 (AI 自動提取)</label>
+          <input type="text" id="must_try" placeholder="例如：熟成黑安格斯肉眼、特調調酒"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
         </div>
 
         <div>
           <label class="block text-zinc-400 font-bold mb-1">食評詳細內文 (Caption / 介紹)</label>
-          <textarea id="caption" rows="4" placeholder="輸入詳細食評心得、環境評價或 Hashtag..."
+          <textarea id="caption" rows="4" placeholder="AI 自動帶入貼文心得全文..."
                     class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow leading-relaxed"></textarea>
         </div>
 
@@ -163,17 +163,17 @@
       </form>
     </section>
 
-    <!-- 右側：現存清單與快速搜尋/管理 -->
+    <!-- 右側：資料庫列表 -->
     <section class="lg:col-span-7 bg-brand-card border border-brand-border rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-3 mb-4">
         <div>
           <h2 class="text-base font-extrabold text-white flex items-center gap-2">
             <span>📚</span> 餐廳資料庫列表 (<span id="totalItemsCount" class="text-brand-yellow">0</span> 間)
           </h2>
-          <span class="text-[11px] text-zinc-400">編輯或新增完成後，請點擊右上角「🚀 一鍵自動同步到網站」完成發布！</span>
+          <span class="text-[11px] text-zinc-400">確認無誤後，點擊右上角「🚀 一鍵自動同步到網站」完成發布</span>
         </div>
         <div class="relative">
-          <input type="text" id="adminSearchInput" oninput="renderTable()" placeholder="快速搜尋餐廳、地區、菜式..."
+          <input type="text" id="adminSearchInput" oninput="renderTable()" placeholder="快速搜尋餐廳、地區..."
                  class="bg-zinc-900 border border-zinc-700 text-xs text-white rounded-full pl-7 pr-3 py-1.5 focus:outline-none focus:border-brand-yellow w-48 sm:w-56" />
           <span class="absolute left-2.5 top-2 text-zinc-500 text-xs">🔍</span>
         </div>
@@ -202,41 +202,46 @@
 
   </main>
 
-  <!-- GitHub 連線設定彈窗 (Modal) -->
+  <!-- 系統與 API 設定彈窗 -->
   <div id="configModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-brand-card border border-brand-border rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
       <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
-        <h3 class="font-bold text-white text-base">⚙️ GitHub 自動上傳設定</h3>
+        <h3 class="font-bold text-white text-base">⚙️ 系統與 API 設定</h3>
         <button onclick="closeConfigModal()" class="text-zinc-400 hover:text-white">✕</button>
       </div>
       <p class="text-xs text-zinc-400 leading-relaxed">
-        設定一次後，Token 會安全保存在此台設備的 LocalStorage 中，無後端洩漏風險。
+        設定一次後會安全保存在本機瀏覽器中。
       </p>
       <div class="space-y-3 text-xs">
         <div>
+          <label class="block text-brand-yellow font-bold mb-1">Google Gemini API Key (用於 AI 全自動填表)</label>
+          <input type="password" id="cfgGeminiKey" placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxx"
+                 class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
+        </div>
+        <div class="border-t border-zinc-800 pt-3">
           <label class="block text-zinc-300 font-bold mb-1">GitHub 使用者帳號 (Owner)</label>
           <input type="text" id="cfgOwner" placeholder="例如：your-github-username"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
         </div>
         <div>
-          <label class="block text-zinc-300 font-bold mb-1">Repository 名稱 (倉庫名稱)</label>
+          <label class="block text-zinc-300 font-bold mb-1">GitHub 倉庫名稱 (Repo)</label>
           <input type="text" id="cfgRepo" placeholder="例如：foodcafealcoholic"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
         </div>
         <div>
-          <label class="block text-zinc-300 font-bold mb-1">分支名稱 (Branch)</label>
+          <label class="block text-zinc-300 font-bold mb-1">GitHub 分支名稱 (Branch)</label>
           <input type="text" id="cfgBranch" value="main"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
         </div>
         <div>
-          <label class="block text-zinc-300 font-bold mb-1">Personal Access Token (PAT)</label>
+          <label class="block text-zinc-300 font-bold mb-1">GitHub Token (PAT)</label>
           <input type="password" id="cfgToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
         </div>
       </div>
       <div class="pt-2 flex justify-end gap-2">
         <button onclick="closeConfigModal()" class="px-4 py-2 rounded-lg bg-zinc-800 text-xs text-zinc-300 hover:bg-zinc-700">取消</button>
-        <button onclick="saveConfig()" class="px-4 py-2 rounded-lg bg-brand-yellow text-black text-xs font-bold hover:bg-brand-yellowHover">儲存連線設定</button>
+        <button onclick="saveConfig()" class="px-4 py-2 rounded-lg bg-brand-yellow text-black text-xs font-bold hover:bg-brand-yellowHover">儲存設定</button>
       </div>
     </div>
   </div>
@@ -245,9 +250,9 @@
     let adminList = [];
     const CSV_FILENAME = 'cleaned_data_final.csv';
 
-    // 讀取 GitHub 設定
     function loadConfig() {
       return {
+        geminiKey: localStorage.getItem('fca_gemini_key') || '',
         owner: localStorage.getItem('fca_gh_owner') || '',
         repo: localStorage.getItem('fca_gh_repo') || '',
         branch: localStorage.getItem('fca_gh_branch') || 'main',
@@ -257,6 +262,7 @@
 
     function openConfigModal() {
       const cfg = loadConfig();
+      document.getElementById('cfgGeminiKey').value = cfg.geminiKey;
       document.getElementById('cfgOwner').value = cfg.owner;
       document.getElementById('cfgRepo').value = cfg.repo;
       document.getElementById('cfgBranch').value = cfg.branch;
@@ -269,26 +275,27 @@
     }
 
     function saveConfig() {
+      const geminiKey = document.getElementById('cfgGeminiKey').value.trim();
       const owner = document.getElementById('cfgOwner').value.trim();
       const repo = document.getElementById('cfgRepo').value.trim();
       const branch = document.getElementById('cfgBranch').value.trim() || 'main';
       const token = document.getElementById('cfgToken').value.trim();
 
       if (!owner || !repo || !token) {
-        alert('請填寫完整帳號、倉庫名稱與 Token！');
+        alert('請填寫完整 GitHub 帳號、倉庫名稱與 Token！');
         return;
       }
 
+      localStorage.setItem('fca_gemini_key', geminiKey);
       localStorage.setItem('fca_gh_owner', owner);
       localStorage.setItem('fca_gh_repo', repo);
       localStorage.setItem('fca_gh_branch', branch);
       localStorage.setItem('fca_gh_token', token);
 
-      alert('✅ GitHub 連線設定已儲存！');
+      alert('✅ 設定已順利儲存！');
       closeConfigModal();
     }
 
-    // 初始化加載本地 CSV
     function initLoadData() {
       fetch(`${CSV_FILENAME}?t=` + Date.now())
         .then(res => {
@@ -311,7 +318,6 @@
         });
     }
 
-    // 渲染右側資料表格
     function renderTable() {
       const tbody = document.getElementById('restaurantTableBody');
       const countEl = document.getElementById('totalItemsCount');
@@ -349,7 +355,6 @@
       `).join('');
     }
 
-    // 即時圖片預覽
     function updateImagePreview(url) {
       const box = document.getElementById('imagePreviewBox');
       const thumb = document.getElementById('imagePreviewThumb');
@@ -363,32 +368,119 @@
       }
     }
 
-    // 智能提取 IG 封面與 ShortCode
-    function autoFetchFromInstagram() {
+    // ⭐ 核心：AI 智能自動萃取並填滿所有欄位
+    async function fullAutoGenerateFromIG() {
       const postUrl = document.getElementById('post_url').value.trim();
+      const cfg = loadConfig();
+
       if (!postUrl) {
         alert('請先在輸入框貼上 Instagram 貼文或 Reel 網址！');
         return;
       }
 
       const match = postUrl.match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/);
-      if (!match || !match[1]) {
-        alert('無法識別此網址，請確認是正確的 Instagram 貼文或 Reel 連結格式！');
+      if (!match) {
+        alert('無法識別網址，請確認是 Instagram 貼文或 Reel 連結！');
         return;
       }
 
       const code = match[1];
       document.getElementById('shortCode').value = code;
 
-      // 產生官方高畫質圖片直連網址
+      // 自動配置封面直連
       const officialMediaUrl = `https://www.instagram.com/p/${code}/media/?size=l`;
       document.getElementById('imageUrl').value = officialMediaUrl;
       updateImagePreview(officialMediaUrl);
 
-      alert(`✅ 成功辨識 ShortCode: ${code}\n已為你自動配置 IG 封面圖片！`);
+      const btn = document.getElementById('btnAiFetch');
+      const originalText = btn.innerText;
+      btn.innerText = '🤖 AI 解析中...';
+      btn.disabled = true;
+
+      try {
+        let textToAnalyze = '';
+
+        // 嘗試透過無跨域代理抓取 Meta Caption
+        try {
+          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.instagram.com/p/${code}/`)}`;
+          const pageRes = await fetch(proxyUrl);
+          if (pageRes.ok) {
+            const pageData = await pageRes.json();
+            const matchMeta = pageData.contents.match(/<meta\s+property="og:description"\s+content="([^"]*)"/i);
+            if (matchMeta && matchMeta[1]) {
+              textToAnalyze = matchMeta[1]
+                .replace(/^[0-9,]+ likes, [0-9,]+ comments - [^:]+: "/, '')
+                .replace(/"$/, '');
+            }
+          }
+        } catch (e) {
+          console.warn('代理抓取跳過');
+        }
+
+        // 若 IG 防護阻擋無法自動抓取文字，彈出輸入框請使用者貼入貼文內容
+        if (!textToAnalyze || textToAnalyze.length < 5) {
+          textToAnalyze = prompt('已為你提取封面圖片！請在下方貼上此貼文的食評文字（Caption），AI 將為你自動提取所有欄位：');
+          if (!textToAnalyze) {
+            btn.innerText = originalText;
+            btn.disabled = false;
+            return;
+          }
+        }
+
+        document.getElementById('caption').value = textToAnalyze;
+
+        if (!cfg.geminiKey) {
+          alert('封面圖片與文字已填入！\n\n提示：若要自動識別「餐廳名稱、地區、菜式、預算」，請點擊右上角「⚙️ 系統與 API 設定」填入免費的 Gemini API Key。');
+          btn.innerText = originalText;
+          btn.disabled = false;
+          return;
+        }
+
+        // 呼叫 Gemini AI 進行結構化提取
+        const promptText = `
+你是一位香港美食指南資料庫整理專員。請從以下美食 IG 貼文內容中，提取資料並僅回傳純 JSON，不得加上任何 Markdown 語法標籤（如不要加 \`\`\`json）：
+{
+  "restaurant_name": "餐廳名稱 (去除多餘形容詞或店鋪代號)",
+  "district": "地區 (例如：中環、銅鑼灣、尖沙咀、旺角、觀塘，若未明確說明請推斷)",
+  "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋)",
+  "price": "人均價格預算 (例如：$200 - $400，若未提及請根據菜式合理推估或填寫 $100 - $200)",
+  "occasion": "適合場景 (例如：拍拖約會、朋友聚會、深夜食堂、商務聚餐)",
+  "must_try": "招牌菜式或必食推介 (精選 1-3 個重點菜名)"
+}
+
+貼文內容如下：
+${textToAnalyze}
+`;
+
+        const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cfg.geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }]
+          })
+        });
+
+        const aiData = await aiRes.json();
+        let rawJson = aiData.candidates[0].content.parts[0].text.trim();
+        rawJson = rawJson.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+        const extracted = JSON.parse(rawJson);
+
+        if (extracted.restaurant_name) document.getElementById('restaurant_name').value = extracted.restaurant_name;
+        if (extracted.district) document.getElementById('district').value = extracted.district;
+        if (extracted.cuisine) document.getElementById('cuisine').value = extracted.cuisine;
+        if (extracted.price) document.getElementById('price').value = extracted.price;
+        if (extracted.occasion) document.getElementById('occasion').value = extracted.occasion;
+        if (extracted.must_try) document.getElementById('must_try').value = extracted.must_try;
+
+        alert(`🎉 AI 已成功為你填妥所有欄位！\n餐廳名：${extracted.restaurant_name}\n地區：${extracted.district}`);
+      } catch (err) {
+        alert('AI 解析過程發生問題：' + err.message);
+      } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
     }
 
-    // 表單提交流程
     function handleFormSubmit(e) {
       e.preventDefault();
 
@@ -427,7 +519,6 @@
       renderTable();
     }
 
-    // 編輯指定項目（將資料帶回左側完整欄位）
     function editItem(index) {
       const item = adminList[index];
       if (!item) return;
@@ -456,7 +547,6 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 刪除項目
     function deleteItem(index) {
       const item = adminList[index];
       if (!item) return;
@@ -467,22 +557,20 @@
       }
     }
 
-    // 重設清空表單
     function resetForm() {
       document.getElementById('postForm').reset();
       document.getElementById('editIndex').value = '-1';
       document.getElementById('postId').value = '';
-      document.getElementById('formTitle').innerHTML = `<span class="text-brand-yellow">➕</span> 新增餐廳食評`;
+      document.getElementById('formTitle').innerHTML = `<span class="text-brand-yellow">✨</span> 新增餐廳食評`;
       document.getElementById('submitBtn').innerText = '暫存至列表';
       document.getElementById('cancelEditBtn').classList.add('hidden');
       document.getElementById('imagePreviewBox').classList.add('hidden');
     }
 
-    // 核心：透過 GitHub REST API 自動 Commit
     async function autoUploadToGitHub() {
       const cfg = loadConfig();
       if (!cfg.owner || !cfg.repo || !cfg.token) {
-        alert('尚未設定 GitHub 憑證，請先點擊「⚙️ GitHub 連線設定」填寫！');
+        alert('尚未設定 GitHub 憑證，請先點擊「⚙️ 系統與 API 設定」填寫！');
         openConfigModal();
         return;
       }
@@ -492,16 +580,12 @@
       uploadBtn.innerText = '⏳ 正在同步至 GitHub...';
 
       try {
-        // 1. 生成 CSV 內容
         const csvText = Papa.unparse(adminList);
-        
-        // 解決 UTF-8 中文 Base64 編碼
         const utf8Bytes = new TextEncoder().encode(csvText);
         let binaryStr = '';
         utf8Bytes.forEach(b => binaryStr += String.fromCharCode(b));
         const base64Content = btoa(binaryStr);
 
-        // 2. 獲取遠端檔案 SHA 雜湊值
         const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${CSV_FILENAME}?ref=${cfg.branch}`;
         const getRes = await fetch(apiUrl, {
           headers: {
@@ -516,7 +600,6 @@
           fileSha = fileData.sha;
         }
 
-        // 3. 發送 PUT 請求自動 commit
         const payload = {
           message: `Update ${CSV_FILENAME} via FCA Admin Panel (${new Date().toLocaleString()})`,
           content: base64Content,
@@ -541,14 +624,13 @@
 
         alert('🎉 成功自動上傳並 Commit 至 GitHub！\n\n約 30-45 秒後前台網站將會自動更新。');
       } catch (err) {
-        alert('❌ 上傳失敗: ' + err.message + '\n\n請檢查「GitHub 連線設定」的 Token 權限是否包含 repo。');
+        alert('❌ 上傳失敗: ' + err.message + '\n\n請檢查 GitHub Token 權限是否包含 repo。');
       } finally {
         uploadBtn.disabled = false;
         uploadBtn.innerText = '🚀 一鍵自動同步到網站';
       }
     }
 
-    // 本地備份匯出
     function exportCsvLocal() {
       const csvContent = Papa.unparse(adminList);
       const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });

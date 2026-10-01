@@ -7,8 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
@@ -39,7 +39,7 @@
   <header class="bg-brand-card border-b border-brand-border px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
     <div class="flex items-center gap-3">
       <span class="text-xl font-black text-brand-yellow tracking-wider">FCA ADMIN</span>
-      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">AI 貼文自動提取 • 一鍵同步至網站</span>
+      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">精準對齊 displayUrl • 一鍵同步至網站</span>
     </div>
     
     <div class="flex items-center gap-2 sm:gap-3">
@@ -74,28 +74,33 @@
 
       <form id="postForm" onsubmit="handleFormSubmit(event)" class="space-y-3.5 text-xs">
         <input type="hidden" id="editIndex" value="-1" />
-        <input type="hidden" id="postId" value="" />
 
         <!-- 步驟 1: IG 網址 -->
         <div>
           <label class="block text-brand-yellow font-black mb-1">1. Instagram 貼文 / Reel 網址 (URL)</label>
-          <input type="url" id="post_url" placeholder="https://www.instagram.com/reel/Cxxxxxx/"
+          <input type="url" id="url" required placeholder="https://www.instagram.com/reel/Cxxxxxx/"
                  onchange="handleUrlChange(this.value)"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">IG Reel ShortCode</label>
+            <label class="block text-zinc-400 font-bold mb-1">ShortCode</label>
             <input type="text" id="shortCode" placeholder="貼上網址自動生成"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
           </div>
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">封面圖片網址 (Image URL)</label>
-            <input type="url" id="imageUrl" placeholder="自動配置"
+            <label class="block text-zinc-400 font-bold mb-1">封面圖片網址 (displayUrl)</label>
+            <input type="url" id="displayUrl" placeholder="自動配置"
                    oninput="updateImagePreview(this.value)"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
           </div>
+        </div>
+
+        <div>
+          <label class="block text-zinc-400 font-bold mb-1">影片直連網址 (videoUrl, 可留空)</label>
+          <input type="text" id="videoUrl" placeholder="選填"
+                 class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
         </div>
 
         <!-- 封面圖片即時預覽 -->
@@ -143,7 +148,7 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-zinc-400 font-bold mb-1">預算 / 人均價格</label>
-            <input type="text" id="price" placeholder="AI 自動填寫 (例：$200 - $400)"
+            <input type="text" id="price" placeholder="AI 自動填寫 (例：100-200 或 400-600)"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
           <div>
@@ -173,7 +178,7 @@
           <h2 class="text-base font-extrabold text-white flex items-center gap-2">
             <span>📚</span> 餐廳資料庫列表 (<span id="totalItemsCount" class="text-brand-yellow">0</span> 間)
           </h2>
-          <span class="text-[11px] text-zinc-400">確認無誤後，點擊右上角「🚀 一鍵自動同步到網站」完成發布</span>
+          <span class="text-[11px] text-zinc-400">確認包含舊餐廳總數無誤後，再點擊右上角同步</span>
         </div>
         <div class="relative">
           <input type="text" id="adminSearchInput" oninput="renderTable()" placeholder="快速搜尋餐廳、地區..."
@@ -212,12 +217,9 @@
         <h3 class="font-bold text-white text-base">⚙️ 系統與 API 設定</h3>
         <button onclick="closeConfigModal()" class="text-zinc-400 hover:text-white">✕</button>
       </div>
-      <p class="text-xs text-zinc-400 leading-relaxed">
-        設定一次後會安全保存在本機瀏覽器中。
-      </p>
       <div class="space-y-3 text-xs">
         <div>
-          <label class="block text-brand-yellow font-bold mb-1">Google Gemini API Key (用於 AI 全自動填表)</label>
+          <label class="block text-brand-yellow font-bold mb-1">Google Gemini API Key</label>
           <input type="password" id="cfgGeminiKey" placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxx"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
         </div>
@@ -252,6 +254,20 @@
   <script>
     let adminList = [];
     const CSV_FILENAME = 'cleaned_data_final.csv';
+    // 嚴格鎖定欄位名稱與順序，保證與原始 CSV 完全相同
+    const CSV_COLUMNS = [
+      'restaurant_name',
+      'district',
+      'cuisine',
+      'price',
+      'occasion',
+      'must_try',
+      'url',
+      'shortCode',
+      'displayUrl',
+      'videoUrl',
+      'caption'
+    ];
 
     function loadConfig() {
       return {
@@ -310,7 +326,22 @@
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
-              adminList = results.data.filter(r => r && r.restaurant_name);
+              // 完整保留並標準化
+              adminList = results.data
+                .filter(r => r && (r.restaurant_name || r.shortCode))
+                .map(item => ({
+                  restaurant_name: item.restaurant_name || '',
+                  district: item.district || '',
+                  cuisine: item.cuisine || '',
+                  price: item.price || '',
+                  occasion: item.occasion || '',
+                  must_try: item.must_try || '',
+                  url: item.url || '',
+                  shortCode: item.shortCode || '',
+                  displayUrl: item.displayUrl || item.imageUrl || '',
+                  videoUrl: item.videoUrl || '',
+                  caption: item.caption || ''
+                }));
               renderTable();
             }
           });
@@ -378,18 +409,17 @@
         const code = match[1];
         document.getElementById('shortCode').value = code;
         const officialMediaUrl = `https://www.instagram.com/p/${code}/media/?size=l`;
-        document.getElementById('imageUrl').value = officialMediaUrl;
+        document.getElementById('displayUrl').value = officialMediaUrl;
         updateImagePreview(officialMediaUrl);
       }
     }
 
-    // ⭐ 點擊按鈕呼叫 Gemini 進行結構化填表 (支援最新 Gemini 3 系列)
     async function runAiExtraction() {
       const textToAnalyze = document.getElementById('caption').value.trim();
       const cfg = loadConfig();
 
       if (!textToAnalyze) {
-        alert('請先在下方「食評內文」框貼上 IG 貼文文字（整段複製貼上即可）！');
+        alert('請先在下方「食評內文」框貼上 IG 貼文文字！');
         return;
       }
 
@@ -410,9 +440,9 @@
   "restaurant_name": "餐廳名稱 (去除多餘形容詞或店鋪代號)",
   "district": "地區 (例如：中環、銅鑼灣、尖沙咀、旺角、觀塘，若未明確說明請推斷)",
   "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋)",
-  "price": "人均價格預算 (例如：$200 - $400，若未提及請根據菜式合理推估或填寫 $100 - $200)",
-  "occasion": "適合場景 (例如：拍拖約會、朋友聚會、深夜食堂、商務聚餐)",
-  "must_try": "招牌菜式或必食推介 (精選 1-3 個重點菜名)"
+  "price": "人均價格預算 (格式如：100-200 或 400-600，只填數字範圍)",
+  "occasion": "適合場景 (例如：拍拖約會、朋友聚會、深夜食堂、打卡必到)",
+  "must_try": "招牌菜式或必食推介 (精選 1-3 個重點菜名，用頓號、分開)"
 }
 
 貼文內容如下：
@@ -464,7 +494,7 @@ ${textToAnalyze}`;
         if (extracted.occasion) document.getElementById('occasion').value = extracted.occasion;
         if (extracted.must_try) document.getElementById('must_try').value = extracted.must_try;
 
-        alert(`🎉 AI 已成功為你填妥所有欄位！\n\n餐廳名：${extracted.restaurant_name}\n地區：${extracted.district}`);
+        alert(`🎉 AI 提取成功！\n\n餐廳名：${extracted.restaurant_name}\n地區：${extracted.district}`);
       } catch (err) {
         alert('AI 解析異常: ' + err.message);
       } finally {
@@ -477,7 +507,7 @@ ${textToAnalyze}`;
       e.preventDefault();
 
       const editIdx = parseInt(document.getElementById('editIndex').value, 10);
-      const postUrl = document.getElementById('post_url').value.trim();
+      const postUrl = document.getElementById('url').value.trim();
       let code = document.getElementById('shortCode').value.trim();
 
       if (!code && postUrl) {
@@ -485,8 +515,8 @@ ${textToAnalyze}`;
         if (match) code = match[1];
       }
 
+      // 嚴格對齊原始 10 個欄位，絕不多增、不改名
       const itemData = {
-        id: document.getElementById('postId').value || (code || `post_${Date.now()}`),
         restaurant_name: document.getElementById('restaurant_name').value.trim(),
         district: document.getElementById('district').value.trim(),
         cuisine: document.getElementById('cuisine').value.trim(),
@@ -495,16 +525,17 @@ ${textToAnalyze}`;
         must_try: document.getElementById('must_try').value.trim(),
         url: postUrl,
         shortCode: code,
-        imageUrl: document.getElementById('imageUrl').value.trim(),
+        displayUrl: document.getElementById('displayUrl').value.trim(),
+        videoUrl: document.getElementById('videoUrl').value.trim(),
         caption: document.getElementById('caption').value.trim()
       };
 
       if (editIdx >= 0 && editIdx < adminList.length) {
         adminList[editIdx] = { ...adminList[editIdx], ...itemData };
-        alert(`已成功更新《${itemData.restaurant_name}》！\n請記得點擊右上角「🚀 一鍵自動同步到網站」完成發布。`);
+        alert(`已成功更新《${itemData.restaurant_name}》！`);
       } else {
         adminList.unshift(itemData);
-        alert(`已成功將《${itemData.restaurant_name}》加入清單首位！\n請記得點擊右上角「🚀 一鍵自動同步到網站」完成發布。`);
+        alert(`已成功新增《${itemData.restaurant_name}》至清單首位！`);
       }
 
       resetForm();
@@ -516,20 +547,20 @@ ${textToAnalyze}`;
       if (!item) return;
 
       document.getElementById('editIndex').value = index;
-      document.getElementById('postId').value = item.id || '';
       document.getElementById('restaurant_name').value = item.restaurant_name || '';
       document.getElementById('district').value = item.district || '';
       document.getElementById('cuisine').value = item.cuisine || '';
       document.getElementById('price').value = item.price || '';
       document.getElementById('occasion').value = item.occasion || '';
-      document.getElementById('must_try').value = item.must_try || item.signature_dishes || '';
-      document.getElementById('post_url').value = item.url || item.postUrl || '';
-      document.getElementById('shortCode').value = item.shortCode || item.shortcode || '';
+      document.getElementById('must_try').value = item.must_try || '';
+      document.getElementById('url').value = item.url || '';
+      document.getElementById('shortCode').value = item.shortCode || '';
       
-      const imgUrl = item.imageUrl || item.displayUrl || item.image || '';
-      document.getElementById('imageUrl').value = imgUrl;
-      updateImagePreview(imgUrl);
+      const img = item.displayUrl || item.imageUrl || '';
+      document.getElementById('displayUrl').value = img;
+      updateImagePreview(img);
 
+      document.getElementById('videoUrl').value = item.videoUrl || '';
       document.getElementById('caption').value = item.caption || '';
 
       document.getElementById('formTitle').innerHTML = `<span class="text-brand-yellow">✏️</span> 正在編輯：《${item.restaurant_name}》`;
@@ -552,14 +583,13 @@ ${textToAnalyze}`;
     function resetForm() {
       document.getElementById('postForm').reset();
       document.getElementById('editIndex').value = '-1';
-      document.getElementById('postId').value = '';
       document.getElementById('formTitle').innerHTML = `<span class="text-brand-yellow">✨</span> 新增餐廳食評`;
       document.getElementById('submitBtn').innerText = '暫存至列表';
       document.getElementById('cancelEditBtn').classList.add('hidden');
       document.getElementById('imagePreviewBox').classList.add('hidden');
     }
 
-async function autoUploadToGitHub() {
+    async function autoUploadToGitHub() {
       const cfg = loadConfig();
       if (!cfg.owner || !cfg.repo || !cfg.token) {
         alert('尚未設定 GitHub 憑證，請先點擊「⚙️ 系統與 API 設定」填寫！');
@@ -567,14 +597,10 @@ async function autoUploadToGitHub() {
         return;
       }
 
-      // ⭐ 安全保護機制：防止意外把整個資料庫清空覆蓋
+      // 安全防線：防止空資料庫或資料遺失
       if (adminList.length < 50) {
-        const confirmClear = confirm(
-          `⚠️ 安全警告：目前清單內只有 ${adminList.length} 筆資料！\n` +
-          `如果直接上傳，原本的數百筆餐廳資料將會被覆蓋移除！\n\n` +
-          `是否確認真的要強制覆蓋？（若否請按取消，重新整理頁面讀取完整資料）`
-        );
-        if (!confirmClear) return;
+        const confirmSave = confirm(`⚠️ 警告：目前列表中只有 ${adminList.length} 筆資料！\n是否確認要覆蓋遠端檔案？若不確定請按「取消」！`);
+        if (!confirmSave) return;
       }
 
       const uploadBtn = document.getElementById('btnAutoUpload');
@@ -582,7 +608,12 @@ async function autoUploadToGitHub() {
       uploadBtn.innerText = '⏳ 正在同步至 GitHub...';
 
       try {
-        const csvText = Papa.unparse(adminList);
+        // 使用嚴格鎖定的欄位順序進行 Papa.unparse，百分之百保護格式
+        const csvText = Papa.unparse({
+          fields: CSV_COLUMNS,
+          data: adminList
+        });
+
         const utf8Bytes = new TextEncoder().encode(csvText);
         let binaryStr = '';
         utf8Bytes.forEach(b => binaryStr += String.fromCharCode(b));
@@ -624,7 +655,7 @@ async function autoUploadToGitHub() {
           throw new Error(errData.message || 'GitHub API 回應錯誤');
         }
 
-        alert(`🎉 成功同步！資料庫現共有 ${adminList.length} 間餐廳，網站約 30-45 秒後完成更新。`);
+        alert(`🎉 成功安全同步！現共有 ${adminList.length} 間餐廳，網站約 45 秒後完成更新，舊照片完整保留！`);
       } catch (err) {
         alert('❌ 上傳失敗: ' + err.message);
       } finally {
@@ -634,8 +665,11 @@ async function autoUploadToGitHub() {
     }
 
     function exportCsvLocal() {
-      const csvContent = Papa.unparse(adminList);
-      const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const csvText = Papa.unparse({
+        fields: CSV_COLUMNS,
+        data: adminList
+      });
+      const blob = new Blob(["\uFEFF" + csvText], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = CSV_FILENAME;

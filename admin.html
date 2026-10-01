@@ -452,15 +452,31 @@
 ${textToAnalyze}
 `;
 
-        const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cfg.geminiKey}`, {
+// 呼叫 Gemini 1.5 Flash API (支援 v1beta 與原生 JSON 模式)
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cfg.geminiKey}`;
+        
+        const aiRes = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }]
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: {
+              responseMimeType: "application/json"
+            }
           })
         });
 
         const aiData = await aiRes.json();
+
+        // 檢查 API 是否有報錯訊息
+        if (aiData.error) {
+          throw new Error(`Google API 錯誤 (${aiData.error.code}): ${aiData.error.message}`);
+        }
+
+        if (!aiData.candidates || aiData.candidates.length === 0) {
+          throw new Error('AI 未能產生內容，請檢查貼文內容是否觸發內容安全限制。');
+        }
+
         let rawJson = aiData.candidates[0].content.parts[0].text.trim();
         rawJson = rawJson.replace(/^```json\s*/, '').replace(/\s*```$/, '');
         const extracted = JSON.parse(rawJson);
@@ -472,7 +488,7 @@ ${textToAnalyze}
         if (extracted.occasion) document.getElementById('occasion').value = extracted.occasion;
         if (extracted.must_try) document.getElementById('must_try').value = extracted.must_try;
 
-        alert(`🎉 AI 已成功為你填妥所有欄位！\n餐廳名：${extracted.restaurant_name}\n地區：${extracted.district}`);
+        alert(`🎉 AI 已成功為你填妥所有欄位！\n\n餐廳名：${extracted.restaurant_name}\n地區：${extracted.district}`);
       } catch (err) {
         alert('AI 解析過程發生問題：' + err.message);
       } finally {

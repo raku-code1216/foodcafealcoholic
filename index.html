@@ -746,25 +746,41 @@
       document.getElementById('modalMustTry').innerText = item.must_try || '請參考下方食評詳細推介。';
       document.getElementById('modalCaption').innerText = item.caption || '暫無詳細食評內容。';
 
-      const directVideo = document.getElementById('modalDirectVideo');
+const directVideo = document.getElementById('modalDirectVideo');
       const iframeEl = document.getElementById('modalReelIframe');
       const fallbackEl = document.getElementById('modalVideoFallback');
 
-      if (item.videoUrl && item.videoUrl.startsWith('http')) {
-        directVideo.src = item.videoUrl;
-        directVideo.classList.remove('hidden');
+      // 優先擷取 shortCode（無論是欄位本身或從 IG 網址解析）
+      let reelCode = item.shortCode;
+      if (!reelCode && item.url) {
+        const match = item.url.match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/);
+        if (match) reelCode = match[1];
+      }
+
+      // ⭐ 做法 A 核心修改：優先使用 Instagram 官方原裝 Embed iframe（永不過期、免防盜鏈）
+      if (reelCode) {
+        directVideo.pause();
+        directVideo.src = "";
+        directVideo.classList.add('hidden');
+        fallbackEl.classList.add('hidden');
+        
+        iframeEl.classList.remove('hidden');
+        iframeEl.src = `https://www.instagram.com/reel/${reelCode}/embed/`;
+      } else if (item.videoUrl && item.videoUrl.startsWith('http')) {
+        // 次選：只有在完全沒有 shortCode 時才嘗試直連
+        iframeEl.src = "";
         iframeEl.classList.add('hidden');
         fallbackEl.classList.add('hidden');
+        
+        directVideo.classList.remove('hidden');
+        directVideo.src = item.videoUrl;
         directVideo.play().catch(() => {});
-      } else if (item.shortCode) {
-        directVideo.pause();
-        directVideo.classList.add('hidden');
-        fallbackEl.classList.add('hidden');
-        iframeEl.classList.remove('hidden');
-        iframeEl.src = `https://www.instagram.com/reel/${item.shortCode}/embed/`;
       } else {
+        // 兩者皆無時顯示後備提示
         directVideo.pause();
+        directVideo.src = "";
         directVideo.classList.add('hidden');
+        iframeEl.src = "";
         iframeEl.classList.add('hidden');
         fallbackEl.classList.remove('hidden');
       }
@@ -788,9 +804,14 @@
 
     function closeModal() {
       const directVideo = document.getElementById('modalDirectVideo');
-      directVideo.pause();
-      directVideo.src = "";
-      document.getElementById('modalReelIframe').src = "";
+      if (directVideo) {
+        directVideo.pause();
+        directVideo.src = "";
+      }
+      const iframeEl = document.getElementById('modalReelIframe');
+      if (iframeEl) {
+        iframeEl.src = ""; // 關閉時清空 iframe，確保聲音立即停止
+      }
       document.getElementById('detailModal').classList.add('hidden');
     }
 

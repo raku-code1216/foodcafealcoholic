@@ -437,6 +437,7 @@
       try {
         const promptText = `你是一位香港美食指南資料庫專員。請從以下美食 IG 貼文內容中，提取資料並僅回傳純 JSON，不得加上任何 Markdown 語法標籤（不要加 \`\`\`json）：
 {
+  "title": "精選貼文中最吸引人的吸睛大標題/爆款金句 (保留Emoji，去除Hashtag與地區分類，控制在15字以內)",
   "restaurant_name": "餐廳名稱 (去除多餘形容詞或店鋪代號)",
   "district": "地區 (例如：中環、銅鑼灣、尖沙咀、旺角、觀塘，若未明確說明請推斷)",
   "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋)",
@@ -494,6 +495,23 @@ ${textToAnalyze}`;
         if (extracted.occasion) document.getElementById('occasion').value = extracted.occasion;
         if (extracted.must_try) document.getElementById('must_try').value = extracted.must_try;
 
+        // ⭐ 喺呢度處理 AI 提煉出嚟嘅吸睛大標題
+        if (extracted.title) {
+          // 1. 即時喺黃色預覽框顯示標題
+          const previewEl = document.getElementById('captionTitlePreview');
+          const previewText = document.getElementById('captionTitleText');
+          if (previewEl && previewText) {
+            previewText.innerText = extracted.title;
+            previewEl.classList.remove('hidden');
+          }
+
+          // 2. 確保 caption 嘅第一行就係呢句精煉標題
+          let currentCap = document.getElementById('caption').value.trim();
+          if (!currentCap.startsWith(extracted.title)) {
+            document.getElementById('caption').value = `${extracted.title}\n\n${currentCap}`;
+          }
+        }
+        
         alert(`🎉 AI 提取成功！\n\n餐廳名：${extracted.restaurant_name}\n地區：${extracted.district}`);
       } catch (err) {
         alert('AI 解析異常: ' + err.message);

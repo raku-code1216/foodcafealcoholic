@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Foodcafealcoholic | 美食搜尋引擎</title>
+  <title>Foodcafealcoholic | 香港美食搜尋引擎</title>
 
   <!-- ================= 網站圖標 (JPG 格式 Favicon) ================= -->
   <link rel="icon" type="image/jpeg" sizes="192x192" href="logo.jpg?v=8">
@@ -13,7 +13,6 @@
   <link rel="shortcut icon" type="image/jpeg" href="logo.jpg?v=8">
   <link rel="apple-touch-icon" href="logo.jpg?v=8">
 
-  <!-- 社交分享預覽 -->
   <meta property="og:image" content="https://foodcafealcoholic.com/logo.jpg?v=8">
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="512">
@@ -73,9 +72,9 @@
     .pill-active {
       background-color: #FFC400 !important;
       color: #000000 !important;
-      font-weight: 800 !important;
+      font-weight: 900 !important;
       border-color: #FFC400 !important;
-      box-shadow: 0 0 12px rgba(255, 196, 0, 0.4);
+      box-shadow: 0 0 14px rgba(255, 196, 0, 0.45);
     }
     .food-card-img {
       transition: transform 0.5s ease;
@@ -118,16 +117,16 @@
   </script>
 
   <!-- 頂部導航列 (7 & 8: 漢堡 Logo + 點擊重新整理回到首頁) -->
-  <nav id="navbar" class="fixed top-0 w-full z-50 px-4 sm:px-8 py-3 flex items-center justify-between bg-black/95 backdrop-blur-md border-b border-brand-border">
+  <nav id="navbar" class="fixed top-0 w-full z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between bg-black/95 backdrop-blur-md border-b border-brand-border">
     <div class="flex items-center space-x-6">
-      <a href="index.html" class="flex items-center gap-2.5 group cursor-pointer" title="重新整理首頁">
+      <a href="index.html" class="flex items-center gap-3 cursor-pointer group" title="重新整理首頁">
         <img src="logo.jpeg" 
              alt="Logo" 
              onerror="this.onerror=null; this.src='logo.jpg';"
-             class="w-9 h-9 rounded-xl object-contain border border-brand-yellow/40 group-hover:scale-105 transition shadow" />
+             class="w-9 h-9 rounded-xl object-contain border border-brand-yellow/40 group-hover:scale-105 transition shadow-md" />
         <div class="flex flex-col border-l border-zinc-700 pl-2.5 leading-none">
           <span class="text-white font-extrabold text-xs sm:text-sm tracking-wider group-hover:text-brand-yellow transition">
-            FOODCAFEALCHOLIC
+            FOODCAFEALCOHOLIC
           </span>
           <span class="text-[9px] text-zinc-400 font-mono tracking-tight">@foodcafealcoholic</span>
         </div>
@@ -140,20 +139,20 @@
       </div>
     </div>
 
-    <!-- 右側功能操作區 -->
+    <!-- 右側我的收藏按鈕 -->
     <div class="flex items-center space-x-2 sm:space-x-3">
-      <button onclick="toggleMyListModal()" class="relative bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1.5 shadow">
-        <span class="text-brand-yellow">★</span>
-        <span class="hidden sm:inline">搵食清單</span>
-        <span id="favCountBadge" class="bg-brand-yellow text-black text-[10px] font-black rounded-full px-1.5 py-0.2 leading-tight">0</span>
+      <button onclick="toggleMyListModal()" class="relative bg-zinc-900 hover:bg-zinc-800 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1.5 shadow">
+        <span class="text-brand-yellow text-sm">★</span>
+        <span>搵食清單</span>
+        <span id="favCountBadge" class="bg-brand-yellow text-black text-xs font-black rounded-full px-1.5 py-0.2 leading-tight">0</span>
       </button>
 
       <input type="file" id="csvFileInput" accept=".csv" style="display: none !important;" />
     </div>
   </nav>
 
-  <!-- 2 & 3. 置頂巨型美食搜尋引擎 (加大字體，不被導航列遮擋) -->
-  <section class="w-full max-w-5xl mx-auto px-4 pt-28 sm:pt-36 pb-8 text-center relative z-10">
+  <!-- 2 & 3. 置頂巨型美食搜尋引擎 (加大防遮擋邊距，全幅大字) -->
+  <section class="w-full max-w-5xl mx-auto px-4 pt-36 sm:pt-40 pb-8 text-center relative z-10">
     <div class="inline-flex items-center gap-2 bg-brand-yellow/15 border border-brand-yellow/40 px-4 py-1.5 rounded-full text-brand-yellow text-xs sm:text-sm font-black mb-4 shadow-lg">
       <span class="animate-pulse">⚡</span> <span>HONG KONG FOOD SEARCH ENGINE</span>
     </div>
@@ -181,28 +180,30 @@
     </div>
   </section>
 
-  <!-- 篩選系統 -->
-  <section class="sticky top-14 z-40 bg-[#0A0A0A]/95 backdrop-blur-md border-y border-brand-border px-4 sm:px-8 lg:px-12 py-3 shadow-xl">
-    <div class="space-y-2.5 text-xs">
+  <!-- ⭐ 放大版篩選系統 (加大按鈕、加大下拉選單、更好點選) -->
+  <section class="sticky top-14 z-40 bg-[#0A0A0A]/95 backdrop-blur-md border-y border-brand-border px-4 sm:px-8 lg:px-12 py-4 sm:py-5 shadow-2xl">
+    <div class="max-w-7xl mx-auto space-y-3.5">
       
-      <!-- 場景標籤 -->
-      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
-        <span class="text-zinc-400 font-bold shrink-0">🎉 場景：</span>
-        <button onclick="setFilter('occasion', 'all', this)" class="filter-pill occasion-pill pill-active shrink-0 px-3 py-1 rounded-full border border-zinc-700 text-zinc-300 hover:border-brand-yellow transition">全部</button>
-        <button onclick="setFilter('occasion', '拍拖約會', this)" class="filter-pill occasion-pill shrink-0 px-3 py-1 rounded-full border border-zinc-700 text-zinc-300 hover:border-brand-yellow transition">💑 拍拖約會</button>
-        <button onclick="setFilter('occasion', '聚會', this)" class="filter-pill occasion-pill shrink-0 px-3 py-1 rounded-full border border-zinc-700 text-zinc-300 hover:border-brand-yellow transition">🍻 大班聚會</button>
-        <button onclick="setFilter('occasion', '打卡Cafe', this)" class="filter-pill occasion-pill shrink-0 px-3 py-1 rounded-full border border-zinc-700 text-zinc-300 hover:border-brand-yellow transition">📸 打卡必到</button>
-        <button onclick="setFilter('occasion', '深夜食堂', this)" class="filter-pill occasion-pill shrink-0 px-3 py-1 rounded-full border border-zinc-700 text-zinc-300 hover:border-brand-yellow transition">🌙 深夜食堂</button>
-        <button onclick="setFilter('occasion', '寵物友善', this)" class="filter-pill occasion-pill shrink-0 px-3 py-1 rounded-full border border-zinc-700 text-zinc-300 hover:border-brand-yellow transition">🐾 寵物友善</button>
+      <!-- 放大版場景標籤 -->
+      <div class="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1">
+        <span class="text-zinc-300 font-extrabold text-xs sm:text-sm shrink-0 flex items-center gap-1">
+          <span>🎉</span> <span>場景：</span>
+        </span>
+        <button onclick="setFilter('occasion', 'all', this)" class="filter-pill occasion-pill pill-active shrink-0 px-4 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-bold text-zinc-200 hover:border-brand-yellow transition shadow-sm">全部</button>
+        <button onclick="setFilter('occasion', '拍拖約會', this)" class="filter-pill occasion-pill shrink-0 px-4 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">💑 拍拖約會</button>
+        <button onclick="setFilter('occasion', '聚會', this)" class="filter-pill occasion-pill shrink-0 px-4 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🍻 大班聚會</button>
+        <button onclick="setFilter('occasion', '打卡Cafe', this)" class="filter-pill occasion-pill shrink-0 px-4 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">📸 打卡必到</button>
+        <button onclick="setFilter('occasion', '深夜食堂', this)" class="filter-pill occasion-pill shrink-0 px-4 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🌙 深夜食堂</button>
+        <button onclick="setFilter('occasion', '寵物友善', this)" class="filter-pill occasion-pill shrink-0 px-4 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🐾 寵物友善</button>
       </div>
 
-      <!-- 細分選單 -->
-      <div class="flex flex-wrap items-center gap-2.5 pt-1 text-xs">
+      <!-- 放大版細分選單 -->
+      <div class="flex flex-wrap items-center gap-3 pt-1">
         
-        <!-- 9. 地區篩選 (移除日本與澳門，保留香港本地商圈) -->
-        <div class="flex items-center gap-1.5">
-          <span class="text-zinc-400 font-medium">📍 地區：</span>
-          <select id="districtRegionSelect" onchange="onDistrictChange(this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-brand-yellow font-medium">
+        <!-- 9. 地區篩選 (精準香港商圈) -->
+        <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
+          <span class="text-zinc-300 font-bold text-xs sm:text-sm shrink-0">📍 地區：</span>
+          <select id="districtRegionSelect" onchange="onDistrictChange(this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
             <option value="all" id="opt-all">🗺️ 全港所有地區 (All)</option>
             <optgroup label="── 快速大區 ──">
               <option value="region:港島" id="opt-reg-hk">🇭🇰 港島全區 (Hong Kong Island)</option>
@@ -242,10 +243,10 @@
           </select>
         </div>
 
-        <!-- 6. 預算篩選 (移除 $$$ 符號，改為具體金額說明) -->
-        <div class="flex items-center gap-1.5">
-          <span class="text-zinc-400 font-medium">💰 預算：</span>
-          <select id="priceSelect" onchange="setFilter('price', this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-brand-yellow font-medium">
+        <!-- 6. 預算篩選 (無 $$$，清楚金額字句) -->
+        <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
+          <span class="text-zinc-300 font-bold text-xs sm:text-sm shrink-0">💰 預算：</span>
+          <select id="priceSelect" onchange="setFilter('price', this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
             <option value="all">不限預算 (全部價格)</option>
             <option value="under100">$100 以下 (平民/輕食)</option>
             <option value="100-300">$100 - $300 (人氣抵食)</option>
@@ -255,9 +256,9 @@
         </div>
 
         <!-- 菜式種類 -->
-        <div class="flex items-center gap-1.5">
-          <span class="text-zinc-400 font-medium">🍜 菜式：</span>
-          <select id="cuisineSelect" onchange="setFilter('cuisine', this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-brand-yellow font-medium">
+        <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
+          <span class="text-zinc-300 font-bold text-xs sm:text-sm shrink-0">🍜 菜式：</span>
+          <select id="cuisineSelect" onchange="setFilter('cuisine', this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
             <option value="all">🍽️ 所有菜式 (All Cuisines)</option>
             <option value="日本">🇯🇵 日本料理 (壽司/燒肉/居酒屋/拉麵)</option>
             <option value="Cafe">☕ Cafe 咖啡 / 早午餐 Brunch</option>
@@ -271,7 +272,7 @@
           </select>
         </div>
 
-        <button onclick="resetAllFilters()" class="text-zinc-400 hover:text-brand-yellow text-xs underline ml-auto transition">
+        <button onclick="resetAllFilters()" class="text-zinc-400 hover:text-brand-yellow text-xs sm:text-sm font-bold underline ml-auto transition py-2">
           重設篩選
         </button>
       </div>
@@ -281,15 +282,15 @@
 
   <!-- 主要內容區 -->
   <main class="flex-grow space-y-10 relative z-20 px-4 sm:px-8 lg:px-12 py-8">
-    <div class="flex items-center justify-between text-xs text-zinc-400 border-b border-brand-border pb-3">
+    <div class="flex items-center justify-between text-xs sm:text-sm text-zinc-400 border-b border-brand-border pb-3">
       <div class="flex items-center gap-2">
         <span class="w-2.5 h-2.5 rounded-full bg-brand-yellow animate-pulse"></span>
-        <span>共收錄 <strong id="totalCount" class="text-brand-yellow">0</strong> 間由 @foodcafealcoholic 推薦餐廳</span>
-        <span id="activeFilterNotice" class="hidden text-brand-yellow font-medium bg-brand-yellow/10 px-2 py-0.5 rounded border border-brand-yellow/30">
+        <span>共收錄 <strong id="totalCount" class="text-brand-yellow text-sm sm:text-base">0</strong> 間由 @foodcafealcoholic 推薦餐廳</span>
+        <span id="activeFilterNotice" class="hidden text-brand-yellow font-bold bg-brand-yellow/15 px-2.5 py-1 rounded-lg border border-brand-yellow/40">
           🎯 已套用篩選條件
         </span>
       </div>
-      <span class="hidden sm:inline text-zinc-500">電腦端滑鼠滾輪支援橫向滑動</span>
+      <span class="hidden sm:inline text-zinc-500 text-xs">電腦端滑鼠滾輪支援橫向滑動</span>
     </div>
 
     <!-- 每週最多點擊排行榜 -->
@@ -340,13 +341,13 @@
     </section>
   </main>
 
-  <!-- 4 & 5. 詳情視窗 (無截圖封面 + 加大返回按鈕) -->
+  <!-- 4 & 5. 詳情視窗 (無多餘截圖 + 加大返回按鈕) -->
   <div id="detailModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
     <div class="bg-brand-card border border-brand-border rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-2xl relative flex flex-col">
       
       <!-- 5. 醒目「返回首頁」按鈕列 -->
       <div class="p-3.5 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 sticky top-0 z-30">
-        <button onclick="closeModal()" class="flex items-center gap-2 bg-brand-yellow hover:bg-brand-yellowHover text-black px-4 py-2 rounded-xl font-black text-xs sm:text-sm shadow-md transition active:scale-95">
+        <button onclick="closeModal()" class="flex items-center gap-2 bg-brand-yellow hover:bg-yellow-400 text-black px-4 py-2 rounded-xl font-black text-xs sm:text-sm shadow-md transition active:scale-95">
           <span class="text-base sm:text-lg">←</span> <span>返回首頁</span>
         </button>
         <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center font-bold text-base">
@@ -501,6 +502,7 @@
       '酒吧': 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=700&q=80',
       '東南亞': 'https://images.unsplash.com/photo-1559847844-5315695dadae?w=700&q=80',
       '中菜': 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=700&q=80',
+      '快餐': 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=700&q=80',
       'default': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80'
     };
 
@@ -512,7 +514,7 @@
       return cuisineFallbacks['default'];
     }
 
-    // 9. 地區映射（僅保留香港商圈）
+    // 9. 地區映射 (香港本地)
     const REGION_MAP = {
       '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '黃竹坑'],
       '九龍': ['九龍', '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣'],
@@ -530,7 +532,7 @@
       return '九龍';
     }
 
-    // 6. 預算層級解析（不使用 $$$，提供具體說明）
+    // 6. 預算層級解析 (無 $$$，清楚範圍)
     function parseBudgetTier(rawPrice) {
       if (!rawPrice || rawPrice === 'None' || rawPrice === 'null' || String(rawPrice).trim() === '') {
         return { tier: 'all', text: '依現場菜單' };
@@ -554,27 +556,20 @@
       return match ? match[1] : null;
     }
 
+    // ⭐ 最原始運作正常的代理邏輯（不走阻擋端點）
     function proxyImageUrl(url) {
       if (!url) return null;
-      if (url.includes('unsplash.com')) return url;
-      const clean = url.replace(/&amp;/g, '&');
-      return `https://wsrv.nl/?url=${encodeURIComponent(clean)}&w=600&output=jpg&n=-1`;
+      if (url.includes('unsplash.com') || url.includes('placehold.co')) return url;
+      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=600&output=jpg`;
     }
 
-    // 相片擷取（優先使用有效圖片，若過期則 fallback 至對應菜系高畫質圖）
+    // ⭐ 最原始運作正常的卡片圖片邏輯
     function getReelThumbnail(item) {
       if (!item) return cuisineFallbacks['default'];
-
-      const rawImg = item.displayUrl || item.imageUrl || item.image || item.thumbnailUrl;
-      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http') && !rawImg.includes('cdninstagram.com/null')) {
+      const rawImg = item.image || item.displayUrl || item.imageUrl || item.thumbnailUrl;
+      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
         return proxyImageUrl(rawImg);
       }
-
-      const code = item.shortCode || extractShortcode(item.url) || item.id;
-      if (code && code.length >= 8 && code.length <= 15) {
-        return `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=l&default=https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700`;
-      }
-
       return getCuisineImage(item.cuisine);
     }
 
@@ -928,7 +923,7 @@
         if (filteredGrid) {
           if (filtered.length === 0) {
             filteredGrid.innerHTML = `
-              <div class="col-span-full text-center py-16 text-zinc-500 text-xs space-y-2">
+              <div class="col-span-full text-center py-16 text-zinc-500 text-xs sm:text-sm space-y-2">
                 <span class="text-3xl block">🔍</span>
                 <p class="text-zinc-300 font-bold">找不到完全符合條件的餐廳</p>
                 <p>試下放寬地區或預算條件，或者點擊「清除所有篩選」重新探索。</p>

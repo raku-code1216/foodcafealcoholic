@@ -74,7 +74,7 @@
       color: #000000 !important;
       font-weight: 900 !important;
       border-color: #FFC400 !important;
-      box-shadow: 0 0 14px rgba(255, 196, 0, 0.45);
+      box-shadow: 0 0 16px rgba(255, 196, 0, 0.5);
     }
     .food-card-img {
       transition: transform 0.5s ease;
@@ -186,15 +186,15 @@
       
       <!-- 放大版場景標籤 -->
       <div class="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1">
-        <span class="text-zinc-300 font-extrabold text-xs sm:text-sm shrink-0 flex items-center gap-1">
+        <span class="text-zinc-300 font-extrabold text-sm sm:text-base shrink-0 flex items-center gap-1.5">
           <span>🎉</span> <span>場景：</span>
         </span>
-        <button onclick="setFilter('occasion', 'all', this)" class="filter-pill occasion-pill pill-active shrink-0 px-4 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-bold text-zinc-200 hover:border-brand-yellow transition shadow-sm">全部</button>
-        <button onclick="setFilter('occasion', '拍拖約會', this)" class="filter-pill occasion-pill shrink-0 px-4 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">💑 拍拖約會</button>
-        <button onclick="setFilter('occasion', '聚會', this)" class="filter-pill occasion-pill shrink-0 px-4 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🍻 大班聚會</button>
-        <button onclick="setFilter('occasion', '打卡Cafe', this)" class="filter-pill occasion-pill shrink-0 px-4 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">📸 打卡必到</button>
-        <button onclick="setFilter('occasion', '深夜食堂', this)" class="filter-pill occasion-pill shrink-0 px-4 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🌙 深夜食堂</button>
-        <button onclick="setFilter('occasion', '寵物友善', this)" class="filter-pill occasion-pill shrink-0 px-4 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🐾 寵物友善</button>
+        <button onclick="setFilter('occasion', 'all', this)" class="filter-pill occasion-pill pill-active shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-zinc-700 text-xs sm:text-sm font-bold text-zinc-200 hover:border-brand-yellow transition shadow-sm">全部</button>
+        <button onclick="setFilter('occasion', '拍拖約會', this)" class="filter-pill occasion-pill shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">💑 拍拖約會</button>
+        <button onclick="setFilter('occasion', '聚會', this)" class="filter-pill occasion-pill shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🍻 大班聚會</button>
+        <button onclick="setFilter('occasion', '打卡Cafe', this)" class="filter-pill occasion-pill shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">📸 打卡必到</button>
+        <button onclick="setFilter('occasion', '深夜食堂', this)" class="filter-pill occasion-pill shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🌙 深夜食堂</button>
+        <button onclick="setFilter('occasion', '寵物友善', this)" class="filter-pill occasion-pill shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🐾 寵物友善</button>
       </div>
 
       <!-- 放大版細分選單 -->
@@ -203,7 +203,7 @@
         <!-- 9. 地區篩選 (精準香港商圈) -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-300 font-bold text-xs sm:text-sm shrink-0">📍 地區：</span>
-          <select id="districtRegionSelect" onchange="onDistrictChange(this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
+          <select id="districtRegionSelect" onchange="onDistrictChange(this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 sm:py-3 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
             <option value="all" id="opt-all">🗺️ 全港所有地區 (All)</option>
             <optgroup label="── 快速大區 ──">
               <option value="region:港島" id="opt-reg-hk">🇭🇰 港島全區 (Hong Kong Island)</option>
@@ -246,7 +246,7 @@
         <!-- 6. 預算篩選 (無 $$$，清楚金額字句) -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-300 font-bold text-xs sm:text-sm shrink-0">💰 預算：</span>
-          <select id="priceSelect" onchange="setFilter('price', this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
+          <select id="priceSelect" onchange="setFilter('price', this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 sm:py-3 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
             <option value="all">不限預算 (全部價格)</option>
             <option value="under100">$100 以下 (平民/輕食)</option>
             <option value="100-300">$100 - $300 (人氣抵食)</option>
@@ -258,7 +258,7 @@
         <!-- 菜式種類 -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-300 font-bold text-xs sm:text-sm shrink-0">🍜 菜式：</span>
-          <select id="cuisineSelect" onchange="setFilter('cuisine', this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
+          <select id="cuisineSelect" onchange="setFilter('cuisine', this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 sm:py-3 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
             <option value="all">🍽️ 所有菜式 (All Cuisines)</option>
             <option value="日本">🇯🇵 日本料理 (壽司/燒肉/居酒屋/拉麵)</option>
             <option value="Cafe">☕ Cafe 咖啡 / 早午餐 Brunch</option>
@@ -553,23 +553,33 @@
     function extractShortcode(url) {
       if (!url) return null;
       const match = String(url).match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/);
-      return match ? match[1] : null;
+      if (match) return match[1];
+      if (/^[A-Za-z0-9_-]{8,15}$/.test(String(url).trim())) return String(url).trim();
+      return null;
     }
 
-    // ⭐ 最原始運作正常的代理邏輯（不走阻擋端點）
     function proxyImageUrl(url) {
       if (!url) return null;
       if (url.includes('unsplash.com') || url.includes('placehold.co')) return url;
       return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=600&output=jpg`;
     }
 
-    // ⭐ 最原始運作正常的卡片圖片邏輯
+    // ⭐ 核心圖片解析：最高優先權使用 Shortcode / ID（例如 DeBNI92hKET）向 IG 請求即時縮圖
     function getReelThumbnail(item) {
       if (!item) return cuisineFallbacks['default'];
+
+      // 1. 最高優先：只要有貼文 code / id，即刻由 IG 官方端點直出縮圖（這就是頭先令相片全數重現的關鍵！）
+      const code = item.shortCode || (item.id && item.id.length >= 8 && item.id.length <= 15 ? item.id : null) || extractShortcode(item.url);
+      if (code) {
+        return `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=l&default=https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700`;
+      }
+
+      // 2. 次選原本圖片網址
       const rawImg = item.image || item.displayUrl || item.imageUrl || item.thumbnailUrl;
       if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
         return proxyImageUrl(rawImg);
       }
+
       return getCuisineImage(item.cuisine);
     }
 
@@ -703,7 +713,7 @@
       const iframeEl = document.getElementById('modalReelIframe');
       const fallbackEl = document.getElementById('modalVideoFallback');
 
-      let reelCode = item.shortCode || extractShortcode(item.url) || item.id;
+      let reelCode = item.shortCode || (item.id && item.id.length >= 8 && item.id.length <= 15 ? item.id : null) || extractShortcode(item.url);
 
       if (reelCode) {
         directVideo.pause();
@@ -795,8 +805,8 @@
 
       if (favList.length === 0) {
         container.innerHTML = `
-          <div class="text-center py-10 text-zinc-500 text-xs">
-            <p class="text-2xl mb-2">🍽</p>
+          <div class="text-center py-10 text-zinc-500 text-xs sm:text-sm">
+            <p class="text-3xl mb-2">🍽</p>
             <p>你仲未收藏任何餐廳</p>
             <p class="mt-1">點擊餐廳卡片上的星星即可加入清單！</p>
           </div>
@@ -805,12 +815,12 @@
       }
 
       container.innerHTML = favList.map(item => `
-        <div class="flex items-center justify-between bg-zinc-900 border border-brand-border p-3.5 rounded-xl hover:border-brand-yellow transition">
+        <div class="flex items-center justify-between bg-zinc-900 border border-brand-border p-3.5 sm:p-4 rounded-xl hover:border-brand-yellow transition">
           <div class="space-y-0.5 cursor-pointer" onclick="closeMyListAndOpen('${item.id}')">
-            <h4 class="font-bold text-sm text-white hover:text-brand-yellow transition">${item.restaurant_name}</h4>
-            <p class="text-xs text-zinc-400">📍 ${item.district || '香港'} • ${item.cuisine || '美食'} • <span class="text-brand-yellow">${item.price || ''}</span></p>
+            <h4 class="font-bold text-sm sm:text-base text-white hover:text-brand-yellow transition">${item.restaurant_name}</h4>
+            <p class="text-xs sm:text-sm text-zinc-400">📍 ${item.district || '香港'} • ${item.cuisine || '美食'} • <span class="text-brand-yellow">${item.price || ''}</span></p>
           </div>
-          <button type="button" onclick="toggleFavorite('${item.id}')" class="text-xs text-zinc-400 hover:text-white px-3 py-1 bg-zinc-800 border border-zinc-700 rounded-lg transition">
+          <button type="button" onclick="toggleFavorite('${item.id}')" class="text-xs sm:text-sm text-zinc-400 hover:text-white px-3 sm:px-4 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg transition">
             移除
           </button>
         </div>

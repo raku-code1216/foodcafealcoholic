@@ -140,27 +140,30 @@
   </nav>
 
   <!-- ⭐ 需求 2 & 3: 頂部巨型美食搜尋引擎 (置頂且大字，徹底取代舊海報) -->
-  <section class="w-full max-w-4xl mx-auto px-4 pt-24 sm:pt-28 pb-4 text-center">
-    <div class="inline-flex items-center gap-2 bg-brand-yellow/10 border border-brand-yellow/30 px-3 py-1 rounded-full text-brand-yellow text-xs font-black mb-3">
-      <span>⚡</span> <span>FOOD SEARCH ENGINE</span>
+<!-- 巨型美食搜尋引擎 (全幅大字、強化搜尋核心地位) -->
+  <section class="w-full max-w-5xl mx-auto px-4 pt-28 sm:pt-36 pb-10 text-center">
+    <div class="inline-flex items-center gap-2 bg-brand-yellow/15 border border-brand-yellow/40 px-4 py-1.5 rounded-full text-brand-yellow text-xs sm:text-sm font-black mb-4 shadow-lg">
+      <span class="animate-pulse">⚡</span> <span>HONG KONG FOOD SEARCH ENGINE</span>
     </div>
-    <h1 class="text-3xl sm:text-5xl font-black text-white tracking-wide mb-3">
-      探索全港美食推介
+    
+    <h1 class="text-4xl sm:text-6xl font-black text-white tracking-tight mb-4 leading-tight">
+      搵食？一 Search 即刻睇片
     </h1>
-    <p class="text-zinc-400 text-xs sm:text-sm mb-6 max-w-lg mx-auto">
-      輸入餐廳名稱、地鐵站、地區或想食嘅菜式（例如：中環、咖啡、燒肉、居酒屋）
+    
+    <p class="text-zinc-400 text-sm sm:text-base mb-8 max-w-xl mx-auto font-medium">
+      收錄全港 470+ 間真實食評．搜尋餐廳、地鐵站、地區或想食嘅菜式
     </p>
 
-    <!-- 巨型搜尋框 -->
-    <div class="relative max-w-2xl mx-auto shadow-2xl">
-      <span class="absolute inset-y-0 left-4 sm:left-5 flex items-center text-brand-yellow text-xl sm:text-2xl pointer-events-none">
+    <!-- 巨型搜尋輸入框 -->
+    <div class="relative max-w-3xl mx-auto">
+      <span class="absolute inset-y-0 left-5 sm:left-6 flex items-center text-brand-yellow text-2xl sm:text-3xl pointer-events-none">
         🔍
       </span>
       <input type="text" id="mainSearchInput" oninput="handleSearch(this.value)"
-             placeholder="想食咩？搜尋餐廳、地區、菜系..." 
-             class="w-full bg-zinc-900 text-white placeholder-zinc-500 text-base sm:text-lg pl-12 sm:pl-14 pr-12 py-4 rounded-2xl border-2 border-brand-yellow/60 focus:border-brand-yellow focus:outline-none focus:ring-4 focus:ring-brand-yellow/20 transition-all shadow-inner" />
+             placeholder="輸入餐廳名稱、地鐵站、地區（例如：中環、牛扒、燒肉、Cafe）..." 
+             class="w-full bg-zinc-900/95 text-white placeholder-zinc-500 text-lg sm:text-xl pl-16 sm:pl-20 pr-14 py-5 sm:py-6 rounded-3xl border-2 border-brand-yellow focus:border-brand-yellowLight focus:outline-none focus:ring-4 focus:ring-brand-yellow/30 transition-all shadow-2xl" />
       <button type="button" onclick="clearSearch()" 
-              class="absolute inset-y-0 right-4 flex items-center text-zinc-500 hover:text-white text-lg">
+              class="absolute inset-y-0 right-5 sm:right-6 flex items-center text-zinc-400 hover:text-white text-xl sm:text-2xl font-bold">
         ✕
       </button>
     </div>
@@ -537,16 +540,20 @@
     }
 
     // ⭐ 核心圖片解析：優先使用官方原裝 /media/?size=l，徹底杜絕死圖
-    function getReelThumbnail(item) {
+function getReelThumbnail(item) {
+      // 1. 優先取用 CSV 內儲存的真實封面圖片網址
+      const rawImg = item.displayUrl || item.imageUrl || item.image || item.thumbnailUrl;
+      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
+        // 如果是外部 CDN，使用你原有的 wsrv 代理加速
+        return proxyImageUrl(rawImg);
+      }
+
+      // 2. 次選 shortCode 直連
       const code = item.shortCode || extractShortcode(item.url);
       if (code) {
-        return `https://www.instagram.com/p/${code}/media/?size=l`;
+        return `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=l&default=https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=700`;
       }
-      const rawImg = item.image || item.displayUrl || item.imageUrl || item.thumbnailUrl;
-      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
-        if (rawImg.includes('unsplash.com')) return rawImg;
-        return `https://wsrv.nl/?url=${encodeURIComponent(rawImg)}&w=600&output=jpg`;
-      }
+
       return getCuisineImage(item.cuisine);
     }
 

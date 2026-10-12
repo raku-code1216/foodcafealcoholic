@@ -547,25 +547,34 @@ function proxyImageUrl(url) {
       return `https://wsrv.nl/?url=${encodeURIComponent(cleanUrl)}&w=600&output=jpg&n=-1`;
     }
 
-    function getReelThumbnail(item) {
-      if (!item) return cuisineFallbacks['default'];
-      const rawImg = item.displayUrl || item.imageUrl || item.image || item.thumbnailUrl;
-      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
-        return proxyImageUrl(rawImg);
-      }
-      return getCuisineImage(item.cuisine);
+function extractShortcode(url) {
+      if (!url) return null;
+      const match = String(url).match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/);
+      if (match) return match[1];
+      if (/^[A-Za-z0-9_-]{8,15}$/.test(String(url).trim())) return String(url).trim();
+      return null;
     }
 
-    // ⭐ 提取 IG 第一行爆款主標題
-    function getPostMainTitle(item) {
-      if (!item.caption) return item.restaurant_name;
-      const lines = item.caption.split('\n').map(l => l.trim()).filter(Boolean);
-      for (const line of lines) {
-        if (!line.startsWith('#') && !line.startsWith('---') && !line.startsWith('地區分類')) {
-          return line;
-        }
+    function getReelThumbnail(item) {
+      if (!item) return cuisineFallbacks['default'];
+
+      // 1. 取得這篇貼文的 IG Shortcode（無論是欄位本身或從 url 提取）
+      const code = item.shortCode || item.shortcode || extractShortcode(item.url);
+
+      // 2. ⭐ 核心拯救邏輯：針對舊資料，只要有 Shortcode，直接用代理請求 IG 官方永久縮圖！
+      if (code) {
+        return `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=l&output=jpg&n=-1`;
       }
-      return item.restaurant_name;
+
+      // 3. 次選：如果是新透過 Admin 輸入且帶有有效圖片網址
+      const rawImg = item.displayUrl || item.imageUrl || item.image || item.thumbnailUrl;
+      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
+        if (rawImg.includes('unsplash.com')) return rawImg;
+        return `https://images.weserv.nl/?url=${encodeURIComponent(rawImg)}&output=jpg&n=-1`;
+      }
+
+      // 4. 最後後備：根據菜系給予對應圖片
+      return getCuisineImage(item.cuisine);
     }
 
     // ⭐ 建立 4:5 直式黃金卡片 + 浮動 IG 爆款標題

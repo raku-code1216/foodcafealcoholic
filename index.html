@@ -7,26 +7,29 @@
 
   <title>Foodcafealcoholic | 美食搜尋引擎</title>
 
-  <!-- 網站圖標 (JPG 格式 Favicon) -->
+  <!-- ================= 網站圖標 (JPG 格式 Favicon) ================= -->
   <link rel="icon" type="image/jpeg" sizes="192x192" href="logo.jpg?v=8">
   <link rel="icon" type="image/jpeg" sizes="32x32" href="logo.jpg?v=8">
   <link rel="shortcut icon" type="image/jpeg" href="logo.jpg?v=8">
+
+  <!-- Apple 手機桌面捷徑圖示 -->
   <link rel="apple-touch-icon" href="logo.jpg?v=8">
 
+  <!-- Google 搜尋引擎與社交分享預覽 -->
   <meta property="og:image" content="https://foodcafealcoholic.com/logo.jpg?v=8">
   <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Montserrat:wght@700;800;900&family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
   <script>
     function onImageError(img) {
       if (!img) return;
       img.onerror = null;
-      // 備用預設圖
       img.src = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=700&q=80';
     }
     window.onImageError = onImageError;
@@ -38,6 +41,7 @@
             brand: {
               yellow: '#FFC400',
               yellowHover: '#E5B000',
+              yellowLight: '#FFE885',
               dark: '#0A0A0A',
               card: '#141414',
               surface: '#1E1E1E',
@@ -54,8 +58,11 @@
       background-color: #0A0A0A;
       color: #FFFFFF;
     }
+    .serif-brand { font-family: 'Cinzel', serif; }
+    .sans-brand { font-family: 'Montserrat', sans-serif; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
     .card-zoom {
       transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.3s ease, border-color 0.3s ease;
       transform-origin: center bottom;
@@ -73,6 +80,12 @@
       border-color: #FFC400 !important;
       box-shadow: 0 0 12px rgba(255, 196, 0, 0.4);
     }
+    .food-card-img {
+      transition: transform 0.5s ease;
+    }
+    .card-zoom:hover .food-card-img {
+      transform: scale(1.08);
+    }
     .reel-container {
       position: relative;
       width: 100%;
@@ -85,11 +98,11 @@
 </head>
 <body class="text-white antialiased min-h-screen flex flex-col selection:bg-brand-yellow selection:text-black">
 
-<!-- ⭐ 需求 1: 入 App Splash Screen (修正檔名為 logo.jpg，必定自動淡出) -->
+<!-- 需求 1: App 入場 Logo Splash Screen (雙副檔名支援 + 計時防卡住) -->
 <div id="splashScreen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-opacity duration-500">
-  <img src="logo.jpg" 
+  <img src="logo.jpeg" 
        alt="Logo" 
-       onerror="this.onerror=null; this.src='logo.jpeg';"
+       onerror="this.onerror=null; this.src='logo.jpg';"
        class="w-28 h-28 rounded-2xl shadow-2xl animate-pulse mb-4 object-contain" />
   <h1 class="text-brand-yellow font-black tracking-widest text-lg">FOODCAFEALCHOLIC</h1>
 </div>
@@ -106,20 +119,24 @@
   window.addEventListener('load', () => setTimeout(dismissSplash, 600));
   setTimeout(dismissSplash, 1200);
 </script>
-
-  <!-- 頂部導航列 (⭐ 需求 7 & 8: 換漢堡 Logo + 點擊回到首頁/重新整理) -->
-  <nav id="navbar" class="fixed top-0 w-full z-50 px-4 sm:px-8 py-3 flex items-center justify-between bg-black/95 backdrop-blur-md border-b border-brand-border">
-    <div class="flex items-center space-x-6">
-      <a href="index.html" class="flex items-center gap-2.5 group cursor-pointer" title="重新整理回到首頁">
-        <img src="logo.jpg" 
+  
+  <!-- 頂部導航列 (需求 7 & 8: 漢堡 Logo + 點擊重新整理回到首頁) -->
+  <nav id="navbar" class="fixed top-0 w-full z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between bg-black/95 backdrop-blur-md border-b border-brand-border">
+    <div class="flex items-center space-x-6 lg:space-x-8">
+      
+      <!-- 漢堡 Logo 重新整理按鈕 -->
+      <a href="index.html" class="flex items-center gap-3 cursor-pointer group" title="重新整理首頁">
+        <img src="logo.jpeg" 
              alt="Logo" 
-             onerror="this.onerror=null; this.src='logo.jpeg';"
-             class="w-9 h-9 rounded-xl object-contain border border-brand-yellow/40 group-hover:scale-105 transition shadow" />
-        <span class="text-white font-extrabold text-sm sm:text-base tracking-wider group-hover:text-brand-yellow transition">
-          FOODCAFEALCHOLIC
-        </span>
+             onerror="this.onerror=null; this.src='logo.jpg';"
+             class="w-9 h-9 rounded-xl object-contain border border-brand-yellow/40 group-hover:scale-105 transition shadow-md" />
+        <div class="hidden sm:flex flex-col border-l border-zinc-700 pl-2.5 leading-none">
+          <span class="text-white font-extrabold text-xs tracking-wider sans-brand group-hover:text-brand-yellow transition">FOODCAFEALCOHOLIC</span>
+          <span class="text-[9px] text-zinc-400 font-mono tracking-tight">@foodcafealcoholic</span>
+        </div>
       </a>
 
+      <!-- 快速連結 -->
       <div class="hidden md:flex items-center space-x-5 text-xs tracking-wider text-zinc-300">
         <a href="#leaderboard-section" class="hover:text-brand-yellow transition">🔥 每週熱門榜</a>
         <a href="#editor-section" class="hover:text-brand-yellow transition">🏆 專屬嚴選</a>
@@ -129,9 +146,10 @@
 
     <!-- 右側功能操作區 -->
     <div class="flex items-center space-x-2 sm:space-x-3">
-      <button onclick="toggleMyListModal()" class="relative bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1.5 shadow">
+      <!-- 我的收藏按鈕 -->
+      <button onclick="toggleMyListModal()" class="relative bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-2.5 sm:px-3 py-1.5 rounded-full border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1">
         <span class="text-brand-yellow">★</span>
-        <span>搵食清單</span>
+        <span class="hidden sm:inline">搵食清單</span>
         <span id="favCountBadge" class="bg-brand-yellow text-black text-[10px] font-black rounded-full px-1.5 py-0.2 leading-tight">0</span>
       </button>
 
@@ -139,31 +157,30 @@
     </div>
   </nav>
 
-  <!-- ⭐ 需求 2 & 3: 頂部巨型美食搜尋引擎 (置頂且大字，徹底取代舊海報) -->
-<!-- 巨型美食搜尋引擎 (全幅大字、強化搜尋核心地位) -->
-  <section class="w-full max-w-5xl mx-auto px-4 pt-36 sm:pt-44 pb-8 text-center">
+  <!-- 需求 2 & 3: 置頂巨型美食搜尋引擎 (全幅大字、不被 Navbar 遮擋) -->
+  <section class="w-full max-w-5xl mx-auto px-4 pt-32 sm:pt-36 pb-8 text-center relative z-10">
     <div class="inline-flex items-center gap-2 bg-brand-yellow/15 border border-brand-yellow/40 px-4 py-1.5 rounded-full text-brand-yellow text-xs sm:text-sm font-black mb-4 shadow-lg">
       <span class="animate-pulse">⚡</span> <span>HONG KONG FOOD SEARCH ENGINE</span>
     </div>
     
-    <h1 class="text-4xl sm:text-6xl font-black text-white tracking-tight mb-4 leading-tight">
+    <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight mb-3">
       搵食？一 Search 即刻睇片
     </h1>
     
-    <p class="text-zinc-400 text-sm sm:text-base mb-8 max-w-xl mx-auto font-medium">
+    <p class="text-zinc-400 text-xs sm:text-sm mb-6 max-w-xl mx-auto font-medium">
       收錄全港 470+ 間真實食評．搜尋餐廳、地鐵站、地區或想食嘅菜式
     </p>
 
     <!-- 巨型搜尋輸入框 -->
-    <div class="relative max-w-3xl mx-auto">
-      <span class="absolute inset-y-0 left-5 sm:left-6 flex items-center text-brand-yellow text-2xl sm:text-3xl pointer-events-none">
+    <div class="relative max-w-3xl mx-auto shadow-2xl">
+      <span class="absolute inset-y-0 left-5 flex items-center text-brand-yellow text-2xl pointer-events-none">
         🔍
       </span>
-      <input type="text" id="mainSearchInput" oninput="handleSearch(this.value)"
+      <input type="text" id="searchInput" oninput="handleSearch(this.value)"
              placeholder="輸入餐廳名稱、地鐵站、地區（例如：中環、牛扒、燒肉、Cafe）..." 
-             class="w-full bg-zinc-900/95 text-white placeholder-zinc-500 text-lg sm:text-xl pl-16 sm:pl-20 pr-14 py-5 sm:py-6 rounded-3xl border-2 border-brand-yellow focus:border-brand-yellowLight focus:outline-none focus:ring-4 focus:ring-brand-yellow/30 transition-all shadow-2xl" />
-      <button type="button" onclick="clearSearch()" 
-              class="absolute inset-y-0 right-5 sm:right-6 flex items-center text-zinc-400 hover:text-white text-xl sm:text-2xl font-bold">
+             class="w-full bg-zinc-900 text-white placeholder-zinc-500 text-base sm:text-lg pl-14 sm:pl-16 pr-12 py-4 sm:py-5 rounded-2xl border-2 border-brand-yellow focus:border-brand-yellowLight focus:outline-none focus:ring-4 focus:ring-brand-yellow/30 transition-all shadow-inner" />
+      <button type="button" onclick="const el=document.getElementById('searchInput'); el.value=''; handleSearch(''); el.focus();" 
+              class="absolute inset-y-0 right-4 flex items-center text-zinc-400 hover:text-white text-xl font-bold">
         ✕
       </button>
     </div>
@@ -187,7 +204,7 @@
       <!-- 細分選單 -->
       <div class="flex flex-wrap items-center gap-2.5 pt-1 text-xs">
         
-        <!-- ⭐ 需求 9: 地區篩選（徹底移除日本與澳門，只保留香港現有熱門商圈） -->
+        <!-- 需求 9: 地區篩選 (移除日本與澳門，僅保留香港商圈) -->
         <div class="flex items-center gap-1.5">
           <span class="text-zinc-400 font-medium">📍 地區：</span>
           <select id="districtRegionSelect" onchange="onDistrictChange(this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-brand-yellow font-medium">
@@ -202,9 +219,10 @@
               <option value="上環">上環 (Sheung Wan / PMQ)</option>
               <option value="灣仔">灣仔 (Wan Chai)</option>
               <option value="銅鑼灣">銅鑼灣 (Causeway Bay)</option>
-              <option value="天后">天后 / 北角 / 炮台山</option>
+              <option value="天后">天后 / 炮台山 / 北角</option>
               <option value="鰂魚涌">鰂魚涌 / 太古</option>
               <option value="西環">西環 / 堅尼地城 / 西營盤</option>
+              <option value="黃竹坑">黃竹坑 / 南區</option>
             </optgroup>
             <optgroup label="── 九龍商圈 ──">
               <option value="尖沙咀">尖沙咀 (Tsim Sha Tsui)</option>
@@ -229,7 +247,7 @@
           </select>
         </div>
 
-        <!-- ⭐ 需求 6: 預算篩選 (移除 $$$ 符號，改用具體金額範圍) -->
+        <!-- 需求 6: 預算篩選 (移除 $$$ 符號，改為具體金額文字) -->
         <div class="flex items-center gap-1.5">
           <span class="text-zinc-400 font-medium">💰 預算：</span>
           <select id="priceSelect" onchange="setFilter('price', this.value)" class="bg-zinc-900 border border-zinc-700 text-zinc-200 rounded px-2.5 py-1.5 focus:outline-none focus:border-brand-yellow font-medium">
@@ -327,13 +345,13 @@
     </section>
   </main>
 
-  <!-- ⭐ 需求 4 & 5: 詳情視窗 (加大返回主頁按鈕 + 移除多餘封面截圖，直連短片) -->
+  <!-- 需求 4 & 5: 詳情視窗 (加大返回主頁按鈕 + 移除多餘封面截圖，專注 Reels 短片) -->
   <div id="detailModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
     <div class="bg-brand-card border border-brand-border rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-2xl relative flex flex-col">
       
-      <!-- ⭐ 需求 5: 頂部醒目「返回首頁」按鈕列 -->
+      <!-- 醒目「返回首頁」按鈕列 -->
       <div class="p-3.5 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 sticky top-0 z-30">
-        <button onclick="closeModal()" class="flex items-center gap-2 bg-brand-yellow hover:bg-brand-yellowHover text-black px-4 py-2 rounded-xl font-black text-xs sm:text-sm shadow-md transition active:scale-95">
+        <button onclick="closeModal()" class="flex items-center gap-2 bg-brand-yellow hover:bg-yellow-400 text-black px-4 py-2 rounded-xl font-black text-xs sm:text-sm shadow-md transition active:scale-95">
           <span class="text-base sm:text-lg">←</span> <span>返回首頁</span>
         </button>
         <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center font-bold text-base">
@@ -343,7 +361,7 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-12 overflow-y-auto no-scrollbar flex-grow">
         
-        <!-- 左側：影片專區 (⭐ 需求 4: 移除了封面截圖 tab 與大截圖，直接放短片) -->
+        <!-- 左側：短片播放專區 -->
         <div class="lg:col-span-5 bg-black/60 border-b lg:border-b-0 lg:border-r border-brand-border p-4 flex flex-col justify-between">
           <div class="space-y-3">
             <div class="reel-container border border-zinc-800 flex items-center justify-center bg-zinc-950">
@@ -351,7 +369,7 @@
               <iframe id="modalReelIframe" class="w-full h-full border-0 rounded-xl" src="" allowtransparency="true" allowfullscreen="true" frameborder="0" scrolling="no"></iframe>
               <div id="modalVideoFallback" class="hidden flex-col items-center justify-center p-6 text-center text-xs text-zinc-400 space-y-3">
                 <span class="text-3xl">🎬</span>
-                <p>點擊下方按鈕即可於 Instagram 直接觀看完整 Reel 原片與留言！</p>
+                <p>點擊下方按鈕即可於 Instagram App 直接觀看完整 Reel 原片與留言！</p>
               </div>
             </div>
           </div>
@@ -437,15 +455,16 @@
   <!-- 頁尾 -->
   <footer class="bg-black border-t border-brand-border py-8 px-6 text-center text-xs text-zinc-500 mt-auto">
     <div class="flex justify-center items-center gap-2 mb-2">
-      <span class="text-brand-yellow font-black text-sm">FCA</span>
+      <span class="text-brand-yellow font-black serif-brand text-sm">FCA</span>
       <span class="text-zinc-400">|</span>
-      <span class="text-white font-bold tracking-wider">FOODCAFEALCOHOLIC</span>
+      <span class="text-white font-bold tracking-wider sans-brand">FOODCAFEALCOHOLIC</span>
     </div>
     <p>© 2026 @foodcafealcoholic • All Rights Reserved</p>
   </footer>
 
   <script>
     let restaurants = [];
+
     const FAVORITES_STORAGE_KEY = 'foodcafe_user_favorites_v2';
     let savedFavorites = new Set();
     
@@ -479,6 +498,7 @@
       cuisine: "all"
     };
 
+    // 多樣化高畫質備用美食圖庫
     const cuisineFallbacks = {
       '日本': 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=700&q=80',
       'Cafe': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=700&q=80',
@@ -488,6 +508,7 @@
       '酒吧': 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=700&q=80',
       '東南亞': 'https://images.unsplash.com/photo-1559847844-5315695dadae?w=700&q=80',
       '中菜': 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=700&q=80',
+      '快餐': 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=700&q=80',
       'default': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=700&q=80'
     };
 
@@ -500,13 +521,13 @@
     }
 
     const REGION_MAP = {
-      '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '天后', '北角', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城'],
+      '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '天后', '北角', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '黃竹坑'],
       '九龍': ['九龍', '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣'],
-      '新界': ['新界', '荃灣', '葵芳', '青衣', '沙田', '大圍', '元朗', '屯門', '大埔', '粉嶺', '上水', '將軍澳', '康城', '西貢']
+      '新界': ['新界', '荃灣', '葵芳', '葵涌', '青衣', '沙田', '大圍', '元朗', '屯門', '大埔', '粉嶺', '上水', '將軍澳', '康城', '西貢']
     };
 
     function inferRegionFromItem(item) {
-      if (!item) return '港島';
+      if (!item) return '九龍';
       const cleanDistrict = String(item.district || '').toLowerCase();
       for (const [region, keywords] of Object.entries(REGION_MAP)) {
         for (const kw of keywords) {
@@ -516,19 +537,20 @@
       return '九龍';
     }
 
+    // 格式化預算價格字串
     function parseBudgetTier(rawPrice) {
       if (!rawPrice || rawPrice === 'None' || rawPrice === 'null' || String(rawPrice).trim() === '') {
         return { tier: 'all', text: '依現場菜單' };
       }
       const numbers = String(rawPrice).replace(/,/g, '').match(/\d+/g);
-      if (!numbers || numbers.length === 0) return { tier: 'all', text: rawPrice };
-      
+      if (!numbers || numbers.length === 0) return { tier: 'all', text: String(rawPrice) };
+
       const numValues = numbers.map(n => parseInt(n, 10)).filter(n => n > 15 && n < 50000);
-      if (numValues.length === 0) return { tier: 'all', text: rawPrice };
+      if (numValues.length === 0) return { tier: 'all', text: String(rawPrice) };
 
       const avg = numValues.reduce((a, b) => a + b, 0) / numValues.length;
       if (avg < 100) return { tier: 'under100', text: `$${rawPrice} (平民日常)` };
-      if (avg <= 300) return { tier: '100-300', text: `$${rawPrice} (人氣聚會)` };
+      if (avg <= 300) return { tier: '100-300', text: `$${rawPrice} (人氣抵食)` };
       if (avg <= 600) return { tier: '300-600', text: `$${rawPrice} (聚會/Cafe)` };
       return { tier: 'above600', text: `$${rawPrice} (精緻約會)` };
     }
@@ -539,45 +561,38 @@
       return match ? match[1] : null;
     }
 
-    // ⭐ 核心圖片解析：優先使用官方原裝 /media/?size=l，徹底杜絕死圖
-function proxyImageUrl(url) {
+    function proxyImageUrl(url) {
       if (!url) return null;
-      if (url.includes('unsplash.com') || url.includes('placehold.co')) return url;
-      const cleanUrl = url.replace(/&amp;/g, '&');
-      return `https://wsrv.nl/?url=${encodeURIComponent(cleanUrl)}&w=600&output=jpg&n=-1`;
+      if (url.includes('unsplash.com')) return url;
+      const clean = url.replace(/&amp;/g, '&');
+      return `https://wsrv.nl/?url=${encodeURIComponent(clean)}&w=600&output=jpg&n=-1`;
     }
 
-function extractShortcode(url) {
-      if (!url) return null;
-      const match = String(url).match(/\/(?:p|reel|reels)\/([A-Za-z0-9_-]+)/);
-      if (match) return match[1];
-      if (/^[A-Za-z0-9_-]{8,15}$/.test(String(url).trim())) return String(url).trim();
-      return null;
-    }
-
+    // 圖片載入核心邏輯
     function getReelThumbnail(item) {
       if (!item) return cuisineFallbacks['default'];
 
-      // 1. 取得這篇貼文的 IG Shortcode（無論是欄位本身或從 url 提取）
-      const code = item.shortCode || item.shortcode || extractShortcode(item.url);
-
-      // 2. ⭐ 核心拯救邏輯：針對舊資料，只要有 Shortcode，直接用代理請求 IG 官方永久縮圖！
-      if (code) {
-        return `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=l&output=jpg&n=-1`;
-      }
-
-      // 3. 次選：如果是新透過 Admin 輸入且帶有有效圖片網址
+      // 1. 若手動輸入帶有完整的外部圖片網址
       const rawImg = item.displayUrl || item.imageUrl || item.image || item.thumbnailUrl;
       if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
-        if (rawImg.includes('unsplash.com')) return rawImg;
-        return `https://images.weserv.nl/?url=${encodeURIComponent(rawImg)}&output=jpg&n=-1`;
+        return proxyImageUrl(rawImg);
       }
 
-      // 4. 最後後備：根據菜系給予對應圖片
+      // 2. 針對 IG 圖片過期的舊貼文，根據菜式精準分派高畫質圖，保證不破圖、不單一
       return getCuisineImage(item.cuisine);
     }
 
-    // ⭐ 建立 4:5 直式黃金卡片 + 浮動 IG 爆款標題
+    function getPostMainTitle(item) {
+      if (!item.caption) return item.restaurant_name;
+      const lines = item.caption.split('\n').map(l => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        if (!line.startsWith('#') && !line.startsWith('---') && !line.startsWith('地區分類')) {
+          return line;
+        }
+      }
+      return item.restaurant_name;
+    }
+
     function createCard(item, index, rankBadge = null, isGrid = false) {
       const img = getReelThumbnail(item);
       const isFav = savedFavorites.has(String(item.id));
@@ -949,22 +964,6 @@ function extractShortcode(url) {
       renderApp();
     }
 
-    function clearSearch() {
-      const el = document.getElementById('mainSearchInput');
-      if (el) {
-        el.value = '';
-        el.focus();
-      }
-      handleSearch('');
-    }
-
-    function shareCurrentRestaurant() {
-      if (!currentModalItem) return;
-      const shareText = `🍽️ 睇下呢間餐廳：《${currentModalItem.restaurant_name}》\n📍 地區：${currentModalItem.district || '香港'}\n⭐ 招牌：${currentModalItem.must_try || '必食推介'}\n💰 預算：${currentModalItem.price || '未註明'}\n\n睇睇 @foodcafealcoholic 嘅食評推介啦！`;
-      const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-      window.open(whatsappUrl, '_blank');
-    }
-
     function setFilter(type, value, element = null) {
       if (type === 'occasion') {
         filters.occasion = value;
@@ -996,7 +995,7 @@ function extractShortcode(url) {
 
     function resetAllFilters() {
       filters = { search: "", region: "all", district: "all", occasion: "all", price: "all", cuisine: "all" };
-      const searchInp = document.getElementById('mainSearchInput');
+      const searchInp = document.getElementById('searchInput');
       if (searchInp) searchInp.value = "";
       const regSel = document.getElementById('districtRegionSelect');
       if (regSel) regSel.value = "all";
@@ -1057,6 +1056,7 @@ function extractShortcode(url) {
             url: postUrl,
             shortCode: code,
             videoUrl: directVid,
+            displayUrl: rawImg,
             image: rawImg
           };
         });
@@ -1065,7 +1065,6 @@ function extractShortcode(url) {
         restaurants = parsed;
         updateDropdownCounts();
         renderApp();
-        console.log(`✅ 成功載入 ${restaurants.length} 間餐廳`);
       }
     }
 

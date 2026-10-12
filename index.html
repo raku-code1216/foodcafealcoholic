@@ -103,23 +103,30 @@
 </head>
 <body class="text-white antialiased min-h-screen flex flex-col selection:bg-brand-yellow selection:text-black">
 
-<!-- Step 1: App 入場 Logo Splash Screen -->
-  <div id="splashScreen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-opacity duration-700">
-    <img src="logo.jpeg" alt="Logo" class="w-28 h-28 rounded-2xl shadow-2xl animate-pulse mb-4 object-contain" />
-    <h1 class="text-brand-yellow font-black tracking-widest text-lg">FOODCAFEALCHOLIC</h1>
-  </div>
+<!-- 安全版 App 入場 Splash Screen -->
+<div id="splashScreen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-opacity duration-500">
+  <img src="logo.jpeg" 
+       alt="Logo" 
+       onerror="this.onerror=null; this.src='logo.jpg';"
+       class="w-28 h-28 rounded-2xl shadow-2xl animate-pulse mb-4 object-contain" />
+  <h1 class="text-brand-yellow font-black tracking-widest text-lg">FOODCAFEALCHOLIC</h1>
+</div>
 
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        const splash = document.getElementById('splashScreen');
-        if (splash) {
-          splash.classList.add('opacity-0', 'pointer-events-none');
-          setTimeout(() => splash.remove(), 700);
-        }
-      }, 900); // 顯示約 1 秒後自動淡出
-    });
-  </script>
+<script>
+  // 強制計時移除，避免卡在黑畫面
+  function dismissSplash() {
+    const splash = document.getElementById('splashScreen');
+    if (splash) {
+      splash.style.opacity = '0';
+      splash.style.pointerEvents = 'none';
+      setTimeout(() => { if (splash) splash.remove(); }, 500);
+    }
+  }
+
+  // 頁面載入或最多 800ms 後必定強制解開
+  window.addEventListener('load', () => setTimeout(dismissSplash, 600));
+  setTimeout(dismissSplash, 1200);
+</script>
   
   <!-- 頂部導航列 -->
   <nav id="navbar" class="fixed top-0 w-full z-50 transition-all duration-300 px-4 sm:px-8 py-3.5 flex items-center justify-between bg-black/95 backdrop-blur-md border-b border-brand-border">

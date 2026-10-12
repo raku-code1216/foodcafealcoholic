@@ -141,7 +141,7 @@
 
   <!-- ⭐ 需求 2 & 3: 頂部巨型美食搜尋引擎 (置頂且大字，徹底取代舊海報) -->
 <!-- 巨型美食搜尋引擎 (全幅大字、強化搜尋核心地位) -->
-  <section class="w-full max-w-5xl mx-auto px-4 pt-28 sm:pt-36 pb-10 text-center">
+  <section class="w-full max-w-5xl mx-auto px-4 pt-36 sm:pt-44 pb-8 text-center">
     <div class="inline-flex items-center gap-2 bg-brand-yellow/15 border border-brand-yellow/40 px-4 py-1.5 rounded-full text-brand-yellow text-xs sm:text-sm font-black mb-4 shadow-lg">
       <span class="animate-pulse">⚡</span> <span>HONG KONG FOOD SEARCH ENGINE</span>
     </div>
@@ -540,22 +540,19 @@
     }
 
     // ⭐ 核心圖片解析：優先使用官方原裝 /media/?size=l，徹底杜絕死圖
-function getReelThumbnail(item) {
-      if (!item) return cuisineFallbacks['default'];
+function proxyImageUrl(url) {
+      if (!url) return null;
+      if (url.includes('unsplash.com') || url.includes('placehold.co')) return url;
+      const cleanUrl = url.replace(/&amp;/g, '&');
+      return `https://wsrv.nl/?url=${encodeURIComponent(cleanUrl)}&w=600&output=jpg&n=-1`;
+    }
 
-      // 1. 優先取用 CSV 裡的圖片欄位
+    function getReelThumbnail(item) {
+      if (!item) return cuisineFallbacks['default'];
       const rawImg = item.displayUrl || item.imageUrl || item.image || item.thumbnailUrl;
       if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
-        if (rawImg.includes('unsplash.com')) return rawImg;
-        return `https://wsrv.nl/?url=${encodeURIComponent(rawImg)}&w=600&output=jpg`;
+        return proxyImageUrl(rawImg);
       }
-
-      // 2. 次選 shortCode 直連
-      const code = item.shortCode || extractShortcode(item.url);
-      if (code) {
-        return `https://wsrv.nl/?url=${encodeURIComponent('https://www.instagram.com/p/' + code + '/media/?size=l')}&w=600&output=jpg`;
-      }
-
       return getCuisineImage(item.cuisine);
     }
 

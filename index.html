@@ -5,32 +5,45 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Foodcafealcoholic | 美食搜尋引擎</title>
+  <title>Foodcafealcoholic | 香港美食搜尋引擎</title>
 
-  <!-- ================= 網站圖標 (JPG 格式 Favicon) ================= -->
+  <!-- 網站圖標 (Favicon) -->
   <link rel="icon" type="image/jpeg" sizes="192x192" href="logo.jpg?v=8">
   <link rel="icon" type="image/jpeg" sizes="32x32" href="logo.jpg?v=8">
   <link rel="shortcut icon" type="image/jpeg" href="logo.jpg?v=8">
-
-  <!-- Apple 手機桌面捷徑圖示 -->
   <link rel="apple-touch-icon" href="logo.jpg?v=8">
 
-  <!-- Google 搜尋引擎與社交分享預覽 -->
   <meta property="og:image" content="https://foodcafealcoholic.com/logo.jpg?v=8">
   <meta property="og:image:type" content="image/jpeg">
-  <meta property="og:image:width" content="512">
-  <meta property="og:image:height" content="512">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Montserrat:wght@700;800;900&family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
   <script>
+    // 多樣化美食圖庫（徹底擺脫單一預設圖）
+    const fallbackFoodGallery = [
+      'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=700&q=80', // 日本料理
+      'https://images.unsplash.com/photo-1544025162-d76694265947?w=700&q=80', // 西式牛扒
+      'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=700&q=80', // Cafe
+      'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=700&q=80', // 中式粵菜
+      'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=700&q=80', // 火鍋
+      'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=700&q=80', // 甜品
+      'https://images.unsplash.com/photo-1559847844-5315695dadae?w=700&q=80', // 東南亞
+      'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=700&q=80', // 漢堡快餐
+      'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=700&q=80'  // 酒吧
+    ];
+
     function onImageError(img) {
       if (!img) return;
       img.onerror = null;
-      img.src = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=700&q=80';
+      const name = img.alt || '';
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      const index = Math.abs(hash) % fallbackFoodGallery.length;
+      img.src = fallbackFoodGallery[index];
     }
     window.onImageError = onImageError;
 
@@ -41,7 +54,6 @@
             brand: {
               yellow: '#FFC400',
               yellowHover: '#E5B000',
-              yellowLight: '#FFE885',
               dark: '#0A0A0A',
               card: '#141414',
               surface: '#1E1E1E',
@@ -58,11 +70,8 @@
       background-color: #0A0A0A;
       color: #FFFFFF;
     }
-    .serif-brand { font-family: 'Cinzel', serif; }
-    .sans-brand { font-family: 'Montserrat', sans-serif; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    
     .card-zoom {
       transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.3s ease, border-color 0.3s ease;
       transform-origin: center bottom;
@@ -80,12 +89,6 @@
       border-color: #FFC400 !important;
       box-shadow: 0 0 12px rgba(255, 196, 0, 0.4);
     }
-    .food-card-img {
-      transition: transform 0.5s ease;
-    }
-    .card-zoom:hover .food-card-img {
-      transform: scale(1.08);
-    }
     .reel-container {
       position: relative;
       width: 100%;
@@ -98,7 +101,7 @@
 </head>
 <body class="text-white antialiased min-h-screen flex flex-col selection:bg-brand-yellow selection:text-black">
 
-<!-- 需求 1: App 入場 Logo Splash Screen (雙副檔名支援 + 計時防卡住) -->
+<!-- 需求 1: App 入場 Logo 開場動畫 (安全淡出) -->
 <div id="splashScreen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-opacity duration-500">
   <img src="logo.jpeg" 
        alt="Logo" 
@@ -119,24 +122,21 @@
   window.addEventListener('load', () => setTimeout(dismissSplash, 600));
   setTimeout(dismissSplash, 1200);
 </script>
-  
+
   <!-- 頂部導航列 (需求 7 & 8: 漢堡 Logo + 點擊重新整理回到首頁) -->
   <nav id="navbar" class="fixed top-0 w-full z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between bg-black/95 backdrop-blur-md border-b border-brand-border">
     <div class="flex items-center space-x-6 lg:space-x-8">
-      
-      <!-- 漢堡 Logo 重新整理按鈕 -->
       <a href="index.html" class="flex items-center gap-3 cursor-pointer group" title="重新整理首頁">
         <img src="logo.jpeg" 
              alt="Logo" 
              onerror="this.onerror=null; this.src='logo.jpg';"
              class="w-9 h-9 rounded-xl object-contain border border-brand-yellow/40 group-hover:scale-105 transition shadow-md" />
         <div class="hidden sm:flex flex-col border-l border-zinc-700 pl-2.5 leading-none">
-          <span class="text-white font-extrabold text-xs tracking-wider sans-brand group-hover:text-brand-yellow transition">FOODCAFEALCOHOLIC</span>
+          <span class="text-white font-extrabold text-xs tracking-wider group-hover:text-brand-yellow transition">FOODCAFEALCOHOLIC</span>
           <span class="text-[9px] text-zinc-400 font-mono tracking-tight">@foodcafealcoholic</span>
         </div>
       </a>
 
-      <!-- 快速連結 -->
       <div class="hidden md:flex items-center space-x-5 text-xs tracking-wider text-zinc-300">
         <a href="#leaderboard-section" class="hover:text-brand-yellow transition">🔥 每週熱門榜</a>
         <a href="#editor-section" class="hover:text-brand-yellow transition">🏆 專屬嚴選</a>
@@ -144,21 +144,19 @@
       </div>
     </div>
 
-    <!-- 右側功能操作區 -->
+    <!-- 右側我的收藏按鈕 -->
     <div class="flex items-center space-x-2 sm:space-x-3">
-      <!-- 我的收藏按鈕 -->
-      <button onclick="toggleMyListModal()" class="relative bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-2.5 sm:px-3 py-1.5 rounded-full border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1">
+      <button onclick="toggleMyListModal()" class="relative bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1.5 shadow">
         <span class="text-brand-yellow">★</span>
-        <span class="hidden sm:inline">搵食清單</span>
+        <span>搵食清單</span>
         <span id="favCountBadge" class="bg-brand-yellow text-black text-[10px] font-black rounded-full px-1.5 py-0.2 leading-tight">0</span>
       </button>
-
       <input type="file" id="csvFileInput" accept=".csv" style="display: none !important;" />
     </div>
   </nav>
 
-  <!-- 需求 2 & 3: 置頂巨型美食搜尋引擎 (全幅大字、不被 Navbar 遮擋) -->
-  <section class="w-full max-w-5xl mx-auto px-4 pt-32 sm:pt-36 pb-8 text-center relative z-10">
+  <!-- 需求 2 & 3: 置頂巨型美食搜尋引擎 (加大頂部 Padding，徹底杜絕 Navbar 遮擋) -->
+  <section class="w-full max-w-5xl mx-auto px-4 pt-36 sm:pt-44 pb-8 text-center relative z-10">
     <div class="inline-flex items-center gap-2 bg-brand-yellow/15 border border-brand-yellow/40 px-4 py-1.5 rounded-full text-brand-yellow text-xs sm:text-sm font-black mb-4 shadow-lg">
       <span class="animate-pulse">⚡</span> <span>HONG KONG FOOD SEARCH ENGINE</span>
     </div>
@@ -176,10 +174,10 @@
       <span class="absolute inset-y-0 left-5 flex items-center text-brand-yellow text-2xl pointer-events-none">
         🔍
       </span>
-      <input type="text" id="searchInput" oninput="handleSearch(this.value)"
+      <input type="text" id="mainSearchInput" oninput="handleSearch(this.value)"
              placeholder="輸入餐廳名稱、地鐵站、地區（例如：中環、牛扒、燒肉、Cafe）..." 
              class="w-full bg-zinc-900 text-white placeholder-zinc-500 text-base sm:text-lg pl-14 sm:pl-16 pr-12 py-4 sm:py-5 rounded-2xl border-2 border-brand-yellow focus:border-brand-yellowLight focus:outline-none focus:ring-4 focus:ring-brand-yellow/30 transition-all shadow-inner" />
-      <button type="button" onclick="const el=document.getElementById('searchInput'); el.value=''; handleSearch(''); el.focus();" 
+      <button type="button" onclick="clearSearch()" 
               class="absolute inset-y-0 right-4 flex items-center text-zinc-400 hover:text-white text-xl font-bold">
         ✕
       </button>
@@ -345,7 +343,7 @@
     </section>
   </main>
 
-  <!-- 需求 4 & 5: 詳情視窗 (加大返回主頁按鈕 + 移除多餘封面截圖，專注 Reels 短片) -->
+  <!-- 需求 4 & 5: 詳情視窗 (加大返回主頁按鈕 + 移除多餘封面截圖，專注短片) -->
   <div id="detailModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
     <div class="bg-brand-card border border-brand-border rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-2xl relative flex flex-col">
       
@@ -455,9 +453,9 @@
   <!-- 頁尾 -->
   <footer class="bg-black border-t border-brand-border py-8 px-6 text-center text-xs text-zinc-500 mt-auto">
     <div class="flex justify-center items-center gap-2 mb-2">
-      <span class="text-brand-yellow font-black serif-brand text-sm">FCA</span>
+      <span class="text-brand-yellow font-black text-sm">FCA</span>
       <span class="text-zinc-400">|</span>
-      <span class="text-white font-bold tracking-wider sans-brand">FOODCAFEALCOHOLIC</span>
+      <span class="text-white font-bold tracking-wider">FOODCAFEALCOHOLIC</span>
     </div>
     <p>© 2026 @foodcafealcoholic • All Rights Reserved</p>
   </footer>
@@ -498,28 +496,6 @@
       cuisine: "all"
     };
 
-    // 多樣化高畫質備用美食圖庫
-    const cuisineFallbacks = {
-      '日本': 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=700&q=80',
-      'Cafe': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=700&q=80',
-      '西式': 'https://images.unsplash.com/photo-1544025162-d76694265947?w=700&q=80',
-      '火鍋': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=700&q=80',
-      '甜品': 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=700&q=80',
-      '酒吧': 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=700&q=80',
-      '東南亞': 'https://images.unsplash.com/photo-1559847844-5315695dadae?w=700&q=80',
-      '中菜': 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=700&q=80',
-      '快餐': 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=700&q=80',
-      'default': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=700&q=80'
-    };
-
-    function getCuisineImage(cuisine) {
-      if (!cuisine) return cuisineFallbacks['default'];
-      for (const [key, url] of Object.entries(cuisineFallbacks)) {
-        if (cuisine.includes(key)) return url;
-      }
-      return cuisineFallbacks['default'];
-    }
-
     const REGION_MAP = {
       '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '天后', '北角', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '黃竹坑'],
       '九龍': ['九龍', '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣'],
@@ -537,7 +513,6 @@
       return '九龍';
     }
 
-    // 格式化預算價格字串
     function parseBudgetTier(rawPrice) {
       if (!rawPrice || rawPrice === 'None' || rawPrice === 'null' || String(rawPrice).trim() === '') {
         return { tier: 'all', text: '依現場菜單' };
@@ -568,18 +543,17 @@
       return `https://wsrv.nl/?url=${encodeURIComponent(clean)}&w=600&output=jpg&n=-1`;
     }
 
-    // 圖片載入核心邏輯
     function getReelThumbnail(item) {
-      if (!item) return cuisineFallbacks['default'];
-
-      // 1. 若手動輸入帶有完整的外部圖片網址
+      if (!item) return fallbackFoodGallery[0];
       const rawImg = item.displayUrl || item.imageUrl || item.image || item.thumbnailUrl;
-      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
+      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http') && !rawImg.includes('cdninstagram.com/null')) {
         return proxyImageUrl(rawImg);
       }
-
-      // 2. 針對 IG 圖片過期的舊貼文，根據菜式精準分派高畫質圖，保證不破圖、不單一
-      return getCuisineImage(item.cuisine);
+      const name = item.restaurant_name || '';
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      const index = Math.abs(hash) % fallbackFoodGallery.length;
+      return fallbackFoodGallery[index];
     }
 
     function getPostMainTitle(item) {
@@ -964,6 +938,22 @@
       renderApp();
     }
 
+    function clearSearch() {
+      const el = document.getElementById('mainSearchInput');
+      if (el) {
+        el.value = '';
+        el.focus();
+      }
+      handleSearch('');
+    }
+
+    function shareCurrentRestaurant() {
+      if (!currentModalItem) return;
+      const shareText = `🍽️ 睇下呢間餐廳：《${currentModalItem.restaurant_name}》\n📍 地區：${currentModalItem.district || '香港'}\n⭐ 招牌：${currentModalItem.must_try || '必食推介'}\n💰 預算：${currentModalItem.price || '未註明'}\n\n睇睇 @foodcafealcoholic 嘅食評推介啦！`;
+      const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+      window.open(whatsappUrl, '_blank');
+    }
+
     function setFilter(type, value, element = null) {
       if (type === 'occasion') {
         filters.occasion = value;
@@ -995,7 +985,7 @@
 
     function resetAllFilters() {
       filters = { search: "", region: "all", district: "all", occasion: "all", price: "all", cuisine: "all" };
-      const searchInp = document.getElementById('searchInput');
+      const searchInp = document.getElementById('mainSearchInput');
       if (searchInp) searchInp.value = "";
       const regSel = document.getElementById('districtRegionSelect');
       if (regSel) regSel.value = "all";

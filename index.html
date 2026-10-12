@@ -619,14 +619,23 @@
       return null;
     }
 
-    function getReelThumbnail(item) {
-      const rawImg = item.image || item.displayUrl || item.imageUrl || item.thumbnailUrl;
+function getReelThumbnail(item) {
+      if (!item) return cuisineFallbacks['default'];
+      
+      // 1. 優先使用貼文唯一的 shortcode/id 直取縮圖
+      const code = item.shortCode || item.id || extractShortcode(item.url);
+      if (code && code.length >= 8 && code.length <= 15) {
+        return `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=l&default=https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700`;
+      }
+
+      // 2. 次選原本圖片網址
+      const rawImg = item.image || item.displayUrl || item.imageUrl;
       if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
         return proxyImageUrl(rawImg);
       }
+
       return getCuisineImage(item.cuisine);
     }
-
     function createCard(item, index, rankBadge = null, isGrid = false) {
       const img = getReelThumbnail(item);
       const isFav = savedFavorites.has(String(item.id));

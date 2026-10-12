@@ -168,41 +168,32 @@
   </nav>
 
   <!-- 頂部焦點 Banner (Hero) -->
-  <header id="hero" class="relative min-h-[65vh] sm:min-h-[72vh] w-full flex items-end p-5 sm:p-12 lg:p-16 bg-cover bg-center transition-all duration-700 overflow-hidden"
-          style="background-image: linear-gradient(to top, #0A0A0A 12%, rgba(10,10,10,0.65) 65%, rgba(0,0,0,0.85) 100%), url('https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1600&q=80');">
-    
-    <div class="max-w-2xl space-y-3.5 z-10 pb-6 pt-24 sm:pt-28">
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="bg-brand-yellow text-black text-[11px] font-black px-2.5 py-0.5 rounded tracking-wider shadow">TOP 1 TODAY</span>
-        <span class="bg-red-600 text-white text-[11px] font-black px-2 py-0.5 rounded flex items-center gap-1">
-          <span>🎬</span> <span>REEL</span>
-        </span>
-        <span id="heroDistrictBadge" class="text-xs font-bold text-zinc-200 bg-black/70 border border-zinc-700 px-2.5 py-0.5 rounded">📍 中環</span>
-        <span id="heroCuisineBadge" class="text-xs font-bold text-zinc-200 bg-black/70 border border-zinc-700 px-2.5 py-0.5 rounded">🔥 炭火燒烤餐廳</span>
-        <span id="heroOccasionBadge" class="text-xs font-bold text-brand-yellow bg-zinc-900/90 border border-brand-yellow/40 px-2.5 py-0.5 rounded">✨ 拍拖約會好去處</span>
+<!-- Step 2 & 3: 置頂巨型美食搜尋引擎 (置頂、大字、搜尋導向) -->
+    <section class="w-full max-w-4xl mx-auto px-4 pt-8 pb-4 text-center">
+      <div class="inline-flex items-center gap-2 bg-brand-yellow/10 border border-brand-yellow/30 px-3 py-1 rounded-full text-brand-yellow text-xs font-black mb-3">
+        <span>⚡</span> <span>FOOD SEARCH ENGINE</span>
       </div>
-
-      <h1 id="heroTitle" class="text-2xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight text-white drop-shadow-2xl">
-        180° Modern Fire Grill
+      <h1 class="text-3xl sm:text-5xl font-black text-white tracking-wide mb-3">
+        探索全港美食推介
       </h1>
-
-      <p id="heroCaption" class="text-zinc-300 text-xs sm:text-sm lg:text-base line-clamp-3 leading-relaxed drop-shadow">
-        中環最新炭烤頂級料理！選用頂級黑安格斯肉眼與海鮮，直火柴香外脆內嫩，肉汁滿溢。店內裝潢現代昏暗，氛圍極佳，非常適合聚會約會。
+      <p class="text-zinc-400 text-xs sm:text-sm mb-6 max-w-lg mx-auto">
+        輸入餐廳名稱、地鐵站、地區或想食嘅菜式（例如：中環、咖啡、燒肉、居酒屋）
       </p>
 
-      <div class="flex flex-wrap items-center gap-3 pt-2">
-        <button id="heroReadBtn" class="bg-brand-yellow hover:bg-brand-yellowHover active:scale-95 text-black font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-lg flex items-center gap-2 transition shadow-lg">
-          ▶ 觀看影片與食評
-        </button>
-        <button id="heroFavBtn" class="bg-zinc-900/90 hover:bg-zinc-800 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1.5">
-          <span id="heroFavIcon">🤍</span> <span id="heroFavText">收藏</span>
-        </button>
-        <span id="heroPrice" class="text-xs font-semibold bg-black/80 border border-zinc-700 px-3 py-2.5 rounded-lg text-brand-yellow">
-          💰 預算: $400 - $800
+      <!-- 放大版置頂搜尋框 -->
+      <div class="relative max-w-2xl mx-auto shadow-2xl">
+        <span class="absolute inset-y-0 left-4 sm:left-5 flex items-center text-brand-yellow text-xl sm:text-2xl pointer-events-none">
+          🔍
         </span>
+        <input type="text" id="searchInput" oninput="handleSearch(this.value)"
+               placeholder="想食咩？搜尋餐廳、地區、菜系..." 
+               class="w-full bg-zinc-900/90 text-white placeholder-zinc-500 text-base sm:text-lg pl-12 sm:pl-14 pr-12 py-4 rounded-2xl border-2 border-brand-yellow/60 focus:border-brand-yellow focus:outline-none focus:ring-4 focus:ring-brand-yellow/20 transition-all shadow-inner" />
+        <button type="button" onclick="const el=document.getElementById('searchInput'); el.value=''; handleSearch(''); el.focus();" 
+                class="absolute inset-y-0 right-4 flex items-center text-zinc-500 hover:text-white text-lg">
+          ✕
+        </button>
       </div>
-    </div>
-  </header>
+    </section>
 
   <!-- 篩選系統 -->
   <section class="sticky top-14 z-40 bg-[#0A0A0A]/95 backdrop-blur-md border-y border-brand-border px-4 sm:px-8 lg:px-12 py-3 shadow-xl">

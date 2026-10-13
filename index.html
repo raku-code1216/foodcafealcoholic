@@ -94,35 +94,42 @@
 </head>
 <body class="text-white antialiased min-h-screen flex flex-col selection:bg-brand-yellow selection:text-black">
 
-  <!-- 1. 入 App Logo Splash Screen -->
+<!-- 1. 入 App Logo Splash Screen (加入記憶防護，重整絕不重複彈出) -->
   <div id="splashScreen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-opacity duration-500">
-    <img src="logo.jpeg" 
-         alt="Logo" 
-         onerror="this.onerror=null; this.src='logo.jpg';"
-         class="w-28 h-28 rounded-2xl shadow-2xl animate-pulse mb-4 object-contain" />
+    <img src="logo.jpg" 
+         alt="" 
+         class="w-28 h-28 rounded-2xl shadow-2xl mb-4 object-contain animate-pulse" />
     <h1 class="text-brand-yellow font-black tracking-widest text-lg">FOODCAFEALCHOLIC</h1>
   </div>
 
   <script>
-    function dismissSplash() {
-      const splash = document.getElementById('splashScreen');
-      if (splash) {
-        splash.style.opacity = '0';
-        splash.style.pointerEvents = 'none';
-        setTimeout(() => { if (splash) splash.remove(); }, 500);
+    // 檢查本次連線是否已經看過開場畫面
+    if (sessionStorage.getItem('fca_splash_viewed')) {
+      // 若已看過（按 Logo 或重新載入），直接瞬間關閉，不出現黑畫面
+      const splashEl = document.getElementById('splashScreen');
+      if (splashEl) splashEl.style.display = 'none';
+    } else {
+      // 僅在第一次進入網站時播放，並寫入快取記錄
+      sessionStorage.setItem('fca_splash_viewed', 'true');
+      function dismissSplash() {
+        const splash = document.getElementById('splashScreen');
+        if (splash) {
+          splash.style.opacity = '0';
+          splash.style.pointerEvents = 'none';
+          setTimeout(() => { if (splash) splash.remove(); }, 400);
+        }
       }
+      window.addEventListener('load', () => setTimeout(dismissSplash, 400));
+      setTimeout(dismissSplash, 800);
     }
-    window.addEventListener('load', () => setTimeout(dismissSplash, 600));
-    setTimeout(dismissSplash, 1200);
   </script>
 
   <!-- 頂部導航列 (7 & 8: 漢堡 Logo + 點擊重新整理回到首頁) -->
   <nav id="navbar" class="fixed top-0 w-full z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between bg-black/95 backdrop-blur-md border-b border-brand-border">
     <div class="flex items-center space-x-6">
-      <a href="index.html" class="flex items-center gap-3 cursor-pointer group" title="重新整理首頁">
-        <img src="logo.jpeg" 
-             alt="Logo" 
-             onerror="this.onerror=null; this.src='logo.jpg';"
+<div onclick="handleLogoRefresh()" class="flex items-center gap-3 cursor-pointer group" title="重新整理首頁">
+        <img src="logo.jpg" 
+             alt="" 
              class="w-9 h-9 rounded-xl object-contain border border-brand-yellow/40 group-hover:scale-105 transition shadow-md" />
         <div class="flex flex-col border-l border-zinc-700 pl-2.5 leading-none">
           <span class="text-white font-extrabold text-xs sm:text-sm tracking-wider group-hover:text-brand-yellow transition">
@@ -130,8 +137,7 @@
           </span>
           <span class="text-[9px] text-zinc-400 font-mono tracking-tight">@foodcafealcoholic</span>
         </div>
-      </a>
-
+      </div>
       <div class="hidden md:flex items-center space-x-5 text-xs tracking-wider text-zinc-300">
         <a href="#leaderboard-section" class="hover:text-brand-yellow transition">🔥 每週熱門榜</a>
         <a href="#editor-section" class="hover:text-brand-yellow transition">🏆 專屬嚴選</a>
@@ -1029,6 +1035,12 @@
       renderApp();
     }
 
+// 點擊左上角 Logo 時：重設所有篩選、清空搜尋框、平滑滑回頂部，零延遲且不重整網頁
+    function handleLogoRefresh() {
+      resetAllFilters();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
     function processCsvData(data) {
       if (!Array.isArray(data) || data.length === 0) return;
 

@@ -130,9 +130,9 @@
       }, duration);
     }
 
-    // 首次進入網站時自動於載入後淡出
-    window.addEventListener('load', () => setTimeout(hideSplashScreen, 400));
-    setTimeout(hideSplashScreen, 800);
+// 首次進入時延長至 1500 毫秒 (1.5 秒)
+    window.addEventListener('load', () => setTimeout(hideSplashScreen, 1500));
+    setTimeout(hideSplashScreen, 2000);
   </script>
 
   <!-- 頂部導航列 (7 & 8: 漢堡 Logo + 點擊重新整理回到首頁) -->
@@ -1047,11 +1047,8 @@
     }
 
 // 點擊左上角 Logo：彈出開場 Logo 動畫 + 瞬間無感重設
-    function handleLogoRefresh() {
-      // 1. 立即再次彈出 Logo 開場畫面（顯示約 0.6 秒後淡出）
-      triggerSplashScreen(600);
-
-      // 2. 趁住黑畫面遮住嘅瞬間，喺背景瞬間重設篩選並跳返頂部（完全唔會 Lag）
+function handleLogoRefresh() {
+      triggerSplashScreen(1500); // 改成 1500 代表顯示 1.5 秒
       resetAllFilters();
       window.scrollTo({ top: 0, behavior: 'instant' });
     }

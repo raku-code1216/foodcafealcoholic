@@ -60,6 +60,8 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     
     .card-zoom {
+      content-visibility: auto;
+      contain-intrinsic-size: 240px 380px;
       transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.3s ease, border-color 0.3s ease;
       transform-origin: center bottom;
     }
@@ -94,34 +96,43 @@
 </head>
 <body class="text-white antialiased min-h-screen flex flex-col selection:bg-brand-yellow selection:text-black">
 
-<!-- 1. 入 App Logo Splash Screen (加入記憶防護，重整絕不重複彈出) -->
-  <div id="splashScreen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-opacity duration-500">
+
+<!-- 1. 入 App Logo Splash Screen (可重複觸發版) -->
+  <div id="splashScreen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-opacity duration-500 opacity-100 pointer-events-auto">
     <img src="logo.jpg" 
          alt="" 
          class="w-28 h-28 rounded-2xl shadow-2xl mb-4 object-contain animate-pulse" />
-    <h1 class="text-brand-yellow font-black tracking-widest text-lg">FOODCAFEALCHOLIC</h1>
+    <h1 class="text-brand-yellow font-black tracking-widest text-lg">FOODCAFEALCOHOLIC</h1>
   </div>
 
   <script>
-    // 檢查本次連線是否已經看過開場畫面
-    if (sessionStorage.getItem('fca_splash_viewed')) {
-      // 若已看過（按 Logo 或重新載入），直接瞬間關閉，不出現黑畫面
-      const splashEl = document.getElementById('splashScreen');
-      if (splashEl) splashEl.style.display = 'none';
-    } else {
-      // 僅在第一次進入網站時播放，並寫入快取記錄
-      sessionStorage.setItem('fca_splash_viewed', 'true');
-      function dismissSplash() {
-        const splash = document.getElementById('splashScreen');
-        if (splash) {
-          splash.style.opacity = '0';
-          splash.style.pointerEvents = 'none';
-          setTimeout(() => { if (splash) splash.remove(); }, 400);
-        }
+    // 關閉 Splash Screen
+    function hideSplashScreen() {
+      const splash = document.getElementById('splashScreen');
+      if (splash) {
+        splash.style.opacity = '0';
+        splash.style.pointerEvents = 'none';
+        setTimeout(() => { splash.style.display = 'none'; }, 500);
       }
-      window.addEventListener('load', () => setTimeout(dismissSplash, 400));
-      setTimeout(dismissSplash, 800);
     }
+
+    // 彈出 Splash Screen（供點擊 Logo 重新整理調用）
+    function triggerSplashScreen(duration = 600) {
+      const splash = document.getElementById('splashScreen');
+      if (!splash) return;
+      splash.style.display = 'flex';
+      splash.style.pointerEvents = 'auto';
+      void splash.offsetWidth; // 強制重繪
+      splash.style.opacity = '1';
+
+      setTimeout(() => {
+        hideSplashScreen();
+      }, duration);
+    }
+
+    // 首次進入網站時自動於載入後淡出
+    window.addEventListener('load', () => setTimeout(hideSplashScreen, 400));
+    setTimeout(hideSplashScreen, 800);
   </script>
 
   <!-- 頂部導航列 (7 & 8: 漢堡 Logo + 點擊重新整理回到首頁) -->
@@ -1035,10 +1046,14 @@
       renderApp();
     }
 
-// 點擊左上角 Logo 時：重設所有篩選、清空搜尋框、平滑滑回頂部，零延遲且不重整網頁
+// 點擊左上角 Logo：彈出開場 Logo 動畫 + 瞬間無感重設
     function handleLogoRefresh() {
+      // 1. 立即再次彈出 Logo 開場畫面（顯示約 0.6 秒後淡出）
+      triggerSplashScreen(600);
+
+      // 2. 趁住黑畫面遮住嘅瞬間，喺背景瞬間重設篩選並跳返頂部（完全唔會 Lag）
       resetAllFilters();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
     
     function processCsvData(data) {

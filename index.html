@@ -1191,7 +1191,7 @@
             priceCategory: priceInfo.tier || 'all',
             occasion: r.occasion || '聚會',
             must_try: r.must_try || r.signature_dishes || '招牌菜式',
-            isEditorPick: i % 4 === 0,
+            isEditorPick: String(r.is_editor_pick).trim() === '1' || String(r.is_editor_pick).toLowerCase() === 'true',
             views: Math.floor(Math.random() * 4000) + 500,
             caption: captionStr,
             url: postUrl,
@@ -1211,7 +1211,7 @@
 
     function autoFetchCsv() {
       if (window.location.protocol === 'file:') return;
-      fetch('cleaned_data_final.csv')
+      fetch('cleaned_data_final.csv?t=' + Date.now())
         .then(response => {
           if (!response.ok) throw new Error('未找到 cleaned_data_final.csv');
           return response.text();

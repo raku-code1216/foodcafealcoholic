@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
+  <meta name="referrer" content="no-referrer">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FCA 後台管理系統 | Foodcafealcoholic Admin</title>
@@ -39,7 +40,7 @@
   <header class="bg-brand-card border-b border-brand-border px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
     <div class="flex items-center gap-3">
       <span class="text-xl font-black text-brand-yellow tracking-wider">FCA ADMIN</span>
-      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">精準對齊 displayUrl • 一鍵同步至網站</span>
+      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • 嚴選推介 • 一鍵同步至網站</span>
     </div>
     
     <div class="flex items-center gap-2 sm:gap-3">
@@ -123,6 +124,12 @@
           </div>
           <textarea id="caption" rows="4" placeholder="請直接貼上 Instagram 的貼文文字內容（整段複製過來即可，包含 hashtag），然後點擊右上角的「⚡ 讓 AI 智能提取」按鈕..."
                     class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow leading-relaxed text-xs"></textarea>
+
+          <!-- 補齊 AI 標題即時預覽元件 -->
+          <div id="captionTitlePreview" class="hidden p-2 rounded-lg bg-brand-yellow/10 border border-brand-yellow/40 text-brand-yellow text-xs flex items-center gap-2">
+            <span class="font-bold">🏷️ AI 提煉標題：</span>
+            <span id="captionTitleText" class="font-medium text-white truncate"></span>
+          </div>
         </div>
 
         <!-- 步驟 3: 自動填入的結果 (亦可手動微調) -->
@@ -164,6 +171,15 @@
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
         </div>
 
+        <!-- 嚴選推介勾選框 -->
+        <div class="p-2.5 bg-zinc-900/80 border border-brand-yellow/30 rounded-lg flex items-center justify-between">
+          <label for="is_editor_pick" class="flex items-center gap-2 cursor-pointer">
+            <span class="text-brand-yellow font-bold text-sm">★</span>
+            <span class="text-white font-bold">設為本週嚴選推介 (Editor's Pick)</span>
+          </label>
+          <input type="checkbox" id="is_editor_pick" class="w-4 h-4 accent-brand-yellow rounded cursor-pointer" />
+        </div>
+
         <button type="submit" id="submitBtn"
                 class="w-full bg-brand-yellow hover:bg-brand-yellowHover text-black font-extrabold py-2.5 rounded-lg transition shadow-lg text-sm mt-2">
           暫存至列表
@@ -178,20 +194,31 @@
           <h2 class="text-base font-extrabold text-white flex items-center gap-2">
             <span>📚</span> 餐廳資料庫列表 (<span id="totalItemsCount" class="text-brand-yellow">0</span> 間)
           </h2>
-          <span class="text-[11px] text-zinc-400">確認包含舊餐廳總數無誤後，再點擊右上角同步</span>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="text-[11px] text-zinc-400">本週嚴選:</span>
+            <span id="editorPicksCount" class="bg-brand-yellow text-black font-black text-[10px] px-2 py-0.2 rounded-full">0 間</span>
+          </div>
         </div>
-        <div class="relative">
-          <input type="text" id="adminSearchInput" oninput="renderTable()" placeholder="快速搜尋餐廳、地區..."
-                 class="bg-zinc-900 border border-zinc-700 text-xs text-white rounded-full pl-7 pr-3 py-1.5 focus:outline-none focus:border-brand-yellow w-48 sm:w-56" />
-          <span class="absolute left-2.5 top-2 text-zinc-500 text-xs">🔍</span>
+        
+        <div class="flex items-center gap-2">
+          <button type="button" id="filterPicksBtn" onclick="toggleOnlyPicksFilter()" 
+                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-brand-yellow text-xs px-2.5 py-1.5 rounded-full transition">
+            ★ 只看嚴選
+          </button>
+          <div class="relative">
+            <input type="text" id="adminSearchInput" oninput="renderTable()" placeholder="搜尋餐廳、地區..."
+                   class="bg-zinc-900 border border-zinc-700 text-xs text-white rounded-full pl-7 pr-3 py-1.5 focus:outline-none focus:border-brand-yellow w-36 sm:w-44" />
+            <span class="absolute left-2.5 top-2 text-zinc-500 text-xs">🔍</span>
+          </div>
         </div>
       </div>
 
       <!-- 表格清單 -->
       <div class="overflow-x-auto flex-grow max-h-[650px] no-scrollbar">
         <table class="w-full text-left text-xs">
-          <thead class="bg-zinc-900/90 sticky top-0 text-zinc-400 border-b border-zinc-800">
+          <thead class="bg-zinc-900/90 sticky top-0 text-zinc-400 border-b border-zinc-800 z-10">
             <tr>
+              <th class="py-2.5 px-2 text-center w-12">嚴選</th>
               <th class="py-2.5 px-3">餐廳名稱</th>
               <th class="py-2.5 px-2">地區</th>
               <th class="py-2.5 px-2">菜式</th>
@@ -201,7 +228,7 @@
           </thead>
           <tbody id="restaurantTableBody" class="divide-y divide-zinc-800/60 text-zinc-200">
             <tr>
-              <td colspan="5" class="py-12 text-center text-zinc-500">正在讀取資料庫中...</td>
+              <td colspan="6" class="py-12 text-center text-zinc-500">正在讀取資料庫中...</td>
             </tr>
           </tbody>
         </table>
@@ -253,8 +280,10 @@
 
   <script>
     let adminList = [];
+    let filterOnlyPicks = false;
     const CSV_FILENAME = 'cleaned_data_final.csv';
-    // 嚴格鎖定欄位名稱與順序，保證與原始 CSV 完全相同
+
+    // 嚴格鎖定欄位名稱與順序，加入 is_editor_pick 確保嚴選標記同步保存
     const CSV_COLUMNS = [
       'restaurant_name',
       'district',
@@ -266,7 +295,8 @@
       'shortCode',
       'displayUrl',
       'videoUrl',
-      'caption'
+      'caption',
+      'is_editor_pick'
     ];
 
     function loadConfig() {
@@ -326,7 +356,6 @@
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
-              // 完整保留並標準化
               adminList = results.data
                 .filter(r => r && (r.restaurant_name || r.shortCode))
                 .map(item => ({
@@ -340,7 +369,8 @@
                   shortCode: item.shortCode || '',
                   displayUrl: item.displayUrl || item.imageUrl || '',
                   videoUrl: item.videoUrl || '',
-                  caption: item.caption || ''
+                  caption: item.caption || '',
+                  is_editor_pick: (String(item.is_editor_pick).toLowerCase() === '1' || String(item.is_editor_pick).toLowerCase() === 'true') ? '1' : '0'
                 }));
               renderTable();
             }
@@ -352,14 +382,42 @@
         });
     }
 
+    function toggleOnlyPicksFilter() {
+      filterOnlyPicks = !filterOnlyPicks;
+      const btn = document.getElementById('filterPicksBtn');
+      if (filterOnlyPicks) {
+        btn.classList.add('bg-brand-yellow', 'text-black', 'border-brand-yellow', 'font-bold');
+        btn.classList.remove('bg-zinc-900', 'text-zinc-300');
+      } else {
+        btn.classList.remove('bg-brand-yellow', 'text-black', 'border-brand-yellow', 'font-bold');
+        btn.classList.add('bg-zinc-900', 'text-zinc-300');
+      }
+      renderTable();
+    }
+
+    function toggleEditorPickInTable(index) {
+      if (adminList[index]) {
+        adminList[index].is_editor_pick = adminList[index].is_editor_pick === '1' ? '0' : '1';
+        renderTable();
+      }
+    }
+
     function renderTable() {
       const tbody = document.getElementById('restaurantTableBody');
       const countEl = document.getElementById('totalItemsCount');
+      const picksCountEl = document.getElementById('editorPicksCount');
       const query = document.getElementById('adminSearchInput').value.trim().toLowerCase();
 
       countEl.innerText = adminList.length;
+      const totalPicks = adminList.filter(item => item.is_editor_pick === '1').length;
+      if (picksCountEl) picksCountEl.innerText = `${totalPicks} 間`;
 
       let filtered = adminList.map((item, originalIndex) => ({ item, originalIndex }));
+      
+      if (filterOnlyPicks) {
+        filtered = filtered.filter(({ item }) => item.is_editor_pick === '1');
+      }
+
       if (query) {
         filtered = filtered.filter(({ item }) => {
           return (item.restaurant_name || '').toLowerCase().includes(query) ||
@@ -369,24 +427,37 @@
       }
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-zinc-500">找不到符合條件的餐廳</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-zinc-500">找不到符合條件的餐廳</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = filtered.map(({ item, originalIndex }) => `
-        <tr class="hover:bg-zinc-900/60 transition">
-          <td class="py-2.5 px-3 font-bold text-white max-w-[160px] truncate" title="${item.restaurant_name || ''}">
-            ${item.restaurant_name || '未命名'}
-          </td>
-          <td class="py-2.5 px-2 text-zinc-300">${item.district || '-'}</td>
-          <td class="py-2.5 px-2 text-zinc-300">${item.cuisine || '-'}</td>
-          <td class="py-2.5 px-2 text-brand-yellow font-medium">${item.price || '-'}</td>
-          <td class="py-2.5 px-3 text-right space-x-2">
-            <button onclick="editItem(${originalIndex})" class="text-brand-yellow hover:underline font-bold">編輯</button>
-            <button onclick="deleteItem(${originalIndex})" class="text-red-400 hover:underline">刪除</button>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = filtered.map(({ item, originalIndex }) => {
+        const isPick = item.is_editor_pick === '1';
+        return `
+          <tr class="hover:bg-zinc-900/60 transition ${isPick ? 'bg-brand-yellow/5' : ''}">
+            <td class="py-2.5 px-2 text-center">
+              <button type="button" onclick="toggleEditorPickInTable(${originalIndex})" title="點擊切換嚴選狀態" class="text-base transition transform hover:scale-125 focus:outline-none">
+                <span class="${isPick ? 'text-brand-yellow drop-shadow font-bold' : 'text-zinc-600 hover:text-zinc-400'}">
+                  ${isPick ? '★' : '☆'}
+                </span>
+              </button>
+            </td>
+            <td class="py-2.5 px-3 font-bold text-white max-w-[160px] truncate" title="${item.restaurant_name || ''}">
+              <div class="flex items-center gap-1.5">
+                <span>${item.restaurant_name || '未命名'}</span>
+                ${isPick ? '<span class="text-[9px] bg-brand-yellow text-black px-1.5 py-0.2 rounded font-black">嚴選</span>' : ''}
+              </div>
+            </td>
+            <td class="py-2.5 px-2 text-zinc-300">${item.district || '-'}</td>
+            <td class="py-2.5 px-2 text-zinc-300">${item.cuisine || '-'}</td>
+            <td class="py-2.5 px-2 text-brand-yellow font-medium">${item.price || '-'}</td>
+            <td class="py-2.5 px-3 text-right space-x-2">
+              <button onclick="editItem(${originalIndex})" class="text-brand-yellow hover:underline font-bold">編輯</button>
+              <button onclick="deleteItem(${originalIndex})" class="text-red-400 hover:underline">刪除</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function updateImagePreview(url) {
@@ -450,9 +521,8 @@
 ${textToAnalyze}`;
 
         const candidateModels = [
-          'gemini-3.1-pro-preview',
-          'gemini-3-flash-preview',
-          'gemini-2.5-flash'
+          'gemini-2.5-flash',
+          'gemini-1.5-flash'
         ];
         
         let aiData = null;
@@ -495,9 +565,7 @@ ${textToAnalyze}`;
         if (extracted.occasion) document.getElementById('occasion').value = extracted.occasion;
         if (extracted.must_try) document.getElementById('must_try').value = extracted.must_try;
 
-        // ⭐ 喺呢度處理 AI 提煉出嚟嘅吸睛大標題
         if (extracted.title) {
-          // 1. 即時喺黃色預覽框顯示標題
           const previewEl = document.getElementById('captionTitlePreview');
           const previewText = document.getElementById('captionTitleText');
           if (previewEl && previewText) {
@@ -505,7 +573,6 @@ ${textToAnalyze}`;
             previewEl.classList.remove('hidden');
           }
 
-          // 2. 確保 caption 嘅第一行就係呢句精煉標題
           let currentCap = document.getElementById('caption').value.trim();
           if (!currentCap.startsWith(extracted.title)) {
             document.getElementById('caption').value = `${extracted.title}\n\n${currentCap}`;
@@ -533,7 +600,6 @@ ${textToAnalyze}`;
         if (match) code = match[1];
       }
 
-      // 嚴格對齊原始 10 個欄位，絕不多增、不改名
       const itemData = {
         restaurant_name: document.getElementById('restaurant_name').value.trim(),
         district: document.getElementById('district').value.trim(),
@@ -545,7 +611,8 @@ ${textToAnalyze}`;
         shortCode: code,
         displayUrl: document.getElementById('displayUrl').value.trim(),
         videoUrl: document.getElementById('videoUrl').value.trim(),
-        caption: document.getElementById('caption').value.trim()
+        caption: document.getElementById('caption').value.trim(),
+        is_editor_pick: document.getElementById('is_editor_pick').checked ? '1' : '0'
       };
 
       if (editIdx >= 0 && editIdx < adminList.length) {
@@ -580,6 +647,7 @@ ${textToAnalyze}`;
 
       document.getElementById('videoUrl').value = item.videoUrl || '';
       document.getElementById('caption').value = item.caption || '';
+      document.getElementById('is_editor_pick').checked = item.is_editor_pick === '1';
 
       document.getElementById('formTitle').innerHTML = `<span class="text-brand-yellow">✏️</span> 正在編輯：《${item.restaurant_name}》`;
       document.getElementById('submitBtn').innerText = '儲存修改';
@@ -601,10 +669,13 @@ ${textToAnalyze}`;
     function resetForm() {
       document.getElementById('postForm').reset();
       document.getElementById('editIndex').value = '-1';
+      document.getElementById('is_editor_pick').checked = false;
       document.getElementById('formTitle').innerHTML = `<span class="text-brand-yellow">✨</span> 新增餐廳食評`;
       document.getElementById('submitBtn').innerText = '暫存至列表';
       document.getElementById('cancelEditBtn').classList.add('hidden');
       document.getElementById('imagePreviewBox').classList.add('hidden');
+      const previewEl = document.getElementById('captionTitlePreview');
+      if (previewEl) previewEl.classList.add('hidden');
     }
 
     async function autoUploadToGitHub() {
@@ -615,7 +686,6 @@ ${textToAnalyze}`;
         return;
       }
 
-      // 安全防線：防止空資料庫或資料遺失
       if (adminList.length < 50) {
         const confirmSave = confirm(`⚠️ 警告：目前列表中只有 ${adminList.length} 筆資料！\n是否確認要覆蓋遠端檔案？若不確定請按「取消」！`);
         if (!confirmSave) return;
@@ -626,7 +696,6 @@ ${textToAnalyze}`;
       uploadBtn.innerText = '⏳ 正在同步至 GitHub...';
 
       try {
-        // 使用嚴格鎖定的欄位順序進行 Papa.unparse，百分之百保護格式
         const csvText = Papa.unparse({
           fields: CSV_COLUMNS,
           data: adminList
@@ -673,7 +742,8 @@ ${textToAnalyze}`;
           throw new Error(errData.message || 'GitHub API 回應錯誤');
         }
 
-        alert(`🎉 成功安全同步！現共有 ${adminList.length} 間餐廳，網站約 45 秒後完成更新，舊照片完整保留！`);
+        const totalPicks = adminList.filter(item => item.is_editor_pick === '1').length;
+        alert(`🎉 成功安全同步！現共有 ${adminList.length} 間餐廳（其中 ${totalPicks} 間設為嚴選推介），網站約 45 秒後完成更新！`);
       } catch (err) {
         alert('❌ 上傳失敗: ' + err.message);
       } finally {

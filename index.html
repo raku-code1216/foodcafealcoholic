@@ -21,7 +21,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
   
   <script>
@@ -31,7 +31,13 @@
       img.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
     }
     window.onImageError = onImageError;
+  </script>
 
+  <!-- Google Firebase Realtime Database SDK (相容模式) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+  <script>
     tailwind.config = {
       theme: {
         extend: {
@@ -315,7 +321,7 @@
         <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 tracking-wide text-white">
           <span class="text-brand-yellow">🔥</span> 每週熱門點擊排行榜 TOP 10 (Trending Leaderboard)
         </h2>
-        <span class="text-[11px] text-zinc-400">熱度每週更新</span>
+        <span class="text-[11px] text-zinc-400">熱度即時更新</span>
       </div>
       <div id="railLeaderboard" class="flex space-x-4 overflow-x-auto no-scrollbar py-3 scroll-smooth"></div>
     </section>
@@ -478,6 +484,27 @@
   </footer>
 
   <script>
+    // 專屬 Firebase 即時資料庫連線設定[cite: 3]
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpBXu84kqQKtsmICc5UQopqh7nJiZ7EQw",
+      authDomain: "foodcafealcoholic.firebaseapp.com",
+      databaseURL: "https://foodcafealcoholic-default-rtdb.firebaseio.com",
+      projectId: "foodcafealcoholic",
+      storageBucket: "foodcafealcoholic.firebasestorage.app",
+      messagingSenderId: "773988272547",
+      appId: "1:773988272547:web:5ebffc59fd4f0ccbbef216",
+      measurementId: "G-WFBF6J54XY"
+    };
+
+    let rtdb = null;
+    let globalClicksMap = {}; // 暫存雲端真實點擊數據
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      rtdb = firebase.database();
+    } catch (e) {
+      console.warn("Firebase 初始化提示:", e);
+    }
     let restaurants = [];
     const FAVORITES_STORAGE_KEY = 'foodcafe_user_favorites_v2';
     const HISTORY_STORAGE_KEY = 'foodcafe_search_history_v1';
@@ -510,7 +537,6 @@
       const clean = keyword.trim();
       if (clean.length < 2) return;
 
-      // 移除重複項並加入最前端
       searchHistory = searchHistory.filter(item => item.toLowerCase() !== clean.toLowerCase());
       searchHistory.unshift(clean);
       if (searchHistory.length > 8) searchHistory = searchHistory.slice(0, 8);
@@ -694,6 +720,7 @@
       const isFav = savedFavorites.has(String(item.id));
       const widthClass = isGrid ? 'w-full' : 'flex-none w-60 sm:w-64';
       const mainTitle = getPostMainTitle(item);
+      const viewsCount = (item.views !== undefined && item.views !== null) ? item.views : 0;
 
       return `
         <div data-rest-id="${item.id}" onclick="handleCardClick(this)"
@@ -765,7 +792,7 @@
               <span class="text-brand-yellow font-semibold text-[11px]">
                 💰 ${item.priceInfo ? item.priceInfo.text : (item.price || '依現場菜單')}
               </span>
-              <span class="text-[10px] text-zinc-500">🔥 ${item.views || 999} 次查看</span>
+              <span class="text-[10px] text-zinc-500">🔥 ${viewsCount} 次查看</span>
             </div>
           </div>
         </div>
@@ -786,7 +813,6 @@
       if (id) toggleFavorite(id);
     }
 
-    // 與原版一致：優先使用 IG Reel 嵌入播放器
     function openModalById(id) {
       const safeId = String(id);
       const item = restaurants.find(r => String(r.id) === safeId);
@@ -794,6 +820,14 @@
       currentModalItem = item;
 
       item.views = (item.views || 0) + 1;
+      globalClicksMap[item.id] = item.views;
+
+      // 即時發送點擊累加至 Firebase
+      if (rtdb && item.id) {
+        rtdb.ref('restaurant_clicks/' + item.id).transaction((currentClicks) => {
+          return (currentClicks || 0) + 1;
+        });
+      }
 
       document.getElementById('modalTitle').innerText = item.restaurant_name;
       document.getElementById('modalMeta').innerText = `${item.district || '地區未註明'} • ${item.cuisine || '美食'}`;
@@ -1192,7 +1226,7 @@
             occasion: r.occasion || '聚會',
             must_try: r.must_try || r.signature_dishes || '招牌菜式',
             isEditorPick: String(r.is_editor_pick).trim() === '1' || String(r.is_editor_pick).toLowerCase() === 'true',
-            views: Math.floor(Math.random() * 4000) + 500,
+            views: globalClicksMap[uniqueId] !== undefined ? globalClicksMap[uniqueId] : 0,
             caption: captionStr,
             url: postUrl,
             shortCode: code,
@@ -1211,6 +1245,21 @@
 
     function autoFetchCsv() {
       if (window.location.protocol === 'file:') return;
+
+      // 1. 先向 Firebase 抓取最新的全網累積點擊數
+      if (rtdb) {
+        rtdb.ref('restaurant_clicks').once('value').then(snapshot => {
+          globalClicksMap = snapshot.val() || {};
+          restaurants.forEach(item => {
+            if (globalClicksMap[item.id] !== undefined) {
+              item.views = globalClicksMap[item.id];
+            }
+          });
+          renderApp();
+        }).catch(err => console.log('讀取雲端點擊數提示:', err));
+      }
+
+      // 2. 載入最新 CSV 資料
       fetch('cleaned_data_final.csv?t=' + Date.now())
         .then(response => {
           if (!response.ok) throw new Error('未找到 cleaned_data_final.csv');

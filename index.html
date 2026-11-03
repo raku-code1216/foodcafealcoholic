@@ -172,7 +172,7 @@
     </div>
   </nav>
 
-  <!-- 置頂搜尋引擎 Sector (已刪除大標題宣傳海報，文字更巨大) -->
+  <!-- 置頂搜尋引擎 Sector -->
   <section class="w-full max-w-5xl mx-auto px-4 pt-20 sm:pt-24 pb-4 text-center relative z-10">
     <!-- 巨型搜尋輸入框 -->
     <div class="relative max-w-3xl mx-auto shadow-2xl">
@@ -190,7 +190,7 @@
       </button>
     </div>
 
-    <!-- 搜尋歷史紀錄 Sector (Search History Chips) -->
+    <!-- 搜尋歷史紀錄 Sector -->
     <div id="searchHistoryContainer" class="max-w-3xl mx-auto mt-3 px-2 flex flex-wrap items-center gap-2 text-xs sm:text-sm hidden">
       <span class="text-zinc-400 font-bold flex items-center gap-1 shrink-0">
         <span>🕒</span> <span>最近搜尋:</span>
@@ -202,11 +202,11 @@
     </div>
   </section>
 
-  <!-- 放大版篩選系統 (加大按鈕與下拉選單) -->
+  <!-- 放大版篩選系統 -->
   <section class="sticky top-14 z-40 bg-[#0A0A0A]/95 backdrop-blur-md border-y border-brand-border px-4 sm:px-8 lg:px-12 py-3.5 sm:py-4 shadow-2xl">
     <div class="max-w-7xl mx-auto space-y-3">
       
-      <!-- 放大版場景標籤 -->
+      <!-- 場景標籤 -->
       <div class="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1">
         <span class="text-zinc-200 font-black text-sm sm:text-base shrink-0 flex items-center gap-1.5">
           <span>🎉</span> <span>場景：</span>
@@ -219,7 +219,7 @@
         <button onclick="setFilter('occasion', '寵物友善', this)" class="filter-pill occasion-pill shrink-0 px-4 sm:px-5 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🐾 寵物友善</button>
       </div>
 
-      <!-- 放大版細分選單 -->
+      <!-- 細分選單 -->
       <div class="flex flex-wrap items-center gap-3 pt-1">
         
         <!-- 地區篩選 -->
@@ -363,11 +363,11 @@
     </section>
   </main>
 
-  <!-- 詳情視窗 (無多餘截圖 + 加大返回按鈕) -->
+  <!-- 詳情視窗 -->
   <div id="detailModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
     <div class="bg-brand-card border border-brand-border rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-2xl relative flex flex-col">
       
-      <!-- 醒目「返回首頁」按鈕列 -->
+      <!-- 「返回首頁」按鈕列 -->
       <div class="p-3.5 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 sticky top-0 z-30">
         <button onclick="closeModal()" class="flex items-center gap-2 bg-brand-yellow hover:bg-yellow-400 text-black px-4 py-2 rounded-xl font-black text-xs sm:text-sm shadow-md transition active:scale-95">
           <span class="text-base sm:text-lg">←</span> <span>返回首頁</span>
@@ -983,6 +983,13 @@
       if (optNt) optNt.innerText = `🌳 新界全區 (${counts['新界']} 間)`;
     }
 
+    // 香港熱門商圈（用於智慧比對）
+    const HK_DISTRICTS = [
+      '中環', '上環', '灣仔', '銅鑼灣', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '黃竹坑',
+      '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣',
+      '荃灣', '葵芳', '青衣', '沙田', '大圍', '元朗', '屯門', '大埔', '粉嶺', '上水', '將軍澳', '康城', '西貢'
+    ];
+
     function renderApp() {
       updateFavBadge();
 
@@ -1000,12 +1007,28 @@
 
       let filtered = restaurants.filter(item => {
         if (filters.search) {
-          const s = filters.search.toLowerCase();
-          const matchName = (item.restaurant_name || '').toLowerCase().includes(s);
-          const matchDist = (item.district || '').toLowerCase().includes(s);
-          const matchCuis = (item.cuisine || '').toLowerCase().includes(s);
-          const matchCap = (item.caption || '').toLowerCase().includes(s);
-          if (!matchName && !matchDist && !matchCuis && !matchCap) return false;
+          const s = filters.search.toLowerCase().trim();
+          const cleanItemDist = String(item.district || '').toLowerCase();
+          const cleanName = String(item.restaurant_name || '').toLowerCase();
+
+          // 判斷用戶是否單純想尋找「特定地區」
+          const isPureDistrictQuery = HK_DISTRICTS.includes(s);
+
+          if (isPureDistrictQuery) {
+            // ⭐ 地區模式：只比對地區欄位與店名，完全無視食材名稱，永不誤撞
+            const matchDist = cleanItemDist.includes(s);
+            const matchName = cleanName.includes(s);
+            if (!matchDist && !matchName) return false;
+          } else {
+            // ⭐ 一般關鍵字模式：比對店名、地區、菜式、必食招牌（must_try）
+            const matchName = cleanName.includes(s);
+            const matchDist = cleanItemDist.includes(s);
+            const matchCuis = (item.cuisine || '').toLowerCase().includes(s);
+            const matchMust = (item.must_try || '').toLowerCase().includes(s);
+
+            // 乾淨精準：不再盲目搜尋整篇長篇 caption 故事
+            if (!matchName && !matchDist && !matchCuis && !matchMust) return false;
+          }
         }
 
         if (filters.region !== 'all') {

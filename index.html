@@ -31,22 +31,18 @@
       img.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
     }
     window.onImageError = onImageError;
-
-    function onMapPinImgError(img) {
-      if (!img) return;
-      img.onerror = null;
-      img.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200&q=80';
-    }
-    window.onMapPinImgError = onMapPinImgError;
   </script>
 
   <!-- Google Firebase Realtime Database SDK (相容模式) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Leaflet.js 互動地圖庫 (免費無需 API Key) -->
+  <!-- Leaflet.js 互動地圖庫 + MarkerCluster 聚合插件 (免費無需 API Key) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     
   <script>
     tailwind.config = {
@@ -110,7 +106,7 @@
       overflow: hidden;
     }
 
-    /* 地圖容器、美食相片圖釘與彈窗樣式 */
+    /* 地圖容器、美食相片圖釘、聚合氣泡與彈窗樣式 */
     #fcaLeafletMap {
       background: #1a1a1a !important;
     }
@@ -137,8 +133,8 @@
     }
     .food-photo-pin {
       position: relative;
-      width: 46px;
-      height: 46px;
+      width: 48px;
+      height: 48px;
       border-radius: 9999px;
       border: 2.5px solid #FFC400;
       background: #18181b;
@@ -166,6 +162,20 @@
       border-width: 7px 6px 0;
       border-style: solid;
       border-color: #FFC400 transparent transparent transparent;
+    }
+    .fca-cluster-pin {
+      width: 42px;
+      height: 42px;
+      border-radius: 9999px;
+      background: #0A0A0A;
+      color: #FFC400;
+      border: 2.5px solid #FFC400;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 13px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.8);
     }
     .user-pulse-dot {
       width: 18px;
@@ -551,7 +561,7 @@
           <span class="text-xl">🗺️</span>
           <div>
             <h3 class="text-sm sm:text-base font-black text-white">附近食評地圖 (Nearby Food Map)</h3>
-            <p id="mapStatusText" class="text-[11px] text-zinc-400">點擊圖釘查看餐廳美食相片與食評短片</p>
+            <p id="mapStatusText" class="text-[11px] text-zinc-400">放大地圖或點擊數字氣泡展開餐廳美食相片</p>
           </div>
         </div>
 
@@ -838,20 +848,6 @@
       const rawImg = item.image || item.displayUrl || item.imageUrl || item.thumbnailUrl;
       if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
         return proxyImageUrl(rawImg, 600);
-      }
-      return getCuisineImage(item.cuisine);
-    }
-
-    // 地圖圖釘專用輕量縮圖 (載入更快更清晰)
-    function getMapPinThumbnail(item) {
-      if (!item) return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200&q=80';
-      const code = item.shortCode || (item.id && item.id.length >= 8 && item.id.length <= 15 ? item.id : null) || extractShortcode(item.url);
-      if (code) {
-        return `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=m&w=160&h=160&fit=cover&default=https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200`;
-      }
-      const rawImg = item.image || item.displayUrl || item.imageUrl || item.thumbnailUrl;
-      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
-        return `https://wsrv.nl/?url=${encodeURIComponent(rawImg)}&w=160&h=160&fit=cover&output=jpg`;
       }
       return getCuisineImage(item.cuisine);
     }
@@ -1548,7 +1544,6 @@
       currentMapStyle = styleKey;
 
       if (styleKey === 'hk') {
-        // 香港地政總署官方詳細街道圖 + 繁體中文標籤（支援港鐵出口及大廈名稱）
         const hkBase = L.tileLayer('https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/xyz/basemap/WGS84/{z}/{x}/{y}.png', {
           attribution: '© 地政總署 Lands Department',
           maxNativeZoom: 19,
@@ -1560,7 +1555,6 @@
         }).addTo(fcaMap);
         currentTileLayers = [hkBase, hkLabel];
       } else if (styleKey === 'dark') {
-        // 深色型格模式
         const darkBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
           attribution: '© Esri, HERE, Garmin, OpenStreetMap',
           maxNativeZoom: 16,
@@ -1572,7 +1566,6 @@
         }).addTo(fcaMap);
         currentTileLayers = [darkBase, darkRef];
       } else {
-        // 預設：清晰高對比街道圖 (全球通用，街道及地標極清晰)
         const streetLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
           attribution: '© Esri, HERE, Garmin, OpenStreetMap',
           maxNativeZoom: 18,
@@ -1602,7 +1595,20 @@
         if (!fcaMap) {
           fcaMap = L.map('fcaLeafletMap').setView([22.3027, 114.1772], 14);
           applyMapTileStyle(currentMapStyle);
-          mapMarkersLayer = L.layerGroup().addTo(fcaMap);
+
+          // 使用聚合插件：縮小時自動合併密集餐廳，放大時順暢展開真實美食相片圖釘
+          mapMarkersLayer = L.markerClusterGroup({
+            maxClusterRadius: 48,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
+            iconCreateFunction: function(cluster) {
+              return L.divIcon({
+                html: `<div class="fca-cluster-pin">${cluster.getChildCount()}</div>`,
+                className: '',
+                iconSize: [42, 42]
+              });
+            }
+          }).addTo(fcaMap);
         }
 
         fcaMap.invalidateSize();
@@ -1646,7 +1652,6 @@
               .openPopup();
           }
 
-          // 定位後自動切換為 3km 內方便查看附近
           const defaultPill = document.querySelectorAll('.map-radius-pill')[3];
           setMapRadius(3, defaultPill);
         },
@@ -1691,19 +1696,18 @@
 
       document.getElementById('mapPinCountBadge').innerText = `${enriched.length} 間`;
 
-      enriched.forEach(item => {
-        const pinThumb = getMapPinThumbnail(item);
-        const cardThumb = getReelThumbnail(item);
+      const markersToAdd = enriched.map(item => {
+        // 直接共用首頁已經快取好的高畫質縮圖網址，零延遲載入每間餐廳真實相片
+        const thumbUrl = getReelThumbnail(item);
 
-        // 美食相片圓形圖釘
         const photoPinIcon = L.divIcon({
           html: `<div class="food-photo-pin" title="${item.restaurant_name}">
-                   <img src="${pinThumb}" alt="${item.restaurant_name}" onerror="onMapPinImgError(this)" />
+                   <img src="${thumbUrl}" alt="${item.restaurant_name}" onerror="onImageError(this)" />
                  </div>`,
           className: '',
-          iconSize: [46, 52],
-          iconAnchor: [23, 52],
-          popupAnchor: [0, -48]
+          iconSize: [48, 54],
+          iconAnchor: [24, 54],
+          popupAnchor: [0, -50]
         });
 
         const distLabel = item.distKm !== null
@@ -1713,7 +1717,7 @@
         const popupHtml = `
           <div class="w-56 font-sans overflow-hidden">
             <div class="relative w-full h-28 rounded-lg overflow-hidden mb-2 bg-zinc-900">
-              <img src="${cardThumb}" alt="${item.restaurant_name}" onerror="onImageError(this)" class="w-full h-full object-cover" />
+              <img src="${thumbUrl}" alt="${item.restaurant_name}" onerror="onImageError(this)" class="w-full h-full object-cover" />
               <div class="absolute bottom-1.5 left-1.5 flex items-center gap-1">
                 <span class="bg-black/85 text-white text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-700">📍 ${item.district || '香港'}</span>
                 ${distLabel}
@@ -1731,10 +1735,10 @@
           </div>
         `;
 
-        L.marker([item.coords.lat, item.coords.lng], { icon: photoPinIcon })
-          .addTo(mapMarkersLayer)
-          .bindPopup(popupHtml);
+        return L.marker([item.coords.lat, item.coords.lng], { icon: photoPinIcon }).bindPopup(popupHtml);
       });
+
+      mapMarkersLayer.addLayers(markersToAdd);
 
       // 更新底部附近餐廳橫向卡片
       const rail = document.getElementById('nearbyCardsRail');

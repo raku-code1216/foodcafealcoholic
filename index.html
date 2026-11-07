@@ -133,6 +133,7 @@
     }
     .food-photo-pin {
       position: relative;
+      box-sizing: border-box;
       width: 48px;
       height: 48px;
       border-radius: 9999px;
@@ -146,17 +147,20 @@
       border-color: #ffffff;
       z-index: 999 !important;
     }
-    .food-photo-pin img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 9999px;
-      display: block;
+    /* 覆蓋 Leaflet 預設的 width: auto，讓相片 100% 填滿整個圓圈 */
+    .leaflet-container .leaflet-marker-pane .food-photo-pin img {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+      max-height: 100% !important;
+      object-fit: cover !important;
+      border-radius: 9999px !important;
+      display: block !important;
     }
     .food-photo-pin::after {
       content: '';
       position: absolute;
-      bottom: -7px;
+      bottom: -8px;
       left: 50%;
       transform: translateX(-50%);
       border-width: 7px 6px 0;
@@ -1596,7 +1600,6 @@
           fcaMap = L.map('fcaLeafletMap').setView([22.3027, 114.1772], 14);
           applyMapTileStyle(currentMapStyle);
 
-          // 使用聚合插件：縮小時自動合併密集餐廳，放大時順暢展開真實美食相片圖釘
           mapMarkersLayer = L.markerClusterGroup({
             maxClusterRadius: 48,
             spiderfyOnMaxZoom: true,
@@ -1697,7 +1700,6 @@
       document.getElementById('mapPinCountBadge').innerText = `${enriched.length} 間`;
 
       const markersToAdd = enriched.map(item => {
-        // 直接共用首頁已經快取好的高畫質縮圖網址，零延遲載入每間餐廳真實相片
         const thumbUrl = getReelThumbnail(item);
 
         const photoPinIcon = L.divIcon({

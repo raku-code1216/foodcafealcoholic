@@ -462,10 +462,10 @@
   <div id="detailModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
     <div class="bg-brand-card border border-brand-border rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-2xl relative flex flex-col">
       
-      <!-- 「返回首頁」按鈕列 -->
+      <!-- 「返回首頁 / 返回地圖」按鈕列 -->
       <div class="p-3.5 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 sticky top-0 z-30">
         <button onclick="closeModal()" class="flex items-center gap-2 bg-brand-yellow hover:bg-yellow-400 text-black px-4 py-2 rounded-xl font-black text-xs sm:text-sm shadow-md transition active:scale-95">
-          <span class="text-base sm:text-lg">←</span> <span>返回首頁</span>
+          <span class="text-base sm:text-lg">←</span> <span id="modalBackBtnText">返回首頁</span>
         </button>
         <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center font-bold text-base">
           ✕
@@ -711,6 +711,7 @@
     
     let savedFavorites = new Set();
     let searchHistory = [];
+    let openedDetailFromMap = false;
 
     // 載入搜尋歷史
     function loadSearchHistory() {
@@ -1091,6 +1092,16 @@
       const iframeEl = document.getElementById('modalReelIframe');
       if (iframeEl) iframeEl.src = "";
       document.getElementById('detailModal').classList.add('hidden');
+
+      // 恢復按鈕預設文字為「返回首頁」
+      const backTextEl = document.getElementById('modalBackBtnText');
+      if (backTextEl) backTextEl.innerText = '返回首頁';
+
+      // 若是從地圖點開食評，關閉時自動返回地圖並保留原本位置與篩選狀態
+      if (openedDetailFromMap) {
+        openedDetailFromMap = false;
+        openNearbyMapModal();
+      }
     }
 
     function updateFavBadge() {
@@ -1910,6 +1921,10 @@
     }
 
     function openModalFromMap(id) {
+      openedDetailFromMap = true;
+      const backTextEl = document.getElementById('modalBackBtnText');
+      if (backTextEl) backTextEl.innerText = '返回地圖';
+
       closeNearbyMapModal();
       openModalById(id);
     }

@@ -21,7 +21,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
   
   <script>
@@ -104,6 +104,9 @@
     }
 
     /* 地圖深色主題彈窗與定位點樣式 */
+    #fcaLeafletMap {
+      background: #141414 !important;
+    }
     .leaflet-popup-content-wrapper, .leaflet-popup-tip {
       background: #141414 !important;
       color: #ffffff !important;
@@ -1474,16 +1477,31 @@
       setTimeout(() => {
         if (!fcaMap) {
           fcaMap = L.map('fcaLeafletMap').setView([22.3027, 114.1772], 13);
-          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© OpenStreetMap © CARTO',
+
+          // 1. Esri 深色底圖（免費、免 API Key、支援 no-referrer）
+          L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri, HERE, Garmin, OpenStreetMap',
+            maxNativeZoom: 16,
             maxZoom: 19
           }).addTo(fcaMap);
+
+          // 2. Esri 深色街道與地名標籤圖層
+          L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+            maxNativeZoom: 16,
+            maxZoom: 19
+          }).addTo(fcaMap);
+
           mapMarkersLayer = L.layerGroup().addTo(fcaMap);
-        } else {
-          fcaMap.invalidateSize();
         }
+
+        // 強制重新計算全螢幕高度，消除上下灰色空白
+        fcaMap.invalidateSize();
         renderMapPins();
-      }, 100);
+      }, 250);
+
+      setTimeout(() => {
+        if (fcaMap) fcaMap.invalidateSize();
+      }, 500);
     }
 
     function closeNearbyMapModal() {
@@ -1508,6 +1526,7 @@
           btn.disabled = false;
 
           if (fcaMap) {
+            fcaMap.invalidateSize();
             fcaMap.setView([userLocation.lat, userLocation.lng], 15);
             if (userMarker) fcaMap.removeLayer(userMarker);
             const userIcon = L.divIcon({ className: 'user-pulse-dot', iconSize: [16, 16] });

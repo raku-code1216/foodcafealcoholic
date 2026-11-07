@@ -147,7 +147,6 @@
       border-color: #ffffff;
       z-index: 999 !important;
     }
-    /* 覆蓋 Leaflet 預設的 width: auto，讓相片 100% 填滿整個圓圈 */
     .leaflet-container .leaflet-marker-pane .food-photo-pin img {
       width: 100% !important;
       height: 100% !important;
@@ -557,15 +556,15 @@
 
   <!-- 附近美食地圖 Modal -->
   <div id="nearbyMapModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-2 sm:p-5">
-    <div class="bg-brand-card border border-brand-border rounded-2xl max-w-5xl w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div class="bg-brand-card border border-brand-border rounded-2xl max-w-5xl w-full h-[92vh] flex flex-col shadow-2xl overflow-hidden">
       
       <!-- 頂部控制列 -->
-      <div class="p-3 sm:p-4 border-b border-zinc-800 bg-zinc-950 flex flex-wrap items-center justify-between gap-2">
+      <div class="p-3 sm:p-3.5 border-b border-zinc-800 bg-zinc-950 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-2">
           <span class="text-xl">🗺️</span>
           <div>
             <h3 class="text-sm sm:text-base font-black text-white">附近食評地圖 (Nearby Food Map)</h3>
-            <p id="mapStatusText" class="text-[11px] text-zinc-400">放大地圖或點擊數字氣泡展開餐廳美食相片</p>
+            <p id="mapStatusText" class="text-[11px] text-zinc-400">可透過下方篩選條件或 GPS 定位探索身邊美食</p>
           </div>
         </div>
 
@@ -577,6 +576,55 @@
             ✕
           </button>
         </div>
+      </div>
+
+      <!-- 地圖篩選系統列 (搜尋 + 菜式 + 預算 + 場景) -->
+      <div class="px-3 sm:px-4 py-2 bg-zinc-950/95 border-b border-zinc-800/80 flex flex-wrap items-center gap-2 text-xs">
+        <!-- 地圖內搜尋框 -->
+        <div class="relative flex-1 min-w-[140px] sm:max-w-[210px]">
+          <span class="absolute inset-y-0 left-2.5 flex items-center text-brand-yellow text-xs pointer-events-none">🔍</span>
+          <input type="text" id="mapSearchInput" oninput="onMapFilterChange(true)"
+                 placeholder="搜尋店名 / 地區 / 招牌..."
+                 class="w-full bg-zinc-900 border border-zinc-700 focus:border-brand-yellow text-white placeholder-zinc-500 rounded-lg pl-7 pr-6 py-1.5 text-xs focus:outline-none" />
+          <button type="button" onclick="clearMapSearch()" class="absolute inset-y-0 right-2 flex items-center text-zinc-500 hover:text-white text-[10px]">✕</button>
+        </div>
+
+        <!-- 菜式篩選 -->
+        <select id="mapCuisineSelect" onchange="onMapFilterChange(true)" class="bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-brand-yellow font-semibold">
+          <option value="all">🍜 所有菜式</option>
+          <option value="日本">🇯🇵 日本料理</option>
+          <option value="Cafe">☕ Cafe / Brunch</option>
+          <option value="西式">🥩 西式料理</option>
+          <option value="火鍋">🍲 火鍋 / 雞煲</option>
+          <option value="東南亞">🌶️ 東南亞菜</option>
+          <option value="中菜">🥢 中式粵菜</option>
+          <option value="甜品">🍰 甜品烘焙</option>
+          <option value="酒吧">🍸 酒吧調酒</option>
+          <option value="快餐">🍔 小食 / 漢堡</option>
+        </select>
+
+        <!-- 預算篩選 -->
+        <select id="mapPriceSelect" onchange="onMapFilterChange(true)" class="bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-brand-yellow font-semibold">
+          <option value="all">💰 不限預算</option>
+          <option value="under100">$100 以下</option>
+          <option value="100-300">$100 - $300</option>
+          <option value="300-600">$300 - $600</option>
+          <option value="above600">$600 以上</option>
+        </select>
+
+        <!-- 場景篩選 -->
+        <select id="mapOccasionSelect" onchange="onMapFilterChange(true)" class="bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-brand-yellow font-semibold">
+          <option value="all">🎉 所有場景</option>
+          <option value="拍拖約會">💑 拍拖約會</option>
+          <option value="聚會">🍻 大班聚會</option>
+          <option value="打卡Cafe">📸 打卡必到</option>
+          <option value="深夜食堂">🌙 深夜食堂</option>
+          <option value="寵物友善">🐾 寵物友善</option>
+        </select>
+
+        <button onclick="resetMapFilters()" class="text-zinc-400 hover:text-brand-yellow text-xs font-bold underline ml-auto shrink-0 px-1">
+          重設條件
+        </button>
       </div>
 
       <!-- 距離與地圖底圖切換列 -->
@@ -605,7 +653,7 @@
 
       <!-- 底部附近餐廳快速滑動列 -->
       <div id="nearbyCardsRail" class="p-3 bg-zinc-950 border-t border-zinc-800 flex gap-3 overflow-x-auto no-scrollbar shrink-0 min-h-[96px] items-center">
-        <span class="text-xs text-zinc-500 mx-auto">開啟定位後，這裡會按距離由近至遠排列附近餐廳</span>
+        <span class="text-xs text-zinc-500 mx-auto">開啟定位或套用篩選後，這裡會顯示符合條件的餐廳</span>
       </div>
 
     </div>
@@ -1142,6 +1190,65 @@
       '荃灣', '葵芳', '青衣', '沙田', '大圍', '元朗', '屯門', '大埔', '粉嶺', '上水', '將軍澳', '康城', '西貢'
     ];
 
+    function matchRestaurantByFilters(item, fObj) {
+      if (fObj.search) {
+        const s = fObj.search.toLowerCase().trim();
+        const cleanItemDist = String(item.district || '').toLowerCase();
+        const cleanName = String(item.restaurant_name || '').toLowerCase();
+
+        // 判斷用戶是否單純想尋找「特定地區」
+        const isPureDistrictQuery = HK_DISTRICTS.includes(s);
+
+        if (isPureDistrictQuery) {
+          const matchDist = cleanItemDist.includes(s);
+          const matchName = cleanName.includes(s);
+          if (!matchDist && !matchName) return false;
+        } else {
+          const matchName = cleanName.includes(s);
+          const matchDist = cleanItemDist.includes(s);
+          const matchCuis = (item.cuisine || '').toLowerCase().includes(s);
+          const matchMust = (item.must_try || '').toLowerCase().includes(s);
+
+          if (!matchName && !matchDist && !matchCuis && !matchMust) return false;
+        }
+      }
+
+      if (fObj.region && fObj.region !== 'all') {
+        const targetRegion = fObj.region;
+        const itemRegion = item.region || inferRegionFromItem(item);
+        if (itemRegion !== targetRegion) return false;
+      }
+
+      if (fObj.district && fObj.district !== 'all') {
+        const dTerm = fObj.district.toLowerCase();
+        const cleanItemDist = String(item.district || '').toLowerCase();
+        const cleanName = String(item.restaurant_name || '').toLowerCase();
+        const inDistrict = cleanItemDist.includes(dTerm) || cleanName.includes(dTerm);
+        if (!inDistrict) return false;
+      }
+
+      if (fObj.occasion && fObj.occasion !== 'all') {
+        const occTerm = fObj.occasion;
+        const matchOcc = (item.occasion || '').includes(occTerm) || (item.caption || '').includes(occTerm);
+        if (!matchOcc) return false;
+      }
+
+      if (fObj.price && fObj.price !== 'all') {
+        const itemTier = item.priceCategory || (item.priceInfo ? item.priceInfo.tier : null);
+        if (itemTier !== fObj.price) return false;
+      }
+
+      if (fObj.cuisine && fObj.cuisine !== 'all') {
+        const cTarget = fObj.cuisine;
+        const cleanCuisine = String(item.cuisine || '').toLowerCase();
+        const cleanName = String(item.restaurant_name || '').toLowerCase();
+        const matched = cleanCuisine.includes(cTarget.toLowerCase()) || cleanName.includes(cTarget.toLowerCase());
+        if (!matched) return false;
+      }
+
+      return true;
+    }
+
     function renderApp() {
       updateFavBadge();
 
@@ -1157,64 +1264,7 @@
       const notice = document.getElementById('activeFilterNotice');
       if (notice) notice.classList.toggle('hidden', !isFiltering);
 
-      let filtered = restaurants.filter(item => {
-        if (filters.search) {
-          const s = filters.search.toLowerCase().trim();
-          const cleanItemDist = String(item.district || '').toLowerCase();
-          const cleanName = String(item.restaurant_name || '').toLowerCase();
-
-          // 判斷用戶是否單純想尋找「特定地區」
-          const isPureDistrictQuery = HK_DISTRICTS.includes(s);
-
-          if (isPureDistrictQuery) {
-            const matchDist = cleanItemDist.includes(s);
-            const matchName = cleanName.includes(s);
-            if (!matchDist && !matchName) return false;
-          } else {
-            const matchName = cleanName.includes(s);
-            const matchDist = cleanItemDist.includes(s);
-            const matchCuis = (item.cuisine || '').toLowerCase().includes(s);
-            const matchMust = (item.must_try || '').toLowerCase().includes(s);
-
-            if (!matchName && !matchDist && !matchCuis && !matchMust) return false;
-          }
-        }
-
-        if (filters.region !== 'all') {
-          const targetRegion = filters.region;
-          const itemRegion = item.region || inferRegionFromItem(item);
-          if (itemRegion !== targetRegion) return false;
-        }
-
-        if (filters.district !== 'all') {
-          const dTerm = filters.district.toLowerCase();
-          const cleanItemDist = String(item.district || '').toLowerCase();
-          const cleanName = String(item.restaurant_name || '').toLowerCase();
-          const inDistrict = cleanItemDist.includes(dTerm) || cleanName.includes(dTerm);
-          if (!inDistrict) return false;
-        }
-
-        if (filters.occasion !== 'all') {
-          const occTerm = filters.occasion;
-          const matchOcc = (item.occasion || '').includes(occTerm) || (item.caption || '').includes(occTerm);
-          if (!matchOcc) return false;
-        }
-
-        if (filters.price !== 'all') {
-          const itemTier = item.priceCategory || (item.priceInfo ? item.priceInfo.tier : null);
-          if (itemTier !== filters.price) return false;
-        }
-
-        if (filters.cuisine !== 'all') {
-          const cTarget = filters.cuisine;
-          const cleanCuisine = String(item.cuisine || '').toLowerCase();
-          const cleanName = String(item.restaurant_name || '').toLowerCase();
-          let matched = cleanCuisine.includes(cTarget.toLowerCase()) || cleanName.includes(cTarget.toLowerCase());
-          if (!matched) return false;
-        }
-
-        return true;
-      });
+      const filtered = restaurants.filter(item => matchRestaurantByFilters(item, filters));
 
       const totalEl = document.getElementById('totalCount');
       if (totalEl) totalEl.innerText = isFiltering ? filtered.length : restaurants.length;
@@ -1467,14 +1517,22 @@
       });
     }
 
-    // ================= 附近美食地圖系統 =================
+    // ================= 附近美食地圖與地圖篩選系統 =================
     let fcaMap = null;
     let currentTileLayers = [];
     let currentMapStyle = 'street';
     let mapMarkersLayer = null;
+    let mapMarkersById = {};
     let userMarker = null;
     let userLocation = null; // 儲存用戶 GPS { lat, lng }
     let currentMapRadius = 'all';
+
+    let mapFilters = {
+      search: '',
+      cuisine: 'all',
+      price: 'all',
+      occasion: 'all'
+    };
 
     // 各區基準座標 (當 CSV 未填寫精準 lat/lng 時自動使用)
     const DISTRICT_COORDS = {
@@ -1591,6 +1649,57 @@
       applyMapTileStyle(styleKey);
     }
 
+    function onMapFilterChange(autoZoom = false) {
+      const searchEl = document.getElementById('mapSearchInput');
+      const cuisEl = document.getElementById('mapCuisineSelect');
+      const priceEl = document.getElementById('mapPriceSelect');
+      const occEl = document.getElementById('mapOccasionSelect');
+
+      mapFilters.search = searchEl ? searchEl.value.trim() : '';
+      mapFilters.cuisine = cuisEl ? cuisEl.value : 'all';
+      mapFilters.price = priceEl ? priceEl.value : 'all';
+      mapFilters.occasion = occEl ? occEl.value : 'all';
+
+      renderMapPins(autoZoom);
+    }
+
+    function clearMapSearch() {
+      const searchEl = document.getElementById('mapSearchInput');
+      if (searchEl) {
+        searchEl.value = '';
+        searchEl.focus();
+      }
+      onMapFilterChange(false);
+    }
+
+    function resetMapFilters() {
+      mapFilters = { search: '', cuisine: 'all', price: 'all', occasion: 'all' };
+      const searchEl = document.getElementById('mapSearchInput');
+      if (searchEl) searchEl.value = '';
+      const cuisEl = document.getElementById('mapCuisineSelect');
+      if (cuisEl) cuisEl.value = 'all';
+      const priceEl = document.getElementById('mapPriceSelect');
+      if (priceEl) priceEl.value = 'all';
+      const occEl = document.getElementById('mapOccasionSelect');
+      if (occEl) occEl.value = 'all';
+
+      currentMapRadius = 'all';
+      document.querySelectorAll('.map-radius-pill').forEach((b, idx) => {
+        if (idx === 0) {
+          b.classList.add('pill-active');
+          b.classList.remove('text-zinc-300');
+        } else {
+          b.classList.remove('pill-active');
+          b.classList.add('text-zinc-300');
+        }
+      });
+
+      renderMapPins(false);
+      if (fcaMap && !userLocation) {
+        fcaMap.setView([22.3027, 114.1772], 14);
+      }
+    }
+
     function openNearbyMapModal() {
       const modal = document.getElementById('nearbyMapModal');
       modal.classList.remove('hidden');
@@ -1615,7 +1724,7 @@
         }
 
         fcaMap.invalidateSize();
-        renderMapPins();
+        renderMapPins(false);
       }, 200);
 
       setTimeout(() => {
@@ -1677,18 +1786,28 @@
         el.classList.add('pill-active');
         el.classList.remove('text-zinc-300');
       }
-      renderMapPins();
+      renderMapPins(false);
     }
 
-    function renderMapPins() {
+    function renderMapPins(autoZoom = false) {
       if (!fcaMap || !mapMarkersLayer) return;
       mapMarkersLayer.clearLayers();
+      mapMarkersById = {};
 
-      let enriched = restaurants.map(item => {
-        const coords = getItemCoordinates(item);
-        const distKm = userLocation ? calcDistanceKm(userLocation.lat, userLocation.lng, coords.lat, coords.lng) : null;
-        return { ...item, coords, distKm };
-      });
+      const isMapFiltering = Boolean(
+        mapFilters.search ||
+        mapFilters.cuisine !== 'all' ||
+        mapFilters.price !== 'all' ||
+        mapFilters.occasion !== 'all'
+      );
+
+      let enriched = restaurants
+        .filter(item => matchRestaurantByFilters(item, mapFilters))
+        .map(item => {
+          const coords = getItemCoordinates(item);
+          const distKm = userLocation ? calcDistanceKm(userLocation.lat, userLocation.lng, coords.lat, coords.lng) : null;
+          return { ...item, coords, distKm };
+        });
 
       if (userLocation) {
         enriched.sort((a, b) => a.distKm - b.distKm);
@@ -1699,8 +1818,10 @@
 
       document.getElementById('mapPinCountBadge').innerText = `${enriched.length} 間`;
 
+      const boundsPoints = [];
       const markersToAdd = enriched.map(item => {
         const thumbUrl = getReelThumbnail(item);
+        boundsPoints.push([item.coords.lat, item.coords.lng]);
 
         const photoPinIcon = L.divIcon({
           html: `<div class="food-photo-pin" title="${item.restaurant_name}">
@@ -1737,36 +1858,55 @@
           </div>
         `;
 
-        return L.marker([item.coords.lat, item.coords.lng], { icon: photoPinIcon }).bindPopup(popupHtml);
+        const marker = L.marker([item.coords.lat, item.coords.lng], { icon: photoPinIcon }).bindPopup(popupHtml);
+        mapMarkersById[String(item.id)] = marker;
+        return marker;
       });
 
       mapMarkersLayer.addLayers(markersToAdd);
 
-      // 更新底部附近餐廳橫向卡片
+      // 若用戶在地圖上套用篩選條件，自動將地圖視角飛往符合條件的餐廳區域
+      if (autoZoom && isMapFiltering && boundsPoints.length > 0 && !userLocation) {
+        if (boundsPoints.length === 1) {
+          fcaMap.setView(boundsPoints[0], 16);
+        } else {
+          fcaMap.fitBounds(boundsPoints, { padding: [50, 50], maxZoom: 15 });
+        }
+      }
+
+      // 更新底部餐廳橫向滑動列 (支援定位後按距離排序，或套用篩選時即時列出結果)
       const rail = document.getElementById('nearbyCardsRail');
-      if (userLocation && enriched.length > 0) {
-        rail.innerHTML = enriched.slice(0, 15).map(item => `
-          <div onclick="focusPinAndOpen('${item.id}', ${item.coords.lat}, ${item.coords.lng})" 
+      if (enriched.length > 0 && (userLocation || isMapFiltering)) {
+        rail.innerHTML = enriched.slice(0, 20).map(item => `
+          <div onclick="focusPinAndPopup('${item.id}', ${item.coords.lat}, ${item.coords.lng})" 
                class="flex-none w-56 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2.5 cursor-pointer transition flex items-center gap-2.5">
             <img src="${getReelThumbnail(item)}" onerror="onImageError(this)" class="w-12 h-12 rounded-lg object-cover shrink-0 bg-zinc-800" />
             <div class="overflow-hidden">
               <div class="flex items-center gap-1">
-                <span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>
-                <span class="text-[10px] text-zinc-400 truncate">${item.district || ''}</span>
+                ${item.distKm !== null ? `<span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>` : ''}
+                <span class="text-[10px] text-zinc-400 truncate">📍 ${item.district || '香港'}</span>
               </div>
               <h4 class="text-xs font-bold text-white truncate mt-0.5">${item.restaurant_name}</h4>
               <p class="text-[10px] text-zinc-400 truncate">${item.cuisine || ''}</p>
             </div>
           </div>
         `).join('');
-      } else if (userLocation && enriched.length === 0) {
-        rail.innerHTML = `<span class="text-xs text-zinc-400 mx-auto">此距離範圍內暫無推薦餐廳，試下按上方放大搜尋範圍！</span>`;
+      } else if (enriched.length === 0) {
+        rail.innerHTML = `<span class="text-xs text-zinc-400 mx-auto">沒有符合目前篩選條件的餐廳，試下按「重設條件」或放大搜尋範圍！</span>`;
+      } else {
+        rail.innerHTML = `<span class="text-xs text-zinc-500 mx-auto">開啟定位或套用上方篩選條件，這裡會即時顯示對應餐廳</span>`;
       }
     }
 
-    function focusPinAndOpen(id, lat, lng) {
-      if (fcaMap) fcaMap.setView([lat, lng], 16);
-      openModalFromMap(id);
+    function focusPinAndPopup(id, lat, lng) {
+      const marker = mapMarkersById[String(id)];
+      if (fcaMap && marker && mapMarkersLayer) {
+        mapMarkersLayer.zoomToShowLayer(marker, () => {
+          marker.openPopup();
+        });
+      } else if (fcaMap) {
+        fcaMap.setView([lat, lng], 16);
+      }
     }
 
     function openModalFromMap(id) {

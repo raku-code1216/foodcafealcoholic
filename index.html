@@ -36,6 +36,10 @@
   <!-- Google Firebase Realtime Database SDK (相容模式) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- Leaflet.js 互動地圖庫 (免費無需 API Key) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
   <script>
     tailwind.config = {
@@ -97,6 +101,28 @@
       background: #000;
       border-radius: 0.75rem;
       overflow: hidden;
+    }
+
+    /* 地圖深色主題彈窗與定位點樣式 */
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background: #141414 !important;
+      color: #ffffff !important;
+      border: 1px solid #FFC400;
+      border-radius: 12px !important;
+    }
+    .leaflet-popup-content {
+      margin: 10px 12px !important;
+    }
+    .leaflet-container a.leaflet-popup-close-button {
+      color: #a1a1aa !important;
+    }
+    .user-pulse-dot {
+      width: 16px;
+      height: 16px;
+      background: #3B82F6;
+      border: 3px solid #FFFFFF;
+      border-radius: 50%;
+      box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.35);
     }
   </style>
 </head>
@@ -160,8 +186,13 @@
       </div>
     </div>
 
-    <!-- 右側我的收藏按鈕 -->
+    <!-- 右側附近地圖與搵食清單按鈕 -->
     <div class="flex items-center space-x-2 sm:space-x-3">
+      <button onclick="openNearbyMapModal()" class="bg-brand-yellow hover:bg-brand-yellowHover text-black text-xs sm:text-sm font-black px-3 sm:px-4 py-2 rounded-full transition flex items-center gap-1.5 shadow-lg active:scale-95">
+        <span>🗺️</span>
+        <span>附近地圖</span>
+      </button>
+
       <button onclick="toggleMyListModal()" class="relative bg-zinc-900 hover:bg-zinc-800 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1.5 shadow">
         <span class="text-brand-yellow text-sm">★</span>
         <span>搵食清單</span>
@@ -459,6 +490,53 @@
     </div>
   </div>
 
+  <!-- 附近美食地圖 Modal -->
+  <div id="nearbyMapModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-2 sm:p-5">
+    <div class="bg-brand-card border border-brand-border rounded-2xl max-w-5xl w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- 頂部控制列 -->
+      <div class="p-3.5 sm:p-4 border-b border-zinc-800 bg-zinc-950 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🗺️</span>
+          <div>
+            <h3 class="text-sm sm:text-base font-black text-white">附近食評地圖 (Nearby Food Map)</h3>
+            <p id="mapStatusText" class="text-[11px] text-zinc-400">點擊「定位我嘅位置」查看身邊嘅推薦餐廳</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="locateUserOnMap()" id="btnLocateMe" class="bg-brand-yellow hover:bg-brand-yellowHover text-black text-xs font-black px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5 transition active:scale-95">
+            <span>📍</span> <span>定位我嘅位置</span>
+          </button>
+          <button onclick="closeNearbyMapModal()" class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center font-bold">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- 距離篩選列 -->
+      <div class="px-4 py-2.5 bg-zinc-900/90 border-b border-zinc-800 flex items-center gap-2 overflow-x-auto no-scrollbar text-xs">
+        <span class="text-zinc-400 font-bold shrink-0">📏 範圍：</span>
+        <button onclick="setMapRadius('all', this)" class="map-radius-pill pill-active px-3 py-1 rounded-lg border border-zinc-700 font-bold shrink-0">全部顯示</button>
+        <button onclick="setMapRadius(0.5, this)" class="map-radius-pill px-3 py-1 rounded-lg border border-zinc-700 text-zinc-300 shrink-0">500m 內</button>
+        <button onclick="setMapRadius(1, this)" class="map-radius-pill px-3 py-1 rounded-lg border border-zinc-700 text-zinc-300 shrink-0">1km 內</button>
+        <button onclick="setMapRadius(3, this)" class="map-radius-pill px-3 py-1 rounded-lg border border-zinc-700 text-zinc-300 shrink-0">3km 內</button>
+        <span id="mapPinCountBadge" class="ml-auto text-brand-yellow font-bold shrink-0">0 間餐廳</span>
+      </div>
+
+      <!-- 地圖畫布區 -->
+      <div class="relative flex-grow w-full bg-zinc-950">
+        <div id="fcaLeafletMap" class="w-full h-full z-10"></div>
+      </div>
+
+      <!-- 底部附近餐廳快速滑動列 -->
+      <div id="nearbyCardsRail" class="p-3 bg-zinc-950 border-t border-zinc-800 flex gap-3 overflow-x-auto no-scrollbar shrink-0 min-h-[96px] items-center">
+        <span class="text-xs text-zinc-500 mx-auto">開啟定位後，這裡會按距離由近至遠排列附近餐廳</span>
+      </div>
+
+    </div>
+  </div>
+
   <!-- 我的搵食清單 Modal -->
   <div id="myListModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-brand-card border border-brand-border rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl relative">
@@ -484,7 +562,7 @@
   </footer>
 
   <script>
-    // 專屬 Firebase 即時資料庫連線設定[cite: 3]
+    // 專屬 Firebase 即時資料庫連線設定
     const firebaseConfig = {
       apiKey: "AIzaSyDpBXu84kqQKtsmICc5UQopqh7nJiZ7EQw",
       authDomain: "foodcafealcoholic.firebaseapp.com",
@@ -1015,18 +1093,17 @@
           const isPureDistrictQuery = HK_DISTRICTS.includes(s);
 
           if (isPureDistrictQuery) {
-            // ⭐ 地區模式：只比對地區欄位與店名，完全無視食材名稱，永不誤撞
+            // 地區模式：只比對地區欄位與店名，完全無視食材名稱，永不誤撞
             const matchDist = cleanItemDist.includes(s);
             const matchName = cleanName.includes(s);
             if (!matchDist && !matchName) return false;
           } else {
-            // ⭐ 一般關鍵字模式：比對店名、地區、菜式、必食招牌（must_try）
+            // 一般關鍵字模式：比對店名、地區、菜式、必食招牌（must_try）
             const matchName = cleanName.includes(s);
             const matchDist = cleanItemDist.includes(s);
             const matchCuis = (item.cuisine || '').toLowerCase().includes(s);
             const matchMust = (item.must_try || '').toLowerCase().includes(s);
 
-            // 乾淨精準：不再盲目搜尋整篇長篇 caption 故事
             if (!matchName && !matchDist && !matchCuis && !matchMust) return false;
           }
         }
@@ -1255,7 +1332,9 @@
             shortCode: code,
             videoUrl: directVid,
             displayUrl: rawImg,
-            image: rawImg
+            image: rawImg,
+            lat: r.lat || '',
+            lng: r.lng || ''
           };
         });
 
@@ -1303,7 +1382,7 @@
     }
 
     function enableHorizontalWheelScroll() {
-      const railIds = ['railLeaderboard', 'railEditor', 'railNew'];
+      const railIds = ['railLeaderboard', 'railEditor', 'railNew', 'nearbyCardsRail'];
       railIds.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -1314,6 +1393,230 @@
           }
         }, { passive: false });
       });
+    }
+
+    // ================= 附近美食地圖系統 =================
+    let fcaMap = null;
+    let mapMarkersLayer = null;
+    let userMarker = null;
+    let userLocation = null; // 儲存用戶 GPS { lat, lng }
+    let currentMapRadius = 'all';
+
+    // 各區基準座標 (當 CSV 未填寫精準 lat/lng 時自動使用)
+    const DISTRICT_COORDS = {
+      '中環': [22.2819, 114.1581], '上環': [22.2864, 114.1502], '灣仔': [22.2770, 114.1722],
+      '銅鑼灣': [22.2804, 114.1848], '天后': [22.2827, 114.1918], '北角': [22.2908, 114.2008],
+      '鰂魚涌': [22.2879, 114.2121], '太古': [22.2856, 114.2170], '西環': [22.2835, 114.1360],
+      '堅尼地城': [22.2812, 114.1283], '西營盤': [22.2858, 114.1426], '黃竹坑': [22.2481, 114.1681],
+      '尖沙咀': [22.2988, 114.1722], '佐敦': [22.3049, 114.1717], '油麻地': [22.3129, 114.1706],
+      '旺角': [22.3193, 114.1694], '太子': [22.3245, 114.1683], '深水埗': [22.3307, 114.1622],
+      '長沙灣': [22.3364, 114.1563], '大角咀': [22.3218, 114.1627], '紅磡': [22.3051, 114.1882],
+      '黃埔': [22.3045, 114.1906], '九龍城': [22.3282, 114.1915], '啟德': [22.3304, 114.1994],
+      '觀塘': [22.3122, 114.2255], '九龍灣': [22.3232, 114.2141], '荃灣': [22.3713, 114.1141],
+      '葵芳': [22.3568, 114.1279], '沙田': [22.3820, 114.1885], '大圍': [22.3730, 114.1786],
+      '元朗': [22.4445, 114.0222], '屯門': [22.3908, 113.9725], '大埔': [22.4508, 114.1642],
+      '將軍澳': [22.3075, 114.2597], '西貢': [22.3814, 114.2705],
+      '台北': [25.0330, 121.5654], '澳門': [22.1987, 113.5439], '深圳': [22.5431, 114.0579],
+      '東京': [35.6762, 139.6503], '大阪': [34.6937, 135.5023], '首爾': [37.5665, 126.9780],
+      '香港': [22.3027, 114.1772]
+    };
+
+    // 穩定偏移函數 (確保同一間餐廳每次打開地圖都在同一位置，不會隨機跳動)
+    function getDeterministicOffset(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      const latOffset = ((hash % 100) / 100) * 0.0045;
+      const lngOffset = (((hash >> 4) % 100) / 100) * 0.0045;
+      return [latOffset, lngOffset];
+    }
+
+    function getItemCoordinates(item) {
+      // 1. 優先讀取 CSV 中的精準座標
+      if (item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng))) {
+        return { lat: parseFloat(item.lat), lng: parseFloat(item.lng), isExact: true };
+      }
+      // 2. 否則根據地區自動對應座標
+      const dist = String(item.district || '香港');
+      let base = DISTRICT_COORDS['香港'];
+      for (const [key, coords] of Object.entries(DISTRICT_COORDS)) {
+        if (dist.includes(key)) {
+          base = coords;
+          break;
+        }
+      }
+      const [dLat, dLng] = getDeterministicOffset(String(item.id || item.restaurant_name));
+      return { lat: base[0] + dLat, lng: base[1] + dLng, isExact: false };
+    }
+
+    // 計算兩點距離 (單位：公里 km)
+    function calcDistanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function formatDistance(km) {
+      if (km === null || km === undefined) return '';
+      return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
+    }
+
+    function openNearbyMapModal() {
+      const modal = document.getElementById('nearbyMapModal');
+      modal.classList.remove('hidden');
+
+      setTimeout(() => {
+        if (!fcaMap) {
+          fcaMap = L.map('fcaLeafletMap').setView([22.3027, 114.1772], 13);
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap © CARTO',
+            maxZoom: 19
+          }).addTo(fcaMap);
+          mapMarkersLayer = L.layerGroup().addTo(fcaMap);
+        } else {
+          fcaMap.invalidateSize();
+        }
+        renderMapPins();
+      }, 100);
+    }
+
+    function closeNearbyMapModal() {
+      document.getElementById('nearbyMapModal').classList.add('hidden');
+    }
+
+    function locateUserOnMap() {
+      const statusEl = document.getElementById('mapStatusText');
+      const btn = document.getElementById('btnLocateMe');
+      if (!navigator.geolocation) {
+        alert('你的瀏覽器不支援 GPS 定位功能。');
+        return;
+      }
+
+      statusEl.innerText = '📡 正在獲取你的 GPS 位置...';
+      btn.disabled = true;
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          statusEl.innerText = '✅ 已鎖定你的目前位置！以下按距離由近至遠排列';
+          btn.disabled = false;
+
+          if (fcaMap) {
+            fcaMap.setView([userLocation.lat, userLocation.lng], 15);
+            if (userMarker) fcaMap.removeLayer(userMarker);
+            const userIcon = L.divIcon({ className: 'user-pulse-dot', iconSize: [16, 16] });
+            userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon })
+              .addTo(fcaMap)
+              .bindPopup('<div class="text-xs font-bold text-blue-400">📍 你目前喺呢度</div>')
+              .openPopup();
+          }
+
+          // 定位後自動切換為 3km 內方便查看附近
+          const defaultPill = document.querySelectorAll('.map-radius-pill')[3];
+          setMapRadius(3, defaultPill);
+        },
+        (err) => {
+          btn.disabled = false;
+          statusEl.innerText = '⚠️ 無法取得定位（請確認手機/瀏覽器已允許位置權限）';
+          alert('無法取得你的位置，請檢查瀏覽器的「位置資訊」權限是否已開啟。');
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function setMapRadius(radius, el) {
+      currentMapRadius = radius;
+      if (el) {
+        document.querySelectorAll('.map-radius-pill').forEach(b => {
+          b.classList.remove('pill-active');
+          b.classList.add('text-zinc-300');
+        });
+        el.classList.add('pill-active');
+        el.classList.remove('text-zinc-300');
+      }
+      renderMapPins();
+    }
+
+    function renderMapPins() {
+      if (!fcaMap || !mapMarkersLayer) return;
+      mapMarkersLayer.clearLayers();
+
+      const foodIcon = L.divIcon({
+        html: `<div style="background:#FFC400; color:#000; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; border:2px solid #000; box-shadow:0 3px 10px rgba(0,0,0,0.8);">🍽️</div>`,
+        className: '',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+
+      let enriched = restaurants.map(item => {
+        const coords = getItemCoordinates(item);
+        const distKm = userLocation ? calcDistanceKm(userLocation.lat, userLocation.lng, coords.lat, coords.lng) : null;
+        return { ...item, coords, distKm };
+      });
+
+      if (userLocation) {
+        enriched.sort((a, b) => a.distKm - b.distKm);
+        if (currentMapRadius !== 'all') {
+          enriched = enriched.filter(item => item.distKm <= Number(currentMapRadius));
+        }
+      }
+
+      document.getElementById('mapPinCountBadge').innerText = `${enriched.length} 間餐廳`;
+
+      enriched.forEach(item => {
+        const distLabel = item.distKm !== null ? `<span class="text-brand-yellow font-bold ml-1">(${formatDistance(item.distKm)})</span>` : '';
+        const popupHtml = `
+          <div class="w-48 space-y-1.5 font-sans">
+            <div class="text-[10px] text-zinc-400">📍 ${item.district || '香港'} • ${item.cuisine || '美食'} ${distLabel}</div>
+            <div class="font-black text-sm text-white leading-tight">${item.restaurant_name}</div>
+            <div class="text-[11px] text-zinc-300 truncate">必食: ${item.must_try || '招牌推介'}</div>
+            <button onclick="openModalFromMap('${item.id}')" 
+                    style="background:#FFC400; color:#000; width:100%; padding:5px 0; border-radius:6px; font-weight:900; font-size:11px; margin-top:4px; cursor:pointer;">
+              🎬 睇食評短片 →
+            </button>
+          </div>
+        `;
+        L.marker([item.coords.lat, item.coords.lng], { icon: foodIcon })
+          .addTo(mapMarkersLayer)
+          .bindPopup(popupHtml);
+      });
+
+      // 更新底部附近餐廳橫向卡片
+      const rail = document.getElementById('nearbyCardsRail');
+      if (userLocation && enriched.length > 0) {
+        rail.innerHTML = enriched.slice(0, 15).map(item => `
+          <div onclick="focusPinAndOpen('${item.id}', ${item.coords.lat}, ${item.coords.lng})" 
+               class="flex-none w-56 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2.5 cursor-pointer transition flex items-center gap-2.5">
+            <img src="${getReelThumbnail(item)}" onerror="onImageError(this)" class="w-12 h-12 rounded-lg object-cover shrink-0 bg-zinc-800" />
+            <div class="overflow-hidden">
+              <div class="flex items-center gap-1">
+                <span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>
+                <span class="text-[10px] text-zinc-400 truncate">${item.district || ''}</span>
+              </div>
+              <h4 class="text-xs font-bold text-white truncate mt-0.5">${item.restaurant_name}</h4>
+              <p class="text-[10px] text-zinc-400 truncate">${item.cuisine || ''}</p>
+            </div>
+          </div>
+        `).join('');
+      } else if (userLocation && enriched.length === 0) {
+        rail.innerHTML = `<span class="text-xs text-zinc-400 mx-auto">此距離範圍內暫無推薦餐廳，試下按上方放大搜尋範圍！</span>`;
+      }
+    }
+
+    function focusPinAndOpen(id, lat, lng) {
+      if (fcaMap) fcaMap.setView([lat, lng], 16);
+      openModalFromMap(id);
+    }
+
+    function openModalFromMap(id) {
+      closeNearbyMapModal();
+      openModalById(id);
     }
 
     loadSearchHistory();

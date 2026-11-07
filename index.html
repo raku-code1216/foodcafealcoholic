@@ -31,6 +31,13 @@
       img.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
     }
     window.onImageError = onImageError;
+
+    function onMapPinImgError(img) {
+      if (!img) return;
+      img.onerror = null;
+      img.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200&q=80';
+    }
+    window.onMapPinImgError = onMapPinImgError;
   </script>
 
   <!-- Google Firebase Realtime Database SDK (相容模式) -->
@@ -103,29 +110,70 @@
       overflow: hidden;
     }
 
-    /* 地圖深色主題彈窗與定位點樣式 */
+    /* 地圖容器、美食相片圖釘與彈窗樣式 */
     #fcaLeafletMap {
-      background: #141414 !important;
+      background: #1a1a1a !important;
     }
     .leaflet-popup-content-wrapper, .leaflet-popup-tip {
       background: #141414 !important;
       color: #ffffff !important;
-      border: 1px solid #FFC400;
-      border-radius: 12px !important;
+      border: 1.5px solid #FFC400;
+      border-radius: 14px !important;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.85) !important;
     }
     .leaflet-popup-content {
-      margin: 10px 12px !important;
+      margin: 8px !important;
     }
     .leaflet-container a.leaflet-popup-close-button {
-      color: #a1a1aa !important;
+      color: #ffffff !important;
+      background: rgba(0,0,0,0.65);
+      border-radius: 9999px;
+      width: 22px !important;
+      height: 22px !important;
+      line-height: 20px !important;
+      top: 12px !important;
+      right: 12px !important;
+      z-index: 20;
+    }
+    .food-photo-pin {
+      position: relative;
+      width: 46px;
+      height: 46px;
+      border-radius: 9999px;
+      border: 2.5px solid #FFC400;
+      background: #18181b;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.75);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .food-photo-pin:hover {
+      transform: scale(1.22);
+      border-color: #ffffff;
+      z-index: 999 !important;
+    }
+    .food-photo-pin img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 9999px;
+      display: block;
+    }
+    .food-photo-pin::after {
+      content: '';
+      position: absolute;
+      bottom: -7px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 7px 6px 0;
+      border-style: solid;
+      border-color: #FFC400 transparent transparent transparent;
     }
     .user-pulse-dot {
-      width: 16px;
-      height: 16px;
-      background: #3B82F6;
+      width: 18px;
+      height: 18px;
+      background: #2563EB;
       border: 3px solid #FFFFFF;
       border-radius: 50%;
-      box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.35);
+      box-shadow: 0 0 0 7px rgba(37, 99, 235, 0.35);
     }
   </style>
 </head>
@@ -498,12 +546,12 @@
     <div class="bg-brand-card border border-brand-border rounded-2xl max-w-5xl w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden">
       
       <!-- 頂部控制列 -->
-      <div class="p-3.5 sm:p-4 border-b border-zinc-800 bg-zinc-950 flex flex-wrap items-center justify-between gap-2">
+      <div class="p-3 sm:p-4 border-b border-zinc-800 bg-zinc-950 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-2">
           <span class="text-xl">🗺️</span>
           <div>
             <h3 class="text-sm sm:text-base font-black text-white">附近食評地圖 (Nearby Food Map)</h3>
-            <p id="mapStatusText" class="text-[11px] text-zinc-400">點擊「定位我嘅位置」查看身邊嘅推薦餐廳</p>
+            <p id="mapStatusText" class="text-[11px] text-zinc-400">點擊圖釘查看餐廳美食相片與食評短片</p>
           </div>
         </div>
 
@@ -517,14 +565,23 @@
         </div>
       </div>
 
-      <!-- 距離篩選列 -->
-      <div class="px-4 py-2.5 bg-zinc-900/90 border-b border-zinc-800 flex items-center gap-2 overflow-x-auto no-scrollbar text-xs">
-        <span class="text-zinc-400 font-bold shrink-0">📏 範圍：</span>
-        <button onclick="setMapRadius('all', this)" class="map-radius-pill pill-active px-3 py-1 rounded-lg border border-zinc-700 font-bold shrink-0">全部顯示</button>
-        <button onclick="setMapRadius(0.5, this)" class="map-radius-pill px-3 py-1 rounded-lg border border-zinc-700 text-zinc-300 shrink-0">500m 內</button>
-        <button onclick="setMapRadius(1, this)" class="map-radius-pill px-3 py-1 rounded-lg border border-zinc-700 text-zinc-300 shrink-0">1km 內</button>
-        <button onclick="setMapRadius(3, this)" class="map-radius-pill px-3 py-1 rounded-lg border border-zinc-700 text-zinc-300 shrink-0">3km 內</button>
-        <span id="mapPinCountBadge" class="ml-auto text-brand-yellow font-bold shrink-0">0 間餐廳</span>
+      <!-- 距離與地圖底圖切換列 -->
+      <div class="px-3 sm:px-4 py-2 bg-zinc-900/95 border-b border-zinc-800 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar text-xs">
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="text-zinc-400 font-bold">📏 範圍：</span>
+          <button onclick="setMapRadius('all', this)" class="map-radius-pill pill-active px-2.5 py-1 rounded-lg border border-zinc-700 font-bold">全部</button>
+          <button onclick="setMapRadius(0.5, this)" class="map-radius-pill px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-300">500m</button>
+          <button onclick="setMapRadius(1, this)" class="map-radius-pill px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-300">1km</button>
+          <button onclick="setMapRadius(3, this)" class="map-radius-pill px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-300">3km</button>
+        </div>
+
+        <!-- 地圖清晰度 / 圖層切換器 -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button onclick="switchMapStyle('street', this)" class="map-style-pill pill-active px-2.5 py-1 rounded-lg border border-zinc-700 font-bold">☀️ 清晰街道</button>
+          <button onclick="switchMapStyle('hk', this)" class="map-style-pill px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-300">🇭🇰 香港詳細</button>
+          <button onclick="switchMapStyle('dark', this)" class="map-style-pill px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-300">🌙 深色</button>
+          <span id="mapPinCountBadge" class="ml-1 text-brand-yellow font-bold">0 間</span>
+        </div>
       </div>
 
       <!-- 地圖畫布區 -->
@@ -766,10 +823,10 @@
       return null;
     }
 
-    function proxyImageUrl(url) {
+    function proxyImageUrl(url, size = 600) {
       if (!url) return null;
       if (url.includes('unsplash.com') || url.includes('placehold.co')) return url;
-      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=600&output=jpg`;
+      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${size}&output=jpg`;
     }
 
     function getReelThumbnail(item) {
@@ -780,7 +837,21 @@
       }
       const rawImg = item.image || item.displayUrl || item.imageUrl || item.thumbnailUrl;
       if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
-        return proxyImageUrl(rawImg);
+        return proxyImageUrl(rawImg, 600);
+      }
+      return getCuisineImage(item.cuisine);
+    }
+
+    // 地圖圖釘專用輕量縮圖 (載入更快更清晰)
+    function getMapPinThumbnail(item) {
+      if (!item) return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200&q=80';
+      const code = item.shortCode || (item.id && item.id.length >= 8 && item.id.length <= 15 ? item.id : null) || extractShortcode(item.url);
+      if (code) {
+        return `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=m&w=160&h=160&fit=cover&default=https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200`;
+      }
+      const rawImg = item.image || item.displayUrl || item.imageUrl || item.thumbnailUrl;
+      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
+        return `https://wsrv.nl/?url=${encodeURIComponent(rawImg)}&w=160&h=160&fit=cover&output=jpg`;
       }
       return getCuisineImage(item.cuisine);
     }
@@ -1096,12 +1167,10 @@
           const isPureDistrictQuery = HK_DISTRICTS.includes(s);
 
           if (isPureDistrictQuery) {
-            // 地區模式：只比對地區欄位與店名，完全無視食材名稱，永不誤撞
             const matchDist = cleanItemDist.includes(s);
             const matchName = cleanName.includes(s);
             if (!matchDist && !matchName) return false;
           } else {
-            // 一般關鍵字模式：比對店名、地區、菜式、必食招牌（must_try）
             const matchName = cleanName.includes(s);
             const matchDist = cleanItemDist.includes(s);
             const matchCuis = (item.cuisine || '').toLowerCase().includes(s);
@@ -1400,6 +1469,8 @@
 
     // ================= 附近美食地圖系統 =================
     let fcaMap = null;
+    let currentTileLayers = [];
+    let currentMapStyle = 'street';
     let mapMarkersLayer = null;
     let userMarker = null;
     let userLocation = null; // 儲存用戶 GPS { lat, lng }
@@ -1470,38 +1541,77 @@
       return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
     }
 
+    function applyMapTileStyle(styleKey) {
+      if (!fcaMap) return;
+      currentTileLayers.forEach(layer => fcaMap.removeLayer(layer));
+      currentTileLayers = [];
+      currentMapStyle = styleKey;
+
+      if (styleKey === 'hk') {
+        // 香港地政總署官方詳細街道圖 + 繁體中文標籤（支援港鐵出口及大廈名稱）
+        const hkBase = L.tileLayer('https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/xyz/basemap/WGS84/{z}/{x}/{y}.png', {
+          attribution: '© 地政總署 Lands Department',
+          maxNativeZoom: 19,
+          maxZoom: 20
+        }).addTo(fcaMap);
+        const hkLabel = L.tileLayer('https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/xyz/label/hk/tc/WGS84/{z}/{x}/{y}.png', {
+          maxNativeZoom: 19,
+          maxZoom: 20
+        }).addTo(fcaMap);
+        currentTileLayers = [hkBase, hkLabel];
+      } else if (styleKey === 'dark') {
+        // 深色型格模式
+        const darkBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '© Esri, HERE, Garmin, OpenStreetMap',
+          maxNativeZoom: 16,
+          maxZoom: 19
+        }).addTo(fcaMap);
+        const darkRef = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+          maxNativeZoom: 16,
+          maxZoom: 19
+        }).addTo(fcaMap);
+        currentTileLayers = [darkBase, darkRef];
+      } else {
+        // 預設：清晰高對比街道圖 (全球通用，街道及地標極清晰)
+        const streetLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '© Esri, HERE, Garmin, OpenStreetMap',
+          maxNativeZoom: 18,
+          maxZoom: 19
+        }).addTo(fcaMap);
+        currentTileLayers = [streetLayer];
+      }
+    }
+
+    function switchMapStyle(styleKey, btnEl) {
+      if (btnEl) {
+        document.querySelectorAll('.map-style-pill').forEach(b => {
+          b.classList.remove('pill-active');
+          b.classList.add('text-zinc-300');
+        });
+        btnEl.classList.add('pill-active');
+        btnEl.classList.remove('text-zinc-300');
+      }
+      applyMapTileStyle(styleKey);
+    }
+
     function openNearbyMapModal() {
       const modal = document.getElementById('nearbyMapModal');
       modal.classList.remove('hidden');
 
       setTimeout(() => {
         if (!fcaMap) {
-          fcaMap = L.map('fcaLeafletMap').setView([22.3027, 114.1772], 13);
-
-          // 1. Esri 深色底圖（免費、免 API Key、支援 no-referrer）
-          L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri, HERE, Garmin, OpenStreetMap',
-            maxNativeZoom: 16,
-            maxZoom: 19
-          }).addTo(fcaMap);
-
-          // 2. Esri 深色街道與地名標籤圖層
-          L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
-            maxNativeZoom: 16,
-            maxZoom: 19
-          }).addTo(fcaMap);
-
+          fcaMap = L.map('fcaLeafletMap').setView([22.3027, 114.1772], 14);
+          applyMapTileStyle(currentMapStyle);
           mapMarkersLayer = L.layerGroup().addTo(fcaMap);
         }
 
-        // 強制重新計算全螢幕高度，消除上下灰色空白
         fcaMap.invalidateSize();
         renderMapPins();
-      }, 250);
+      }, 200);
 
       setTimeout(() => {
         if (fcaMap) fcaMap.invalidateSize();
-      }, 500);
+      }, 450);
     }
 
     function closeNearbyMapModal() {
@@ -1522,17 +1632,17 @@
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          statusEl.innerText = '✅ 已鎖定你的目前位置！以下按距離由近至遠排列';
+          statusEl.innerText = '✅ 已鎖定你的目前位置！點擊相片圖釘睇食評短片';
           btn.disabled = false;
 
           if (fcaMap) {
             fcaMap.invalidateSize();
             fcaMap.setView([userLocation.lat, userLocation.lng], 15);
             if (userMarker) fcaMap.removeLayer(userMarker);
-            const userIcon = L.divIcon({ className: 'user-pulse-dot', iconSize: [16, 16] });
+            const userIcon = L.divIcon({ className: 'user-pulse-dot', iconSize: [18, 18] });
             userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon })
               .addTo(fcaMap)
-              .bindPopup('<div class="text-xs font-bold text-blue-400">📍 你目前喺呢度</div>')
+              .bindPopup('<div class="text-xs font-bold text-blue-400 px-1">📍 你目前喺呢度</div>')
               .openPopup();
           }
 
@@ -1566,13 +1676,6 @@
       if (!fcaMap || !mapMarkersLayer) return;
       mapMarkersLayer.clearLayers();
 
-      const foodIcon = L.divIcon({
-        html: `<div style="background:#FFC400; color:#000; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; border:2px solid #000; box-shadow:0 3px 10px rgba(0,0,0,0.8);">🍽️</div>`,
-        className: '',
-        iconSize: [28, 28],
-        iconAnchor: [14, 14]
-      });
-
       let enriched = restaurants.map(item => {
         const coords = getItemCoordinates(item);
         const distKm = userLocation ? calcDistanceKm(userLocation.lat, userLocation.lng, coords.lat, coords.lng) : null;
@@ -1586,22 +1689,49 @@
         }
       }
 
-      document.getElementById('mapPinCountBadge').innerText = `${enriched.length} 間餐廳`;
+      document.getElementById('mapPinCountBadge').innerText = `${enriched.length} 間`;
 
       enriched.forEach(item => {
-        const distLabel = item.distKm !== null ? `<span class="text-brand-yellow font-bold ml-1">(${formatDistance(item.distKm)})</span>` : '';
+        const pinThumb = getMapPinThumbnail(item);
+        const cardThumb = getReelThumbnail(item);
+
+        // 美食相片圓形圖釘
+        const photoPinIcon = L.divIcon({
+          html: `<div class="food-photo-pin" title="${item.restaurant_name}">
+                   <img src="${pinThumb}" alt="${item.restaurant_name}" onerror="onMapPinImgError(this)" />
+                 </div>`,
+          className: '',
+          iconSize: [46, 52],
+          iconAnchor: [23, 52],
+          popupAnchor: [0, -48]
+        });
+
+        const distLabel = item.distKm !== null
+          ? `<span class="bg-brand-yellow text-black font-black text-[10px] px-1.5 py-0.5 rounded ml-1">${formatDistance(item.distKm)}</span>`
+          : '';
+
         const popupHtml = `
-          <div class="w-48 space-y-1.5 font-sans">
-            <div class="text-[10px] text-zinc-400">📍 ${item.district || '香港'} • ${item.cuisine || '美食'} ${distLabel}</div>
-            <div class="font-black text-sm text-white leading-tight">${item.restaurant_name}</div>
-            <div class="text-[11px] text-zinc-300 truncate">必食: ${item.must_try || '招牌推介'}</div>
-            <button onclick="openModalFromMap('${item.id}')" 
-                    style="background:#FFC400; color:#000; width:100%; padding:5px 0; border-radius:6px; font-weight:900; font-size:11px; margin-top:4px; cursor:pointer;">
-              🎬 睇食評短片 →
-            </button>
+          <div class="w-56 font-sans overflow-hidden">
+            <div class="relative w-full h-28 rounded-lg overflow-hidden mb-2 bg-zinc-900">
+              <img src="${cardThumb}" alt="${item.restaurant_name}" onerror="onImageError(this)" class="w-full h-full object-cover" />
+              <div class="absolute bottom-1.5 left-1.5 flex items-center gap-1">
+                <span class="bg-black/85 text-white text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-700">📍 ${item.district || '香港'}</span>
+                ${distLabel}
+              </div>
+            </div>
+            <div class="space-y-1 px-0.5">
+              <div class="text-[10px] text-brand-yellow font-bold">${item.cuisine || '美食'}</div>
+              <div class="font-black text-sm text-white leading-tight">${item.restaurant_name}</div>
+              <div class="text-[11px] text-zinc-300 truncate">必食: ${item.must_try || '招牌推介'}</div>
+              <button onclick="openModalFromMap('${item.id}')" 
+                      style="background:#FFC400; color:#000; width:100%; padding:6px 0; border-radius:8px; font-weight:900; font-size:11px; margin-top:6px; cursor:pointer;">
+                🎬 睇食評短片 →
+              </button>
+            </div>
           </div>
         `;
-        L.marker([item.coords.lat, item.coords.lng], { icon: foodIcon })
+
+        L.marker([item.coords.lat, item.coords.lng], { icon: photoPinIcon })
           .addTo(mapMarkersLayer)
           .bindPopup(popupHtml);
       });

@@ -3,7 +3,7 @@
 <head>
   <meta name="referrer" content="no-referrer">
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
   <title>Foodcafealcoholic | 香港美食搜尋引擎</title>
 
@@ -106,23 +106,52 @@
       overflow: hidden;
     }
 
-    /* 地圖容器、美食相片圖釘、聚合氣泡與彈窗樣式 */
+    /* ================= 黑金主題地圖與自訂控件 ================= */
     #fcaLeafletMap {
-      background: #1a1a1a !important;
+      background: #0A0A0A !important;
+    }
+    /* 黑金夜食主題：將高精細街道底圖轉化為黑金配色，同時保留街道名稱與黃色主幹道 */
+    #fcaLeafletMap.fca-blackgold-tiles .leaflet-tile-pane {
+      filter: invert(100%) hue-rotate(180deg) brightness(93%) contrast(114%) saturate(95%);
+    }
+    /* 放大縮小 +/- 控件改為黑金風格 */
+    .leaflet-control-zoom {
+      border: 1.5px solid rgba(255, 196, 0, 0.5) !important;
+      border-radius: 12px !important;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.8) !important;
+    }
+    .leaflet-control-zoom a {
+      background: #141414 !important;
+      color: #FFC400 !important;
+      border-bottom: 1px solid #2A2A2A !important;
+      font-weight: 900 !important;
+    }
+    .leaflet-control-zoom a:hover {
+      background: #FFC400 !important;
+      color: #000000 !important;
+    }
+    .leaflet-control-attribution {
+      background: rgba(10, 10, 10, 0.75) !important;
+      color: #71717a !important;
+      font-size: 9px !important;
+    }
+    .leaflet-control-attribution a {
+      color: #a1a1aa !important;
     }
     .leaflet-popup-content-wrapper, .leaflet-popup-tip {
       background: #141414 !important;
       color: #ffffff !important;
       border: 1.5px solid #FFC400;
       border-radius: 14px !important;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.85) !important;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.9) !important;
     }
     .leaflet-popup-content {
       margin: 8px !important;
     }
     .leaflet-container a.leaflet-popup-close-button {
       color: #ffffff !important;
-      background: rgba(0,0,0,0.65);
+      background: rgba(0,0,0,0.75);
       border-radius: 9999px;
       width: 22px !important;
       height: 22px !important;
@@ -138,8 +167,8 @@
       height: 48px;
       border-radius: 9999px;
       border: 2.5px solid #FFC400;
-      background: #18181b;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.75);
+      background: #141414;
+      box-shadow: 0 0 12px rgba(255, 196, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.85);
       transition: transform 0.2s ease, border-color 0.2s ease;
     }
     .food-photo-pin:hover {
@@ -178,15 +207,15 @@
       justify-content: center;
       font-weight: 900;
       font-size: 13px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.8);
+      box-shadow: 0 0 0 4px rgba(255, 196, 0, 0.2), 0 6px 16px rgba(0,0,0,0.9);
     }
     .user-pulse-dot {
       width: 18px;
       height: 18px;
-      background: #2563EB;
+      background: #3B82F6;
       border: 3px solid #FFFFFF;
       border-radius: 50%;
-      box-shadow: 0 0 0 7px rgba(37, 99, 235, 0.35);
+      box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.35);
     }
   </style>
 </head>
@@ -228,39 +257,43 @@
     setTimeout(hideSplashScreen, 2000);
   </script>
 
-  <!-- 頂部導航列 (漢堡 Logo + 點擊重新整理回到首頁) -->
-  <nav id="navbar" class="fixed top-0 w-full z-50 px-4 sm:px-8 py-3.5 flex items-center justify-between bg-black/95 backdrop-blur-md border-b border-brand-border">
-    <div class="flex items-center space-x-6">
-      <div onclick="handleLogoRefresh()" class="flex items-center gap-3 cursor-pointer group" title="重新整理首頁">
+  <!-- 頂部導航列 (單行俐落排版，手機版絕不換行或截斷文字) -->
+  <nav id="navbar" class="fixed top-0 w-full z-50 px-3 sm:px-8 py-3 flex items-center justify-between gap-2 bg-black/95 backdrop-blur-md border-b border-brand-border">
+    <div class="flex items-center space-x-5 min-w-0">
+      <div onclick="handleLogoRefresh()" class="flex items-center gap-2 sm:gap-3 cursor-pointer group min-w-0" title="重新整理首頁">
         <img src="logo.jpg" 
              alt="" 
-             class="w-9 h-9 rounded-xl object-contain border border-brand-yellow/40 group-hover:scale-105 transition shadow-md" />
-        <div class="flex flex-col border-l border-zinc-700 pl-2.5 leading-none">
-          <span class="text-white font-extrabold text-xs sm:text-sm tracking-wider group-hover:text-brand-yellow transition">
+             class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain border border-brand-yellow/40 group-hover:scale-105 transition shadow-md shrink-0" />
+        <div class="flex flex-col border-l border-zinc-700 pl-2 sm:pl-2.5 leading-tight min-w-0">
+          <span class="text-white font-black text-[11px] sm:text-sm tracking-wide group-hover:text-brand-yellow transition truncate">
             FOODCAFEALCOHOLIC
           </span>
-          <span class="text-[9px] text-zinc-400 font-mono tracking-tight">@foodcafealcoholic</span>
+          <span class="text-[9px] text-zinc-400 font-mono tracking-tight truncate">@foodcafealcoholic</span>
         </div>
       </div>
 
-      <div class="hidden md:flex items-center space-x-5 text-xs tracking-wider text-zinc-300">
+      <div class="hidden lg:flex items-center space-x-5 text-xs tracking-wider text-zinc-300 shrink-0">
         <a href="#leaderboard-section" class="hover:text-brand-yellow transition">🔥 每週熱門榜</a>
         <a href="#editor-section" class="hover:text-brand-yellow transition">🏆 專屬嚴選</a>
         <a href="#new-section" class="hover:text-brand-yellow transition">🆕 最新上架</a>
       </div>
     </div>
 
-    <!-- 右側附近地圖與搵食清單按鈕 -->
-    <div class="flex items-center space-x-2 sm:space-x-3">
-      <button onclick="openNearbyMapModal()" class="bg-brand-yellow hover:bg-brand-yellowHover text-black text-xs sm:text-sm font-black px-3 sm:px-4 py-2 rounded-full transition flex items-center gap-1.5 shadow-lg active:scale-95">
-        <span>🗺️</span>
-        <span>附近地圖</span>
+    <!-- 右側黑金地圖按鈕與搵食清單按鈕 (單行不換行) -->
+    <div class="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
+      <button onclick="openNearbyMapModal()" class="bg-zinc-900 hover:bg-brand-yellow text-brand-yellow hover:text-black border border-brand-yellow/75 text-xs sm:text-sm font-black px-3 sm:px-4 py-1.5 sm:py-2 rounded-full transition flex items-center gap-1.5 whitespace-nowrap shadow-[0_0_14px_rgba(255,196,0,0.22)] active:scale-95">
+        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/>
+        </svg>
+        <span class="sm:hidden">地圖</span>
+        <span class="hidden sm:inline">美食地圖</span>
       </button>
 
-      <button onclick="toggleMyListModal()" class="relative bg-zinc-900 hover:bg-zinc-800 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-full border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1.5 shadow">
-        <span class="text-brand-yellow text-sm">★</span>
-        <span>搵食清單</span>
-        <span id="favCountBadge" class="bg-brand-yellow text-black text-xs font-black rounded-full px-1.5 py-0.2 leading-tight">0</span>
+      <button onclick="toggleMyListModal()" class="relative bg-zinc-900 hover:bg-zinc-800 text-white text-xs sm:text-sm font-bold px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shadow">
+        <span class="text-brand-yellow text-xs sm:text-sm">★</span>
+        <span class="sm:hidden">清單</span>
+        <span class="hidden sm:inline">搵食清單</span>
+        <span id="favCountBadge" class="bg-brand-yellow text-black text-[11px] font-black rounded-full px-1.5 py-0.2 leading-tight">0</span>
       </button>
 
       <input type="file" id="csvFileInput" accept=".csv" style="display: none !important;" />
@@ -332,6 +365,7 @@
               <option value="上環">上環 (Sheung Wan / PMQ)</option>
               <option value="灣仔">灣仔 (Wan Chai)</option>
               <option value="銅鑼灣">銅鑼灣 (Causeway Bay)</option>
+              <option value="跑馬地">跑馬地 (Happy Valley)</option>
               <option value="天后">天后 / 炮台山 / 北角</option>
               <option value="鰂魚涌">鰂魚涌 / 太古</option>
               <option value="西環">西環 / 堅尼地城 / 西營盤</option>
@@ -398,7 +432,7 @@
   </section>
 
   <!-- 主要內容區 -->
-  <main class="flex-grow space-y-10 relative z-20 px-4 sm:px-8 lg:px-12 py-8">
+  <main class="flex-grow space-y-10 relative z-20 px-4 sm:px-8 lg:px-12 py-8 pb-24">
     <div class="flex items-center justify-between text-xs sm:text-sm text-zinc-400 border-b border-brand-border pb-3">
       <div class="flex items-center gap-2">
         <span class="w-2.5 h-2.5 rounded-full bg-brand-yellow animate-pulse"></span>
@@ -457,6 +491,15 @@
       <div id="filteredGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-2"></div>
     </section>
   </main>
+
+  <!-- 懸浮黑金美食地圖入口按鈕 (單手拇指輕鬆點擊) -->
+  <button id="floatingMapBtn" onclick="openNearbyMapModal()"
+          class="fixed bottom-5 right-4 sm:bottom-7 sm:right-7 z-40 bg-[#121212]/95 hover:bg-brand-yellow text-white hover:text-black border-2 border-brand-yellow px-4 py-3 rounded-full font-black text-xs sm:text-sm flex items-center gap-2 shadow-[0_8px_28px_rgba(0,0,0,0.9),0_0_20px_rgba(255,196,0,0.35)] backdrop-blur-md transition-all active:scale-95 group">
+    <span class="w-2.5 h-2.5 rounded-full bg-brand-yellow group-hover:bg-black animate-ping absolute left-4 opacity-75"></span>
+    <span class="w-2.5 h-2.5 rounded-full bg-brand-yellow group-hover:bg-black relative"></span>
+    <span>探索附近美食地圖</span>
+    <span class="text-brand-yellow group-hover:text-black font-black">→</span>
+  </button>
 
   <!-- 詳情視窗 -->
   <div id="detailModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
@@ -554,37 +597,43 @@
     </div>
   </div>
 
-  <!-- 附近美食地圖 Modal -->
-  <div id="nearbyMapModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-2 sm:p-5">
-    <div class="bg-brand-card border border-brand-border rounded-2xl max-w-5xl w-full h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+  <!-- 附近美食地圖 Modal (iPhone 滿版 100dvh + 黑金主題 + 可收合篩選列) -->
+  <div id="nearbyMapModal" class="fixed inset-0 bg-black z-50 hidden flex items-center justify-center p-0 sm:p-4 sm:bg-black/90 sm:backdrop-blur-md">
+    <div class="bg-[#0A0A0A] sm:border sm:border-brand-yellow/40 sm:rounded-2xl max-w-6xl w-full h-[100dvh] sm:h-[93vh] flex flex-col shadow-2xl overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       
-      <!-- 頂部控制列 -->
-      <div class="p-3 sm:p-3.5 border-b border-zinc-800 bg-zinc-950 flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center gap-2">
-          <span class="text-xl">🗺️</span>
-          <div>
-            <h3 class="text-sm sm:text-base font-black text-white">附近食評地圖 (Nearby Food Map)</h3>
-            <p id="mapStatusText" class="text-[11px] text-zinc-400">可透過下方篩選條件或 GPS 定位探索身邊美食</p>
+      <!-- 頂部單行極簡控制列 (最大化地圖可視空間) -->
+      <div class="px-3 sm:px-4 py-2.5 border-b border-zinc-800 bg-black flex items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-2 min-w-0">
+          <img src="logo.jpg" alt="" class="w-7 h-7 rounded-lg object-contain border border-brand-yellow/50 shrink-0" />
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <h3 class="text-xs sm:text-sm font-black text-white truncate">美食地圖</h3>
+              <span id="mapPinCountBadge" class="bg-brand-yellow/15 border border-brand-yellow/50 text-brand-yellow text-[10px] font-black px-1.5 py-0.2 rounded-full shrink-0">0 間</span>
+            </div>
+            <p id="mapStatusText" class="text-[10px] text-zinc-400 truncate">點擊相片圖釘睇短片</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button onclick="locateUserOnMap()" id="btnLocateMe" class="bg-brand-yellow hover:bg-brand-yellowHover text-black text-xs font-black px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5 transition active:scale-95">
-            <span>📍</span> <span>定位我嘅位置</span>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button onclick="locateUserOnMap()" id="btnLocateMe" class="bg-brand-yellow hover:bg-brand-yellowHover text-black text-xs font-black px-3 py-1.5 rounded-full shadow flex items-center gap-1 whitespace-nowrap transition active:scale-95">
+            <span>📍</span> <span>定位</span>
           </button>
-          <button onclick="closeNearbyMapModal()" class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center font-bold">
+          <button onclick="toggleMapFilterDrawer()" id="btnToggleMapFilters" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs font-bold px-2.5 py-1.5 rounded-full flex items-center gap-1 whitespace-nowrap transition">
+            <span>🎛️</span> <span>篩選</span>
+          </button>
+          <button onclick="closeNearbyMapModal()" class="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center font-bold text-sm shrink-0">
             ✕
           </button>
         </div>
       </div>
 
-      <!-- 地圖篩選系統列 (搜尋 + 菜式 + 預算 + 場景) -->
-      <div class="px-3 sm:px-4 py-2 bg-zinc-950/95 border-b border-zinc-800/80 flex flex-wrap items-center gap-2 text-xs">
+      <!-- 可收合地圖篩選系統列 (手機預設收合讓地圖最大，點擊「🎛️ 篩選」展開；電腦版常駐顯示) -->
+      <div id="mapFilterPanel" class="hidden sm:flex px-3 sm:px-4 py-2 bg-zinc-950 border-b border-zinc-800/90 flex-wrap items-center gap-2 text-xs shrink-0">
         <!-- 地圖內搜尋框 -->
-        <div class="relative flex-1 min-w-[140px] sm:max-w-[210px]">
+        <div class="relative flex-1 min-w-[150px] sm:max-w-[220px]">
           <span class="absolute inset-y-0 left-2.5 flex items-center text-brand-yellow text-xs pointer-events-none">🔍</span>
           <input type="text" id="mapSearchInput" oninput="onMapFilterChange(true)"
-                 placeholder="搜尋店名 / 地區 / 招牌..."
+                 placeholder="搜尋店名 / 地區 (如跑馬地)..."
                  class="w-full bg-zinc-900 border border-zinc-700 focus:border-brand-yellow text-white placeholder-zinc-500 rounded-lg pl-7 pr-6 py-1.5 text-xs focus:outline-none" />
           <button type="button" onclick="clearMapSearch()" class="absolute inset-y-0 right-2 flex items-center text-zinc-500 hover:text-white text-[10px]">✕</button>
         </div>
@@ -622,39 +671,35 @@
           <option value="寵物友善">🐾 寵物友善</option>
         </select>
 
-        <button onclick="resetMapFilters()" class="text-zinc-400 hover:text-brand-yellow text-xs font-bold underline ml-auto shrink-0 px-1">
-          重設條件
+        <button onclick="resetMapFilters()" class="text-brand-yellow hover:underline text-xs font-bold ml-auto shrink-0 px-1">
+          重設
         </button>
       </div>
 
-      <!-- 距離與地圖底圖切換列 -->
-      <div class="px-3 sm:px-4 py-2 bg-zinc-900/95 border-b border-zinc-800 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar text-xs">
-        <div class="flex items-center gap-1.5 shrink-0">
-          <span class="text-zinc-400 font-bold">📏 範圍：</span>
-          <button onclick="setMapRadius('all', this)" class="map-radius-pill pill-active px-2.5 py-1 rounded-lg border border-zinc-700 font-bold">全部</button>
-          <button onclick="setMapRadius(0.5, this)" class="map-radius-pill px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-300">500m</button>
-          <button onclick="setMapRadius(1, this)" class="map-radius-pill px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-300">1km</button>
-          <button onclick="setMapRadius(3, this)" class="map-radius-pill px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-300">3km</button>
+      <!-- 單行距離與黑金地圖主題切換列 -->
+      <div class="px-3 sm:px-4 py-1.5 bg-zinc-950/95 border-b border-zinc-800/80 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar text-[11px] shrink-0">
+        <div class="flex items-center gap-1 shrink-0">
+          <button onclick="setMapRadius('all', this)" class="map-radius-pill pill-active px-2 py-1 rounded-md border border-zinc-700 font-bold">全部</button>
+          <button onclick="setMapRadius(0.5, this)" class="map-radius-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">500m</button>
+          <button onclick="setMapRadius(1, this)" class="map-radius-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">1km</button>
+          <button onclick="setMapRadius(3, this)" class="map-radius-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">3km</button>
         </div>
 
-        <!-- 地圖清晰度 / 圖層切換器 -->
-        <div class="flex items-center gap-1.5 shrink-0">
-          <button onclick="switchMapStyle('street', this)" class="map-style-pill pill-active px-2.5 py-1 rounded-lg border border-zinc-700 font-bold">☀️ 清晰街道</button>
-          <button onclick="switchMapStyle('hk', this)" class="map-style-pill px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-300">🇭🇰 香港詳細</button>
-          <button onclick="switchMapStyle('dark', this)" class="map-style-pill px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-300">🌙 深色</button>
-          <span id="mapPinCountBadge" class="ml-1 text-brand-yellow font-bold">0 間</span>
+        <!-- 地圖主題切換器 (預設黑金主題) -->
+        <div class="flex items-center gap-1 shrink-0">
+          <button onclick="switchMapStyle('blackgold', this)" class="map-style-pill pill-active px-2 py-1 rounded-md border border-zinc-700 font-bold">🖤 黑金主題</button>
+          <button onclick="switchMapStyle('hk', this)" class="map-style-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">🇭🇰 香港詳細</button>
+          <button onclick="switchMapStyle('street', this)" class="map-style-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">☀️ 日間</button>
         </div>
       </div>
 
-      <!-- 地圖畫布區 -->
-      <div class="relative flex-grow w-full bg-zinc-950">
-        <div id="fcaLeafletMap" class="w-full h-full z-10"></div>
+      <!-- 超大滿版地圖畫布區 -->
+      <div class="relative flex-grow w-full bg-[#0A0A0A]">
+        <div id="fcaLeafletMap" class="w-full h-full z-10 fca-blackgold-tiles"></div>
       </div>
 
-      <!-- 底部附近餐廳快速滑動列 -->
-      <div id="nearbyCardsRail" class="p-3 bg-zinc-950 border-t border-zinc-800 flex gap-3 overflow-x-auto no-scrollbar shrink-0 min-h-[96px] items-center">
-        <span class="text-xs text-zinc-500 mx-auto">開啟定位或套用篩選後，這裡會顯示符合條件的餐廳</span>
-      </div>
+      <!-- 底部附近餐廳快速滑動列 (無定位或無篩選時自動隱藏，不浪費 iPhone 畫面高度) -->
+      <div id="nearbyCardsRail" class="hidden p-2.5 bg-black border-t border-zinc-800 flex gap-2.5 overflow-x-auto no-scrollbar shrink-0 items-center"></div>
 
     </div>
   </div>
@@ -845,9 +890,9 @@
     }
 
     const REGION_MAP = {
-      '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '黃竹坑'],
-      '九龍': ['九龍', '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣'],
-      '新界': ['新界', '荃灣', '葵芳', '青衣', '沙田', '大圍', '元朗', '屯門', '大埔', '粉嶺', '上水', '將軍澳', '康城', '西貢']
+      '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '大坑', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '黃竹坑', '金鐘', '香港仔', '赤柱', '柴灣', '筲箕灣'],
+      '九龍': ['九龍', '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣', '何文田', '土瓜灣', '九龍塘', '黃大仙', '新蒲崗', '荔枝角', '奧運'],
+      '新界': ['新界', '荃灣', '葵芳', '青衣', '沙田', '大圍', '火炭', '馬鞍山', '元朗', '屯門', '大埔', '粉嶺', '上水', '將軍澳', '康城', '西貢', '東涌']
     };
 
     function inferRegionFromItem(item) {
@@ -1014,6 +1059,11 @@
       if (id) toggleFavorite(id);
     }
 
+    function setFloatingMapBtnVisible(visible) {
+      const btn = document.getElementById('floatingMapBtn');
+      if (btn) btn.classList.toggle('hidden', !visible);
+    }
+
     function openModalById(id) {
       const safeId = String(id);
       const item = restaurants.find(r => String(r.id) === safeId);
@@ -1080,6 +1130,7 @@
       document.getElementById('modalExternalIgLink').href = item.url || "https://instagram.com/foodcafealcoholic";
 
       updateModalFavButton();
+      setFloatingMapBtnVisible(false);
       document.getElementById('detailModal').classList.remove('hidden');
     }
 
@@ -1093,14 +1144,14 @@
       if (iframeEl) iframeEl.src = "";
       document.getElementById('detailModal').classList.add('hidden');
 
-      // 恢復按鈕預設文字為「返回首頁」
       const backTextEl = document.getElementById('modalBackBtnText');
       if (backTextEl) backTextEl.innerText = '返回首頁';
 
-      // 若是從地圖點開食評，關閉時自動返回地圖並保留原本位置與篩選狀態
       if (openedDetailFromMap) {
         openedDetailFromMap = false;
         openNearbyMapModal();
+      } else {
+        setFloatingMapBtnVisible(true);
       }
     }
 
@@ -1139,7 +1190,9 @@
     function toggleMyListModal() {
       const modal = document.getElementById('myListModal');
       modal.classList.toggle('hidden');
-      if (!modal.classList.contains('hidden')) renderMyListModal();
+      const isOpen = !modal.classList.contains('hidden');
+      setFloatingMapBtnVisible(!isOpen);
+      if (isOpen) renderMyListModal();
     }
 
     function renderMyListModal() {
@@ -1196,9 +1249,9 @@
 
     // 香港熱門商圈（用於智慧比對）
     const HK_DISTRICTS = [
-      '中環', '上環', '灣仔', '銅鑼灣', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '黃竹坑',
-      '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣',
-      '荃灣', '葵芳', '青衣', '沙田', '大圍', '元朗', '屯門', '大埔', '粉嶺', '上水', '將軍澳', '康城', '西貢'
+      '中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '大坑', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '黃竹坑', '金鐘',
+      '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣', '何文田', '土瓜灣', '九龍塘',
+      '荃灣', '葵芳', '青衣', '沙田', '大圍', '火炭', '馬鞍山', '元朗', '屯門', '大埔', '粉嶺', '上水', '將軍澳', '康城', '西貢', '東涌'
     ];
 
     function matchRestaurantByFilters(item, fObj) {
@@ -1207,7 +1260,6 @@
         const cleanItemDist = String(item.district || '').toLowerCase();
         const cleanName = String(item.restaurant_name || '').toLowerCase();
 
-        // 判斷用戶是否單純想尋找「特定地區」
         const isPureDistrictQuery = HK_DISTRICTS.includes(s);
 
         if (isPureDistrictQuery) {
@@ -1528,10 +1580,10 @@
       });
     }
 
-    // ================= 附近美食地圖與地圖篩選系統 =================
+    // ================= 附近美食地圖與黑金主題系統 =================
     let fcaMap = null;
     let currentTileLayers = [];
-    let currentMapStyle = 'street';
+    let currentMapStyle = 'blackgold';
     let mapMarkersLayer = null;
     let mapMarkersById = {};
     let userMarker = null;
@@ -1545,56 +1597,97 @@
       occasion: 'all'
     };
 
-    // 各區基準座標 (當 CSV 未填寫精準 lat/lng 時自動使用)
+    // 完整全港 18 區 + 地鐵站 + 熱門商圈精準座標庫 (徹底解決跑馬地等地區誤標到紅磡理大的問題)
     const DISTRICT_COORDS = {
-      '中環': [22.2819, 114.1581], '上環': [22.2864, 114.1502], '灣仔': [22.2770, 114.1722],
-      '銅鑼灣': [22.2804, 114.1848], '天后': [22.2827, 114.1918], '北角': [22.2908, 114.2008],
-      '鰂魚涌': [22.2879, 114.2121], '太古': [22.2856, 114.2170], '西環': [22.2835, 114.1360],
-      '堅尼地城': [22.2812, 114.1283], '西營盤': [22.2858, 114.1426], '黃竹坑': [22.2481, 114.1681],
-      '尖沙咀': [22.2988, 114.1722], '佐敦': [22.3049, 114.1717], '油麻地': [22.3129, 114.1706],
-      '旺角': [22.3193, 114.1694], '太子': [22.3245, 114.1683], '深水埗': [22.3307, 114.1622],
-      '長沙灣': [22.3364, 114.1563], '大角咀': [22.3218, 114.1627], '紅磡': [22.3051, 114.1882],
-      '黃埔': [22.3045, 114.1906], '九龍城': [22.3282, 114.1915], '啟德': [22.3304, 114.1994],
-      '觀塘': [22.3122, 114.2255], '九龍灣': [22.3232, 114.2141], '荃灣': [22.3713, 114.1141],
-      '葵芳': [22.3568, 114.1279], '沙田': [22.3820, 114.1885], '大圍': [22.3730, 114.1786],
-      '元朗': [22.4445, 114.0222], '屯門': [22.3908, 113.9725], '大埔': [22.4508, 114.1642],
-      '將軍澳': [22.3075, 114.2597], '西貢': [22.3814, 114.2705],
+      // 港島 Hong Kong Island
+      '中環': [22.2819, 114.1581], '蘭桂坊': [22.2810, 114.1557], '蘇豪': [22.2825, 114.1525], 'soho': [22.2825, 114.1525],
+      '山頂': [22.2711, 114.1498], '半山': [22.2785, 114.1530],
+      '上環': [22.2864, 114.1502], '西營盤': [22.2858, 114.1426], '石塘咀': [22.2862, 114.1355],
+      '堅尼地城': [22.2812, 114.1283], '西環': [22.2835, 114.1360],
+      '金鐘': [22.2793, 114.1655], '灣仔': [22.2770, 114.1722],
+      '銅鑼灣': [22.2804, 114.1848], '跑馬地': [22.2693, 114.1835], 'happy valley': [22.2693, 114.1835],
+      '大坑': [22.2775, 114.1925], '天后': [22.2827, 114.1918], '炮台山': [22.2878, 114.1942],
+      '北角': [22.2908, 114.2008], '鰂魚涌': [22.2879, 114.2121], '太古': [22.2856, 114.2170],
+      '西灣河': [22.2821, 114.2220], '筲箕灣': [22.2785, 114.2285], '杏花邨': [22.2768, 114.2398], '柴灣': [22.2647, 114.2372],
+      '黃竹坑': [22.2481, 114.1681], '香港仔': [22.2478, 114.1553], '鴨脷洲': [22.2435, 114.1558],
+      '薄扶林': [22.2618, 114.1305], '數碼港': [22.2612, 114.1298], '淺水灣': [22.2365, 114.1972], '赤柱': [22.2185, 114.2125],
+
+      // 九龍 Kowloon
+      '尖沙咀': [22.2988, 114.1722], '尖東': [22.2958, 114.1765], '西九龍': [22.3038, 114.1615], '柯士甸': [22.3046, 114.1663],
+      '佐敦': [22.3049, 114.1717], '油麻地': [22.3129, 114.1706],
+      '旺角': [22.3193, 114.1694], '太子': [22.3245, 114.1683], '大角咀': [22.3218, 114.1627], '奧運': [22.3178, 114.1602],
+      '深水埗': [22.3307, 114.1622], '南昌': [22.3268, 114.1535], '長沙灣': [22.3364, 114.1563],
+      '荔枝角': [22.3372, 114.1483], '美孚': [22.3378, 114.1396], '石硤尾': [22.3346, 114.1685],
+      '紅磡': [22.3051, 114.1882], '黃埔': [22.3045, 114.1906], '何文田': [22.3095, 114.1825], '土瓜灣': [22.3175, 114.1888],
+      '九龍城': [22.3282, 114.1915], '啟德': [22.3304, 114.1994], '九龍塘': [22.3369, 114.1762],
+      '樂富': [22.3381, 114.1872], '黃大仙': [22.3418, 114.1938], '鑽石山': [22.3401, 114.2016],
+      '新蒲崗': [22.3358, 114.1968], '慈雲山': [22.3482, 114.2012], '彩虹': [22.3349, 114.2089],
+      '九龍灣': [22.3232, 114.2141], '牛頭角': [22.3155, 114.2191], '觀塘': [22.3122, 114.2255],
+      '藍田': [22.3068, 114.2335], '油塘': [22.2978, 114.2372],
+
+      // 新界及離島 New Territories & Islands
+      '荃灣': [22.3713, 114.1141], '葵芳': [22.3568, 114.1279], '葵興': [22.3632, 114.1312], '葵涌': [22.3610, 114.1325],
+      '青衣': [22.3585, 114.1072], '深井': [22.3672, 114.0615],
+      '沙田': [22.3820, 114.1885], '大圍': [22.3730, 114.1786], '火炭': [22.3952, 114.1982], '馬鞍山': [22.4245, 114.2315],
+      '大埔': [22.4508, 114.1642], '太和': [22.4512, 114.1610], '粉嶺': [22.4921, 114.1388], '上水': [22.5012, 114.1278],
+      '元朗': [22.4445, 114.0222], '天水圍': [22.4482, 114.0045], '屯門': [22.3908, 113.9725],
+      '將軍澳': [22.3075, 114.2597], '調景嶺': [22.3045, 114.2525], '坑口': [22.3156, 114.2645], '寶琳': [22.3228, 114.2582], '康城': [22.2958, 114.2688],
+      '西貢': [22.3814, 114.2705], '清水灣': [22.2865, 114.2885],
+      '東涌': [22.2892, 113.9412], '機場': [22.3155, 113.9365], '愉景灣': [22.2965, 114.0155],
+      '長洲': [22.2085, 114.0305], '南丫島': [22.2262, 114.1115], '坪洲': [22.2852, 114.0415], '大嶼山': [22.2650, 113.9450],
+
+      // 境外精選 Overseas
       '台北': [25.0330, 121.5654], '澳門': [22.1987, 113.5439], '深圳': [22.5431, 114.0579],
-      '東京': [35.6762, 139.6503], '大阪': [34.6937, 135.5023], '首爾': [37.5665, 126.9780],
-      '香港': [22.3027, 114.1772]
+      '東京': [35.6762, 139.6503], '大阪': [34.6937, 135.5023], '首爾': [37.5665, 126.9780]
     };
 
-    // 穩定偏移函數 (確保同一間餐廳每次打開地圖都在同一位置，不會隨機跳動)
+    const SORTED_DISTRICT_KEYS = Object.keys(DISTRICT_COORDS).sort((a, b) => b.length - a.length);
+
+    // 置中穩定偏移函數 (以區中心為圓心微調約 120m 內，避免飄去隔鄰區或理大)
     function getDeterministicOffset(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
         hash = ((hash << 5) - hash) + str.charCodeAt(i);
         hash |= 0;
       }
-      const latOffset = ((hash % 100) / 100) * 0.0045;
-      const lngOffset = (((hash >> 4) % 100) / 100) * 0.0045;
-      return [latOffset, lngOffset];
+      const normLat = (((hash & 0xffff) / 0xffff) - 0.5);
+      const normLng = ((((hash >> 8) & 0xffff) / 0xffff) - 0.5);
+      return [normLat * 0.0028, normLng * 0.0028];
     }
 
     function getItemCoordinates(item) {
-      // 1. 優先讀取 CSV 中的精準座標
+      // 1. 優先讀取 CSV 中的精準門牌經緯度
       if (item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng))) {
         return { lat: parseFloat(item.lat), lng: parseFloat(item.lng), isExact: true };
       }
-      // 2. 否則根據地區自動對應座標
-      const dist = String(item.district || '香港');
-      let base = DISTRICT_COORDS['香港'];
-      for (const [key, coords] of Object.entries(DISTRICT_COORDS)) {
+
+      // 2. 先比對 district 欄位
+      const dist = String(item.district || '').toLowerCase();
+      let matchedBase = null;
+      for (const key of SORTED_DISTRICT_KEYS) {
         if (dist.includes(key)) {
-          base = coords;
+          matchedBase = DISTRICT_COORDS[key];
           break;
         }
       }
+
+      // 3. 若 CSV 地區只寫了籠統的「香港」，自動從餐廳名或內文標籤 (如 #fca_跑馬地) 辨識真實地區
+      if (!matchedBase) {
+        const fallbackText = `${item.restaurant_name || ''} ${item.caption || ''}`.toLowerCase();
+        for (const key of SORTED_DISTRICT_KEYS) {
+          if (fallbackText.includes(key)) {
+            matchedBase = DISTRICT_COORDS[key];
+            break;
+          }
+        }
+      }
+
+      // 4. 最後後備座標：中環海濱 (不再堆疊在紅磡理工大學)
+      const base = matchedBase || [22.2819, 114.1581];
       const [dLat, dLng] = getDeterministicOffset(String(item.id || item.restaurant_name));
       return { lat: base[0] + dLat, lng: base[1] + dLng, isExact: false };
     }
 
-    // 計算兩點距離 (單位：公里 km)
     function calcDistanceKm(lat1, lon1, lat2, lon2) {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -1612,11 +1705,13 @@
 
     function applyMapTileStyle(styleKey) {
       if (!fcaMap) return;
+      const mapEl = document.getElementById('fcaLeafletMap');
       currentTileLayers.forEach(layer => fcaMap.removeLayer(layer));
       currentTileLayers = [];
       currentMapStyle = styleKey;
 
       if (styleKey === 'hk') {
+        if (mapEl) mapEl.classList.remove('fca-blackgold-tiles');
         const hkBase = L.tileLayer('https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/xyz/basemap/WGS84/{z}/{x}/{y}.png', {
           attribution: '© 地政總署 Lands Department',
           maxNativeZoom: 19,
@@ -1627,24 +1722,23 @@
           maxZoom: 20
         }).addTo(fcaMap);
         currentTileLayers = [hkBase, hkLabel];
-      } else if (styleKey === 'dark') {
-        const darkBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-          attribution: '© Esri, HERE, Garmin, OpenStreetMap',
-          maxNativeZoom: 16,
-          maxZoom: 19
-        }).addTo(fcaMap);
-        const darkRef = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
-          maxNativeZoom: 16,
-          maxZoom: 19
-        }).addTo(fcaMap);
-        currentTileLayers = [darkBase, darkRef];
-      } else {
+      } else if (styleKey === 'street') {
+        if (mapEl) mapEl.classList.remove('fca-blackgold-tiles');
         const streetLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
           attribution: '© Esri, HERE, Garmin, OpenStreetMap',
           maxNativeZoom: 18,
           maxZoom: 19
         }).addTo(fcaMap);
         currentTileLayers = [streetLayer];
+      } else {
+        // 預設黑金主題 (Black & Gold Theme)：高精細街道底圖搭配黑金濾鏡，完美契合 App 主題
+        if (mapEl) mapEl.classList.add('fca-blackgold-tiles');
+        const blackGoldLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '© Esri, HERE, Garmin, OpenStreetMap',
+          maxNativeZoom: 18,
+          maxZoom: 19
+        }).addTo(fcaMap);
+        currentTileLayers = [blackGoldLayer];
       }
     }
 
@@ -1658,6 +1752,20 @@
         btnEl.classList.remove('text-zinc-300');
       }
       applyMapTileStyle(styleKey);
+    }
+
+    function toggleMapFilterDrawer() {
+      const panel = document.getElementById('mapFilterPanel');
+      const btn = document.getElementById('btnToggleMapFilters');
+      if (!panel) return;
+      panel.classList.toggle('hidden');
+      panel.classList.toggle('flex');
+      const isExpanded = !panel.classList.contains('hidden');
+      if (btn) {
+        btn.classList.toggle('border-brand-yellow', isExpanded);
+        btn.classList.toggle('text-brand-yellow', isExpanded);
+      }
+      if (fcaMap) setTimeout(() => fcaMap.invalidateSize(), 120);
     }
 
     function onMapFilterChange(autoZoom = false) {
@@ -1707,17 +1815,18 @@
 
       renderMapPins(false);
       if (fcaMap && !userLocation) {
-        fcaMap.setView([22.3027, 114.1772], 14);
+        fcaMap.setView([22.2950, 114.1722], 13);
       }
     }
 
     function openNearbyMapModal() {
       const modal = document.getElementById('nearbyMapModal');
       modal.classList.remove('hidden');
+      setFloatingMapBtnVisible(false);
 
       setTimeout(() => {
         if (!fcaMap) {
-          fcaMap = L.map('fcaLeafletMap').setView([22.3027, 114.1772], 14);
+          fcaMap = L.map('fcaLeafletMap').setView([22.2950, 114.1722], 13);
           applyMapTileStyle(currentMapStyle);
 
           mapMarkersLayer = L.markerClusterGroup({
@@ -1736,15 +1845,18 @@
 
         fcaMap.invalidateSize();
         renderMapPins(false);
-      }, 200);
+      }, 150);
 
       setTimeout(() => {
         if (fcaMap) fcaMap.invalidateSize();
-      }, 450);
+      }, 400);
     }
 
     function closeNearbyMapModal() {
       document.getElementById('nearbyMapModal').classList.add('hidden');
+      if (!openedDetailFromMap) {
+        setFloatingMapBtnVisible(true);
+      }
     }
 
     function locateUserOnMap() {
@@ -1755,13 +1867,13 @@
         return;
       }
 
-      statusEl.innerText = '📡 正在獲取你的 GPS 位置...';
+      statusEl.innerText = '📡 正在獲取 GPS 位置...';
       btn.disabled = true;
 
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          statusEl.innerText = '✅ 已鎖定你的目前位置！點擊相片圖釘睇食評短片';
+          statusEl.innerText = '✅ 已定位！以下按距離由近至遠排列';
           btn.disabled = false;
 
           if (fcaMap) {
@@ -1780,8 +1892,8 @@
         },
         (err) => {
           btn.disabled = false;
-          statusEl.innerText = '⚠️ 無法取得定位（請確認手機/瀏覽器已允許位置權限）';
-          alert('無法取得你的位置，請檢查瀏覽器的「位置資訊」權限是否已開啟。');
+          statusEl.innerText = '⚠️ 無法取得定位（請允許位置權限）';
+          alert('無法取得你的位置，請檢查手機或瀏覽器的「位置資訊」權限是否已開啟。');
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
@@ -1876,7 +1988,6 @@
 
       mapMarkersLayer.addLayers(markersToAdd);
 
-      // 若用戶在地圖上套用篩選條件，自動將地圖視角飛往符合條件的餐廳區域
       if (autoZoom && isMapFiltering && boundsPoints.length > 0 && !userLocation) {
         if (boundsPoints.length === 1) {
           fcaMap.setView(boundsPoints[0], 16);
@@ -1885,28 +1996,34 @@
         }
       }
 
-      // 更新底部餐廳橫向滑動列 (支援定位後按距離排序，或套用篩選時即時列出結果)
+      // 底部卡片列：僅在開啟定位或套用篩選時顯示，平時自動隱藏以最大化手機地圖視野
       const rail = document.getElementById('nearbyCardsRail');
-      if (enriched.length > 0 && (userLocation || isMapFiltering)) {
-        rail.innerHTML = enriched.slice(0, 20).map(item => `
-          <div onclick="focusPinAndPopup('${item.id}', ${item.coords.lat}, ${item.coords.lng})" 
-               class="flex-none w-56 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2.5 cursor-pointer transition flex items-center gap-2.5">
-            <img src="${getReelThumbnail(item)}" onerror="onImageError(this)" class="w-12 h-12 rounded-lg object-cover shrink-0 bg-zinc-800" />
-            <div class="overflow-hidden">
-              <div class="flex items-center gap-1">
-                ${item.distKm !== null ? `<span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>` : ''}
-                <span class="text-[10px] text-zinc-400 truncate">📍 ${item.district || '香港'}</span>
+      if (userLocation || isMapFiltering) {
+        rail.classList.remove('hidden');
+        if (enriched.length > 0) {
+          rail.innerHTML = enriched.slice(0, 20).map(item => `
+            <div onclick="focusPinAndPopup('${item.id}', ${item.coords.lat}, ${item.coords.lng})" 
+                 class="flex-none w-52 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
+              <img src="${getReelThumbnail(item)}" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
+              <div class="overflow-hidden">
+                <div class="flex items-center gap-1">
+                  ${item.distKm !== null ? `<span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>` : ''}
+                  <span class="text-[10px] text-zinc-400 truncate">📍 ${item.district || '香港'}</span>
+                </div>
+                <h4 class="text-xs font-bold text-white truncate mt-0.5">${item.restaurant_name}</h4>
+                <p class="text-[10px] text-zinc-400 truncate">${item.cuisine || ''}</p>
               </div>
-              <h4 class="text-xs font-bold text-white truncate mt-0.5">${item.restaurant_name}</h4>
-              <p class="text-[10px] text-zinc-400 truncate">${item.cuisine || ''}</p>
             </div>
-          </div>
-        `).join('');
-      } else if (enriched.length === 0) {
-        rail.innerHTML = `<span class="text-xs text-zinc-400 mx-auto">沒有符合目前篩選條件的餐廳，試下按「重設條件」或放大搜尋範圍！</span>`;
+          `).join('');
+        } else {
+          rail.innerHTML = `<span class="text-xs text-zinc-400 mx-auto py-2">沒有符合目前篩選條件的餐廳，試下按「重設」或放大搜尋範圍！</span>`;
+        }
       } else {
-        rail.innerHTML = `<span class="text-xs text-zinc-500 mx-auto">開啟定位或套用上方篩選條件，這裡會即時顯示對應餐廳</span>`;
+        rail.classList.add('hidden');
+        rail.innerHTML = '';
       }
+
+      if (fcaMap) setTimeout(() => fcaMap.invalidateSize(), 80);
     }
 
     function focusPinAndPopup(id, lat, lng) {

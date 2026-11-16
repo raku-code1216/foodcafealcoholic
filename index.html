@@ -28,7 +28,7 @@
     function onImageError(img) {
       if (!img) return;
       img.onerror = null;
-      img.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
+      img.src = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=700&q=80';
     }
     window.onImageError = onImageError;
   </script>
@@ -106,7 +106,7 @@
       overflow: hidden;
     }
 
-    /* ================= 奢華黑金地圖與自訂控件樣式 ================= */
+    /* 奢華黑金地圖與自訂控件樣式 */
     #fcaLeafletMap {
       background: #0d0d0d !important;
     }
@@ -216,11 +216,9 @@
 </head>
 <body class="text-white antialiased min-h-screen flex flex-col selection:bg-brand-yellow selection:text-black">
 
-  <!-- 1. 入 App Logo Splash Screen (停留 1.5 秒) -->
+  <!-- Splash Screen -->
   <div id="splashScreen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-opacity duration-500 opacity-100 pointer-events-auto">
-    <img src="logo.jpg" 
-         alt="" 
-         class="w-28 h-28 rounded-2xl shadow-2xl mb-4 object-contain animate-pulse" />
+    <img src="logo.jpg" alt="" class="w-28 h-28 rounded-2xl shadow-2xl mb-4 object-contain animate-pulse" />
     <h1 class="text-brand-yellow font-black tracking-widest text-lg">FOODCAFEALCOHOLIC</h1>
   </div>
 
@@ -251,7 +249,7 @@
     setTimeout(hideSplashScreen, 2000);
   </script>
 
-  <!-- 頂部導航列 (單行排版，手機不換行) -->
+  <!-- 頂部導航列 -->
   <nav id="navbar" class="fixed top-0 w-full z-50 px-3 sm:px-8 py-3 flex items-center justify-between gap-2 bg-black/95 backdrop-blur-md border-b border-brand-border">
     <div class="flex items-center space-x-5 min-w-0">
       <div onclick="handleLogoRefresh()" class="flex items-center gap-2 sm:gap-3 cursor-pointer group min-w-0" title="重新整理首頁">
@@ -294,7 +292,7 @@
     </div>
   </nav>
 
-  <!-- 置頂搜尋引擎 Sector -->
+  <!-- 搜尋框 -->
   <section class="w-full max-w-5xl mx-auto px-4 pt-20 sm:pt-24 pb-4 text-center relative z-10">
     <div class="relative max-w-3xl mx-auto shadow-2xl">
       <span class="absolute inset-y-0 left-5 sm:left-6 flex items-center text-brand-yellow text-2xl sm:text-3xl pointer-events-none">
@@ -311,7 +309,7 @@
       </button>
     </div>
 
-    <!-- 搜尋歷史紀錄 Sector -->
+    <!-- 歷史搜尋紀錄 -->
     <div id="searchHistoryContainer" class="max-w-3xl mx-auto mt-3 px-2 flex flex-wrap items-center gap-2 text-xs sm:text-sm hidden">
       <span class="text-zinc-400 font-bold flex items-center gap-1 shrink-0">
         <span>🕒</span> <span>最近搜尋:</span>
@@ -323,7 +321,7 @@
     </div>
   </section>
 
-  <!-- 放大版篩選系統 -->
+  <!-- 篩選系統 -->
   <section class="sticky top-14 z-40 bg-[#0A0A0A]/95 backdrop-blur-md border-y border-brand-border px-4 sm:px-8 lg:px-12 py-3.5 sm:py-4 shadow-2xl">
     <div class="max-w-7xl mx-auto space-y-3">
       
@@ -342,8 +340,6 @@
 
       <!-- 細分選單 -->
       <div class="flex flex-wrap items-center gap-3 pt-1">
-        
-        <!-- 地區篩選 -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-200 font-extrabold text-sm sm:text-base shrink-0">📍 地區：</span>
           <select id="districtRegionSelect" onchange="onDistrictChange(this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
@@ -387,7 +383,6 @@
           </select>
         </div>
 
-        <!-- 預算篩選 -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-200 font-extrabold text-sm sm:text-base shrink-0">💰 預算：</span>
           <select id="priceSelect" onchange="setFilter('price', this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
@@ -399,7 +394,6 @@
           </select>
         </div>
 
-        <!-- 菜式種類 -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-200 font-extrabold text-sm sm:text-base shrink-0">🍜 菜式：</span>
           <select id="cuisineSelect" onchange="setFilter('cuisine', this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
@@ -485,7 +479,7 @@
     </section>
   </main>
 
-  <!-- 懸浮黑金美食地圖入口按鈕 -->
+  <!-- 懸浮美食地圖按鈕 -->
   <button id="floatingMapBtn" onclick="openNearbyMapModal()"
           class="fixed bottom-5 right-4 sm:bottom-7 sm:right-7 z-40 bg-[#121212]/95 hover:bg-brand-yellow text-white hover:text-black border-2 border-brand-yellow px-4 py-3 rounded-full font-black text-xs sm:text-sm flex items-center gap-2 shadow-[0_8px_28px_rgba(0,0,0,0.9),0_0_20px_rgba(255,196,0,0.35)] backdrop-blur-md transition-all active:scale-95 group">
     <span class="w-2.5 h-2.5 rounded-full bg-brand-yellow group-hover:bg-black animate-ping absolute left-4 opacity-75"></span>
@@ -714,7 +708,7 @@
 
   <script>
     // ========================================================
-    // ⭐️ 1. MAPBOX API KEY (已自動配置完成)
+    // ⭐️ 1. MAPBOX API KEY
     // ========================================================
     const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicmFrdXNoaW4xMjE2IiwiYSI6ImNtd2pneXJuZjAzOWoyeXEzeXVtOHZzdDUifQ.OLeTe5xwwWroEIrj0A5DLA';
     
@@ -866,7 +860,7 @@
       '東南亞': 'https://images.unsplash.com/photo-1559847844-5315695dadae?w=700&q=80',
       '中菜': 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=700&q=80',
       '快餐': 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=700&q=80',
-      'default': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80'
+      'default': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=700&q=80'
     };
 
     function getCuisineImage(cuisine) {
@@ -919,22 +913,21 @@
       return null;
     }
 
-    function proxyImageUrl(url, size = 600) {
-      if (!url) return null;
-      if (url.includes('unsplash.com') || url.includes('placehold.co')) return url;
-      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${size}&output=jpg`;
-    }
-
+    // ⭐️ 核心修復：優先讀取真實爬取到的 displayUrl，絕不先走會被 IG 擋下的 media 路由
     function getReelThumbnail(item) {
       if (!item) return cuisineFallbacks['default'];
+
+      const rawImg = item.displayUrl || item.display_url || item.image || item.imageUrl || item.thumbnailUrl;
+      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
+        if (rawImg.includes('unsplash.com') || rawImg.includes('placehold.co')) return rawImg;
+        return `https://wsrv.nl/?url=${encodeURIComponent(rawImg)}&w=600&output=jpg`;
+      }
+
       const code = item.shortCode || (item.id && item.id.length >= 8 && item.id.length <= 15 ? item.id : null) || extractShortcode(item.url);
       if (code) {
-        return `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=l&default=https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700`;
+        return `https://wsrv.nl/?url=${encodeURIComponent(`https://www.instagram.com/p/${code}/media/?size=l`)}&w=600&output=jpg`;
       }
-      const rawImg = item.image || item.displayUrl || item.imageUrl || item.thumbnailUrl;
-      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
-        return proxyImageUrl(rawImg, 600);
-      }
+
       return getCuisineImage(item.cuisine);
     }
 
@@ -962,6 +955,7 @@
           
           <div class="relative w-full aspect-[4/5] bg-zinc-950 overflow-hidden">
             <img src="${img}" alt="${item.restaurant_name}" 
+                 loading="lazy" decoding="async"
                  onerror="onImageError(this)" 
                  class="food-card-img w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out" />
             
@@ -1581,7 +1575,6 @@
       occasion: 'all'
     };
 
-    // 精準微商圈、地標與商場門牌庫
     const LANDMARK_COORDS = {
       '時代廣場': [22.2783, 114.1824], '希慎廣場': [22.2797, 114.1839], '希慎': [22.2797, 114.1839], '利園': [22.2780, 114.1852],
       'k11 musea': [22.2946, 114.1742], 'k11': [22.2975, 114.1738], '海港城': [22.2979, 114.1685],
@@ -1650,16 +1643,13 @@
       return [normLat * 0.0024, normLng * 0.0024];
     }
 
-    // 強化版地址解析：依序比對 (1) CSV經緯度 > (2) 商場地標 > (3) 貼文底部地址/Hashtag/分區
     function getItemCoordinates(item) {
-      // 1. 優先使用精準經緯度
       if (item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng))) {
         return { lat: parseFloat(item.lat), lng: parseFloat(item.lng), isExact: true };
       }
 
       const fullContent = `${item.restaurant_name || ''} ${item.address || ''} ${item.district || ''} ${item.caption || ''}`.toLowerCase();
 
-      // 2. 先比對具體商場地標
       for (const [landmark, coords] of Object.entries(LANDMARK_COORDS)) {
         if (fullContent.includes(landmark)) {
           const [dLat, dLng] = getDeterministicOffset(String(item.id || item.restaurant_name));
@@ -1667,7 +1657,6 @@
         }
       }
 
-      // 3. 比對分區名稱及貼文底部地址關鍵字
       let matchedBase = null;
       for (const key of SORTED_DISTRICT_KEYS) {
         if (fullContent.includes(key)) {
@@ -1676,7 +1665,6 @@
         }
       }
 
-      // 4. 若全無提示，採用維港中心，不再堆疊於紅磡理工大學
       const base = matchedBase || [22.2900, 114.1700];
       const [dLat, dLng] = getDeterministicOffset(String(item.id || item.restaurant_name));
       return { lat: base[0] + dLat, lng: base[1] + dLng, isExact: false };
@@ -1722,7 +1710,6 @@
         }).addTo(fcaMap);
         currentTileLayers = [streetLayer];
       } else {
-        // 🖤 奢華黑金模式：直接調用 Mapbox dark-v11 旗艦高清圖磚
         if (typeof MAPBOX_ACCESS_TOKEN === 'string' && MAPBOX_ACCESS_TOKEN.startsWith('pk.')) {
           const mapboxDark = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/512/{z}/{x}/{y}@2x?access_token=${MAPBOX_ACCESS_TOKEN}`, {
             attribution: '© <a href="https://www.mapbox.com/">Mapbox</a> © OpenStreetMap',

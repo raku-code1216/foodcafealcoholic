@@ -136,7 +136,7 @@
           </div>
         </div>
 
-        <!-- 步驟 3: 提取出的基本資訊與地址 -->
+        <!-- 步驟 3: 基本資訊與地址 -->
         <div>
           <label class="block text-zinc-400 font-bold mb-1">餐廳名稱 *</label>
           <input type="text" id="restaurant_name" required placeholder="AI 自動填寫或手動修改"
@@ -156,7 +156,6 @@
           </div>
         </div>
 
-        <!-- 底部真實詳細門牌地址 (核心升級) -->
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="text-brand-yellow font-bold">📍 詳細門牌地址 (由貼文底部提取)</label>
@@ -169,7 +168,6 @@
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
         </div>
 
-        <!-- 門牌經緯度欄位 -->
         <div class="p-2.5 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-1.5">
           <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準經緯度 (自動換算完成)</label>
           <div class="grid grid-cols-2 gap-2">
@@ -313,7 +311,6 @@
     let globalClicksMap = {};
     const CSV_FILENAME = 'cleaned_data_final.csv';
 
-    // 關鍵修復：完整保存 address, lat, lng，永久防止同步後座標洗掉
     const CSV_COLUMNS = [
       'restaurant_name',
       'district',
@@ -413,8 +410,8 @@
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
-              adminList = results.data
-                .filter(r => r && (r.restaurant_name || r.shortCode))
+              adminList = (results.data || [])
+                .filter(r => r && (r.restaurant_name || r.shortCode || r.url))
                 .map(item => ({
                   restaurant_name: item.restaurant_name || '',
                   district: item.district || '',
@@ -549,13 +546,12 @@
       if (match && match[1]) {
         const code = match[1];
         document.getElementById('shortCode').value = code;
-        const officialMediaUrl = `https://www.instagram.com/p/${code}/media/?size=l`;
+        const officialMediaUrl = `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=l`;
         document.getElementById('displayUrl').value = officialMediaUrl;
         updateImagePreview(officialMediaUrl);
       }
     }
 
-    // 智能地理編碼轉換（依據詳細門牌 > 餐廳名+地區）
     async function autoGeocodeRestaurant() {
       const name = document.getElementById('restaurant_name').value.trim();
       const dist = document.getElementById('district').value.trim();
@@ -566,7 +562,6 @@
         return;
       }
 
-      // 優先以真實門牌地址查詢，找不到再以「店名 + 地區」查詢
       const queries = [];
       if (addr) queries.push(`${addr} Hong Kong`);
       if (name && dist) queries.push(`${name} ${dist} Hong Kong`);
@@ -693,9 +688,7 @@ ${textToAnalyze}`;
           }
         }
         
-        // 提取完成後立即換算座標
         await autoGeocodeRestaurant();
-        
         alert(`🎉 AI 提取成功！\n\n餐廳名：${extracted.restaurant_name}\n地區：${extracted.district}\n門牌地址：${extracted.address || '未註明'}`);
       } catch (err) {
         alert('AI 解析異常: ' + err.message);
@@ -717,6 +710,11 @@ ${textToAnalyze}`;
         if (match) code = match[1];
       }
 
+      let imgUrl = document.getElementById('displayUrl').value.trim();
+      if (!imgUrl && code) {
+        imgUrl = `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=l`;
+      }
+
       const itemData = {
         restaurant_name: document.getElementById('restaurant_name').value.trim(),
         district: document.getElementById('district').value.trim(),
@@ -727,7 +725,7 @@ ${textToAnalyze}`;
         must_try: document.getElementById('must_try').value.trim(),
         url: postUrl,
         shortCode: code,
-        displayUrl: document.getElementById('displayUrl').value.trim(),
+        displayUrl: imgUrl,
         videoUrl: document.getElementById('videoUrl').value.trim(),
         caption: document.getElementById('caption').value.trim(),
         is_editor_pick: document.getElementById('is_editor_pick').checked ? '1' : '0',

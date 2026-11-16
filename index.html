@@ -292,7 +292,7 @@
     </div>
   </nav>
 
-  <!-- 搜尋引擎 Sector -->
+  <!-- 搜尋框 -->
   <section class="w-full max-w-5xl mx-auto px-4 pt-20 sm:pt-24 pb-4 text-center relative z-10">
     <div class="relative max-w-3xl mx-auto shadow-2xl">
       <span class="absolute inset-y-0 left-5 sm:left-6 flex items-center text-brand-yellow text-2xl sm:text-3xl pointer-events-none">
@@ -309,7 +309,7 @@
       </button>
     </div>
 
-    <!-- 搜尋歷史紀錄 -->
+    <!-- 歷史搜尋紀錄 -->
     <div id="searchHistoryContainer" class="max-w-3xl mx-auto mt-3 px-2 flex flex-wrap items-center gap-2 text-xs sm:text-sm hidden">
       <span class="text-zinc-400 font-bold flex items-center gap-1 shrink-0">
         <span>🕒</span> <span>最近搜尋:</span>
@@ -913,58 +913,6 @@
       return null;
     }
 
-    // ⭐️ 核心解法：Instagram 官方開放 oEmbed 縮圖解析機制 + 多層快取降級
-    const oembedThumbCache = {};
-
-    function getReelThumbnail(item) {
-      if (!item) return cuisineFallbacks['default'];
-
-      const code = item.shortCode || (item.id && item.id.length >= 8 && item.id.length <= 15 ? item.id : null) || extractShortcode(item.url);
-
-      // 若快取中已有 oEmbed 解析出的高解析縮圖，直接返回
-      if (code && oembedThumbCache[code]) {
-        return oembedThumbCache[code];
-      }
-
-      // 1. 優先使用有效非 Unsplash 的 CSV 原始圖片
-      const rawImg = item.displayUrl || item.display_url || item.image || item.imageUrl || item.thumbnailUrl;
-      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http') && !rawImg.includes('unsplash.com')) {
-        return `https://wsrv.nl/?url=${encodeURIComponent(rawImg)}&w=600&output=jpg`;
-      }
-
-      // 2. 次選：使用官方媒體代理節點
-      if (code) {
-        return `https://wsrv.nl/?url=${encodeURIComponent(`https://www.ddinstagram.com/p/${code}/media/?size=l`)}&w=600&output=jpg`;
-      }
-
-      // 3. 兜底備援：依菜式給予對應美味圖片
-      return getCuisineImage(item.cuisine);
-    }
-
-    // 異步向 Instagram 官方開放 oEmbed 接口查詢真實高解析縮圖（全自動靜默補齊封面）
-    function fetchOEmbedThumbnail(code, imgElement) {
-      if (!code || oembedThumbCache[code]) return;
-
-      const postUrl = `https://www.instagram.com/p/${code}/`;
-      const oembedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.instagram.com/oembed/?url=${encodeURIComponent(postUrl)}`)}`;
-
-      fetch(oembedUrl)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.contents) {
-            const parsed = JSON.parse(data.contents);
-            if (parsed && parsed.thumbnail_url) {
-              const proxiedUrl = `https://wsrv.nl/?url=${encodeURIComponent(parsed.thumbnail_url)}&w=600&output=jpg`;
-              oembedThumbCache[code] = proxiedUrl;
-              if (imgElement && imgElement.src !== proxiedUrl) {
-                imgElement.src = proxiedUrl;
-              }
-            }
-          }
-        })
-        .catch(() => {});
-    }
-
     function getPostMainTitle(item) {
       if (!item.caption) return item.restaurant_name;
       const lines = item.caption.split('\n').map(l => l.trim()).filter(Boolean);
@@ -976,34 +924,37 @@
       return item.restaurant_name;
     }
 
+    // ⭐️ 核心修正：利用原生 IG Embed Viewport 渲染真實短片封面，絕不依賴第三方代理，徹底擺脫預設圖
     function createCard(item, index, rankBadge = null, isGrid = false) {
       const code = item.shortCode || (item.id && item.id.length >= 8 && item.id.length <= 15 ? item.id : null) || extractShortcode(item.url);
-      const img = getReelThumbnail(item);
       const isFav = savedFavorites.has(String(item.id));
       const widthClass = isGrid ? 'w-full' : 'flex-none w-60 sm:w-64';
       const mainTitle = getPostMainTitle(item);
       const viewsCount = (item.views !== undefined && item.views !== null) ? item.views : 0;
-      const cardImgId = `thumb_${item.id}_${index}`;
 
-      if (code && !oembedThumbCache[code]) {
-        setTimeout(() => {
-          const el = document.getElementById(cardImgId);
-          fetchOEmbedThumbnail(code, el);
-        }, 150);
-      }
+      const rawImg = item.displayUrl || item.display_url || item.image || item.imageUrl || item.thumbnailUrl;
+      const staticImg = (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http') && !rawImg.includes('unsplash.com'))
+        ? `https://wsrv.nl/?url=${encodeURIComponent(rawImg)}&w=600&output=jpg`
+        : getCuisineImage(item.cuisine);
 
       return `
         <div data-rest-id="${item.id}" onclick="handleCardClick(this)"
              class="${widthClass} bg-brand-surface rounded-2xl overflow-hidden cursor-pointer card-zoom shadow-xl border border-brand-border hover:border-brand-yellow/50 group relative flex flex-col transition-all duration-300">
           
           <div class="relative w-full aspect-[4/5] bg-zinc-950 overflow-hidden">
-            <img id="${cardImgId}" src="${img}" alt="${item.restaurant_name}" 
-                 loading="lazy" decoding="async"
-                 data-fallback="${getCuisineImage(item.cuisine)}"
-                 onerror="onImageError(this)" 
-                 class="food-card-img w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out" />
+            ${code ? `
+              <iframe src="https://www.instagram.com/reel/${code}/embed/?autoplay=0"
+                      class="w-full h-full border-0 pointer-events-none scale-[1.03] object-cover"
+                      scrolling="no" frameborder="0" loading="lazy"></iframe>
+            ` : `
+              <img src="${staticImg}" alt="${item.restaurant_name}" 
+                   loading="lazy" decoding="async"
+                   data-fallback="${getCuisineImage(item.cuisine)}"
+                   onerror="onImageError(this)" 
+                   class="food-card-img w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out" />
+            `}
             
-            <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/30 pointer-events-none flex flex-col justify-between p-3">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-black/30 pointer-events-none flex flex-col justify-between p-3 z-10">
               <div></div>
               
               <div class="space-y-1">
@@ -1023,28 +974,28 @@
             </div>
             
             ${rankBadge ? `
-              <span class="absolute top-2.5 left-2.5 bg-brand-yellow text-black font-black text-xs px-2.5 py-0.5 rounded shadow-lg z-10">
+              <span class="absolute top-2.5 left-2.5 bg-brand-yellow text-black font-black text-xs px-2.5 py-0.5 rounded shadow-lg z-20">
                 ${rankBadge}
               </span>
             ` : ''}
 
-            <span class="absolute ${rankBadge ? 'top-9' : 'top-2.5'} left-2.5 bg-black/90 border border-brand-yellow/50 text-brand-yellow text-[9px] font-bold px-2 py-0.5 rounded-full z-10 flex items-center gap-1 shadow">
+            <span class="absolute ${rankBadge ? 'top-9' : 'top-2.5'} left-2.5 bg-black/90 border border-brand-yellow/50 text-brand-yellow text-[9px] font-bold px-2 py-0.5 rounded-full z-20 flex items-center gap-1 shadow">
               <span>🎬</span> <span>REEL</span>
             </span>
 
             <button type="button" data-fav-id="${item.id}" onclick="handleFavClick(event, this)"
-                    class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/70 hover:bg-black flex items-center justify-center transition border border-zinc-700 z-20 shadow-lg">
+                    class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/70 hover:bg-black flex items-center justify-center transition border border-zinc-700 z-30 shadow-lg">
               <span class="${isFav ? 'text-brand-yellow' : 'text-zinc-400'} text-xs font-bold">
                 ${isFav ? '★' : '☆'}
               </span>
             </button>
 
-            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 z-10 pointer-events-none">
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 z-20 pointer-events-none">
               <span class="w-12 h-12 rounded-full bg-brand-yellow text-black flex items-center justify-center font-black text-lg shadow-2xl transform scale-90 group-hover:scale-100 transition">▶</span>
             </div>
           </div>
 
-          <div class="p-3.5 flex flex-col justify-between flex-grow space-y-2 bg-brand-surface">
+          <div class="p-3.5 flex flex-col justify-between flex-grow space-y-2 bg-brand-surface z-10">
             <div>
               <div class="flex items-center justify-between mb-1">
                 <h4 class="font-extrabold text-sm text-zinc-200 group-hover:text-brand-yellow transition truncate max-w-[150px]">
@@ -1971,12 +1922,16 @@
 
       const boundsPoints = [];
       const markersToAdd = enriched.map(item => {
-        const thumbUrl = getReelThumbnail(item);
         boundsPoints.push([item.coords.lat, item.coords.lng]);
+
+        const rawImg = item.displayUrl || item.display_url || item.image || item.imageUrl || item.thumbnailUrl;
+        const pinImg = (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http') && !rawImg.includes('unsplash.com'))
+          ? `https://wsrv.nl/?url=${encodeURIComponent(rawImg)}&w=120&output=jpg`
+          : getCuisineImage(item.cuisine);
 
         const photoPinIcon = L.divIcon({
           html: `<div class="food-photo-pin" title="${item.restaurant_name}">
-                   <img src="${thumbUrl}" alt="${item.restaurant_name}" onerror="onImageError(this)" />
+                   <img src="${pinImg}" alt="${item.restaurant_name}" onerror="onImageError(this)" />
                  </div>`,
           className: '',
           iconSize: [48, 54],
@@ -1988,11 +1943,17 @@
           ? `<span class="bg-brand-yellow text-black font-black text-[10px] px-1.5 py-0.5 rounded ml-1">${formatDistance(item.distKm)}</span>`
           : '';
 
+        const code = item.shortCode || (item.id && item.id.length >= 8 && item.id.length <= 15 ? item.id : null) || extractShortcode(item.url);
+
+        const popupPreview = code 
+          ? `<iframe src="https://www.instagram.com/reel/${code}/embed/?autoplay=0" class="w-full h-full border-0 pointer-events-none" scrolling="no" frameborder="0"></iframe>`
+          : `<img src="${pinImg}" alt="${item.restaurant_name}" onerror="onImageError(this)" class="w-full h-full object-cover" />`;
+
         const popupHtml = `
           <div class="w-56 font-sans overflow-hidden">
             <div class="relative w-full h-28 rounded-lg overflow-hidden mb-2 bg-zinc-900">
-              <img src="${thumbUrl}" alt="${item.restaurant_name}" onerror="onImageError(this)" class="w-full h-full object-cover" />
-              <div class="absolute bottom-1.5 left-1.5 flex items-center gap-1">
+              ${popupPreview}
+              <div class="absolute bottom-1.5 left-1.5 flex items-center gap-1 z-10">
                 <span class="bg-black/85 text-white text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-700">📍 ${item.district || '香港'}</span>
                 ${distLabel}
               </div>
@@ -2028,20 +1989,27 @@
       if (userLocation || isMapFiltering) {
         rail.classList.remove('hidden');
         if (enriched.length > 0) {
-          rail.innerHTML = enriched.slice(0, 20).map(item => `
-            <div onclick="focusPinAndPopup('${item.id}', ${item.coords.lat}, ${item.coords.lng})" 
-                 class="flex-none w-52 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
-              <img src="${getReelThumbnail(item)}" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
-              <div class="overflow-hidden">
-                <div class="flex items-center gap-1">
-                  ${item.distKm !== null ? `<span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>` : ''}
-                  <span class="text-[10px] text-zinc-400 truncate">📍 ${item.district || '香港'}</span>
+          rail.innerHTML = enriched.slice(0, 20).map(item => {
+            const rawImg = item.displayUrl || item.display_url || item.image || item.imageUrl || item.thumbnailUrl;
+            const thumbImg = (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http') && !rawImg.includes('unsplash.com'))
+              ? `https://wsrv.nl/?url=${encodeURIComponent(rawImg)}&w=120&output=jpg`
+              : getCuisineImage(item.cuisine);
+
+            return `
+              <div onclick="focusPinAndPopup('${item.id}', ${item.coords.lat}, ${item.coords.lng})" 
+                   class="flex-none w-52 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
+                <img src="${thumbImg}" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
+                <div class="overflow-hidden">
+                  <div class="flex items-center gap-1">
+                    ${item.distKm !== null ? `<span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>` : ''}
+                    <span class="text-[10px] text-zinc-400 truncate">📍 ${item.district || '香港'}</span>
+                  </div>
+                  <h4 class="text-xs font-bold text-white truncate mt-0.5">${item.restaurant_name}</h4>
+                  <p class="text-[10px] text-zinc-400 truncate">${item.cuisine || ''}</p>
                 </div>
-                <h4 class="text-xs font-bold text-white truncate mt-0.5">${item.restaurant_name}</h4>
-                <p class="text-[10px] text-zinc-400 truncate">${item.cuisine || ''}</p>
               </div>
-            </div>
-          `).join('');
+            `;
+          }).join('');
         } else {
           rail.innerHTML = `<span class="text-xs text-zinc-400 mx-auto py-2">沒有符合目前篩選條件的餐廳，試下按「重設」或放大搜尋範圍！</span>`;
         }

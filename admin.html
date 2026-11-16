@@ -10,6 +10,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -40,7 +45,7 @@
   <header class="bg-brand-card border-b border-brand-border px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
     <div class="flex items-center gap-3">
       <span class="text-xl font-black text-brand-yellow tracking-wider">FCA ADMIN</span>
-      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • 嚴選推介 • 一鍵同步至網站</span>
+      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • 門牌經緯度定位 • 一鍵同步至網站</span>
     </div>
     
     <div class="flex items-center gap-2 sm:gap-3">
@@ -125,14 +130,13 @@
           <textarea id="caption" rows="4" placeholder="請直接貼上 Instagram 的貼文文字內容（整段複製過來即可，包含 hashtag），然後點擊右上角的「⚡ 讓 AI 智能提取」按鈕..."
                     class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow leading-relaxed text-xs"></textarea>
 
-          <!-- 補齊 AI 標題即時預覽元件 -->
           <div id="captionTitlePreview" class="hidden p-2 rounded-lg bg-brand-yellow/10 border border-brand-yellow/40 text-brand-yellow text-xs flex items-center gap-2">
             <span class="font-bold">🏷️ AI 提煉標題：</span>
             <span id="captionTitleText" class="font-medium text-white truncate"></span>
           </div>
         </div>
 
-        <!-- 步驟 3: 自動填入的結果 (亦可手動微調) -->
+        <!-- 步驟 3: 基本資訊 -->
         <div>
           <label class="block text-zinc-400 font-bold mb-1">餐廳名稱 *</label>
           <input type="text" id="restaurant_name" required placeholder="AI 自動填寫或手動修改"
@@ -141,26 +145,42 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">地區 *</label>
-            <input type="text" id="district" required placeholder="AI 自動填寫 (例：中環)"
+            <label class="block text-zinc-400 font-bold mb-1">地區 * (例：跑馬地、中環)</label>
+            <input type="text" id="district" required placeholder="AI 自動填寫"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
           <div>
             <label class="block text-zinc-400 font-bold mb-1">菜式種類 *</label>
-            <input type="text" id="cuisine" required placeholder="AI 自動填寫 (例：西式)"
+            <input type="text" id="cuisine" required placeholder="AI 自動填寫"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
+          </div>
+        </div>
+
+        <!-- 精準門牌經緯度欄位 (支援一鍵抓取) -->
+        <div class="p-2.5 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準座標 (同步至地圖圖釘)</label>
+            <button type="button" onclick="autoGeocodeRestaurant()" class="text-brand-yellow hover:underline text-[11px] font-bold">
+              📍 自動定位抓取
+            </button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="text" id="lat" placeholder="緯度 Lat (例: 22.2693)"
+                   class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-[11px] focus:outline-none focus:border-brand-yellow" />
+            <input type="text" id="lng" placeholder="經度 Lng (例: 114.1835)"
+                   class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-[11px] focus:outline-none focus:border-brand-yellow" />
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-zinc-400 font-bold mb-1">預算 / 人均價格</label>
-            <input type="text" id="price" placeholder="AI 自動填寫 (例：100-200 或 400-600)"
+            <input type="text" id="price" placeholder="例：100-200 或 400-600"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
           <div>
             <label class="block text-zinc-400 font-bold mb-1">適合場景</label>
-            <input type="text" id="occasion" placeholder="AI 自動填寫 (例：拍拖約會)"
+            <input type="text" id="occasion" placeholder="例：拍拖約會"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
         </div>
@@ -213,7 +233,7 @@
         </div>
       </div>
 
-      <!-- 表格清單 -->
+      <!-- 表格清單 (新增「座標」與「點擊數」標籤) -->
       <div class="overflow-x-auto flex-grow max-h-[650px] no-scrollbar">
         <table class="w-full text-left text-xs">
           <thead class="bg-zinc-900/90 sticky top-0 text-zinc-400 border-b border-zinc-800 z-10">
@@ -221,14 +241,15 @@
               <th class="py-2.5 px-2 text-center w-12">嚴選</th>
               <th class="py-2.5 px-3">餐廳名稱</th>
               <th class="py-2.5 px-2">地區</th>
-              <th class="py-2.5 px-2">菜式</th>
+              <th class="py-2.5 px-2">座標</th>
+              <th class="py-2.5 px-2">點擊</th>
               <th class="py-2.5 px-2">預算</th>
               <th class="py-2.5 px-3 text-right">操作</th>
             </tr>
           </thead>
           <tbody id="restaurantTableBody" class="divide-y divide-zinc-800/60 text-zinc-200">
             <tr>
-              <td colspan="6" class="py-12 text-center text-zinc-500">正在讀取資料庫中...</td>
+              <td colspan="7" class="py-12 text-center text-zinc-500">正在讀取資料庫中...</td>
             </tr>
           </tbody>
         </table>
@@ -281,9 +302,10 @@
   <script>
     let adminList = [];
     let filterOnlyPicks = false;
+    let globalClicksMap = {};
     const CSV_FILENAME = 'cleaned_data_final.csv';
 
-    // 嚴格鎖定欄位名稱與順序，加入 is_editor_pick 確保嚴選標記同步保存
+    // 關鍵修復：補齊 lat 與 lng，避免同步時座標遺失
     const CSV_COLUMNS = [
       'restaurant_name',
       'district',
@@ -296,8 +318,27 @@
       'displayUrl',
       'videoUrl',
       'caption',
-      'is_editor_pick'
+      'is_editor_pick',
+      'lat',
+      'lng'
     ];
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpBXu84kqQKtsmICc5UQopqh7nJiZ7EQw",
+      authDomain: "foodcafealcoholic.firebaseapp.com",
+      databaseURL: "https://foodcafealcoholic-default-rtdb.firebaseio.com",
+      projectId: "foodcafealcoholic",
+      storageBucket: "foodcafealcoholic.firebasestorage.app",
+      messagingSenderId: "773988272547",
+      appId: "1:773988272547:web:5ebffc59fd4f0ccbbef216",
+      measurementId: "G-WFBF6J54XY"
+    };
+
+    let rtdb = null;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      rtdb = firebase.database();
+    } catch (e) {}
 
     function loadConfig() {
       return {
@@ -346,6 +387,13 @@
     }
 
     function initLoadData() {
+      if (rtdb) {
+        rtdb.ref('restaurant_clicks').once('value').then(snapshot => {
+          globalClicksMap = snapshot.val() || {};
+          renderTable();
+        }).catch(() => {});
+      }
+
       fetch(`${CSV_FILENAME}?t=` + Date.now())
         .then(res => {
           if (!res.ok) throw new Error('無法讀取 CSV');
@@ -370,7 +418,9 @@
                   displayUrl: item.displayUrl || item.imageUrl || '',
                   videoUrl: item.videoUrl || '',
                   caption: item.caption || '',
-                  is_editor_pick: (String(item.is_editor_pick).toLowerCase() === '1' || String(item.is_editor_pick).toLowerCase() === 'true') ? '1' : '0'
+                  is_editor_pick: (String(item.is_editor_pick).toLowerCase() === '1' || String(item.is_editor_pick).toLowerCase() === 'true') ? '1' : '0',
+                  lat: item.lat || '',
+                  lng: item.lng || ''
                 }));
               renderTable();
             }
@@ -427,12 +477,16 @@
       }
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-zinc-500">找不到符合條件的餐廳</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-zinc-500">找不到符合條件的餐廳</td></tr>`;
         return;
       }
 
       tbody.innerHTML = filtered.map(({ item, originalIndex }) => {
         const isPick = item.is_editor_pick === '1';
+        const hasCoords = Boolean(item.lat && item.lng);
+        const safeId = String(item.shortCode || item.id || `item_${originalIndex}`).replace(/[^a-zA-Z0-9]/g, '');
+        const views = globalClicksMap[safeId] !== undefined ? globalClicksMap[safeId] : 0;
+
         return `
           <tr class="hover:bg-zinc-900/60 transition ${isPick ? 'bg-brand-yellow/5' : ''}">
             <td class="py-2.5 px-2 text-center">
@@ -449,7 +503,12 @@
               </div>
             </td>
             <td class="py-2.5 px-2 text-zinc-300">${item.district || '-'}</td>
-            <td class="py-2.5 px-2 text-zinc-300">${item.cuisine || '-'}</td>
+            <td class="py-2.5 px-2 text-[10px]">
+              ${hasCoords 
+                ? '<span class="text-emerald-400 font-mono">✓ 已定位</span>' 
+                : '<span class="text-zinc-500 font-mono">預設</span>'}
+            </td>
+            <td class="py-2.5 px-2 text-zinc-400 font-mono text-[11px]">🔥 ${views}</td>
             <td class="py-2.5 px-2 text-brand-yellow font-medium">${item.price || '-'}</td>
             <td class="py-2.5 px-3 text-right space-x-2">
               <button onclick="editItem(${originalIndex})" class="text-brand-yellow hover:underline font-bold">編輯</button>
@@ -485,6 +544,32 @@
       }
     }
 
+    async function autoGeocodeRestaurant() {
+      const name = document.getElementById('restaurant_name').value.trim();
+      const dist = document.getElementById('district').value.trim();
+      if (!name && !dist) {
+        alert('請先填寫餐廳名稱或地區！');
+        return;
+      }
+
+      const q = `${name} ${dist} Hong Kong`;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`, {
+          headers: { 'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8' }
+        });
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          document.getElementById('lat').value = parseFloat(data[0].lat).toFixed(6);
+          document.getElementById('lng').value = parseFloat(data[0].lon).toFixed(6);
+          alert(`✅ 已精確抓取門牌位置！\n緯度: ${data[0].lat}\n經度: ${data[0].lon}`);
+        } else {
+          alert('未能直接找到精準大廈座標，建議手動填寫或由系統依地區自動對應。');
+        }
+      } catch (e) {
+        alert('定位服務連線逾時，請稍後重試。');
+      }
+    }
+
     async function runAiExtraction() {
       const textToAnalyze = document.getElementById('caption').value.trim();
       const cfg = loadConfig();
@@ -510,7 +595,7 @@
 {
   "title": "精選貼文中最吸引人的吸睛大標題/爆款金句 (保留Emoji，去除Hashtag與地區分類，控制在15字以內)",
   "restaurant_name": "餐廳名稱 (去除多餘形容詞或店鋪代號)",
-  "district": "地區 (例如：中環、銅鑼灣、尖沙咀、旺角、觀塘，若未明確說明請推斷)",
+  "district": "地區 (例如：中環、跑馬地、尖沙咀、旺角、觀塘，若未明確說明請推斷)",
   "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋)",
   "price": "人均價格預算 (格式如：100-200 或 400-600，只填數字範圍)",
   "occasion": "適合場景 (例如：拍拖約會、朋友聚會、深夜食堂、打卡必到)",
@@ -579,6 +664,7 @@ ${textToAnalyze}`;
           }
         }
         
+        autoGeocodeRestaurant();
         alert(`🎉 AI 提取成功！\n\n餐廳名：${extracted.restaurant_name}\n地區：${extracted.district}`);
       } catch (err) {
         alert('AI 解析異常: ' + err.message);
@@ -612,7 +698,9 @@ ${textToAnalyze}`;
         displayUrl: document.getElementById('displayUrl').value.trim(),
         videoUrl: document.getElementById('videoUrl').value.trim(),
         caption: document.getElementById('caption').value.trim(),
-        is_editor_pick: document.getElementById('is_editor_pick').checked ? '1' : '0'
+        is_editor_pick: document.getElementById('is_editor_pick').checked ? '1' : '0',
+        lat: document.getElementById('lat').value.trim(),
+        lng: document.getElementById('lng').value.trim()
       };
 
       if (editIdx >= 0 && editIdx < adminList.length) {
@@ -640,6 +728,8 @@ ${textToAnalyze}`;
       document.getElementById('must_try').value = item.must_try || '';
       document.getElementById('url').value = item.url || '';
       document.getElementById('shortCode').value = item.shortCode || '';
+      document.getElementById('lat').value = item.lat || '';
+      document.getElementById('lng').value = item.lng || '';
       
       const img = item.displayUrl || item.imageUrl || '';
       document.getElementById('displayUrl').value = img;

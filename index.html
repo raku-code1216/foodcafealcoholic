@@ -565,7 +565,7 @@
                 <span id="modalFavIcon">🤍</span> <span id="modalFavText">收藏</span>
               </button>
               <button id="modalShareBtn" onclick="shareCurrentRestaurant()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-3 py-2 rounded-lg border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1.5">
-                📤 分享
+                <span class="text-base">📤</span> 分享
               </button>
             </div>
 
@@ -919,22 +919,23 @@
       return null;
     }
 
-    function proxyImageUrl(url, size = 600) {
-      if (!url) return null;
-      if (url.includes('unsplash.com') || url.includes('placehold.co')) return url;
-      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${size}&output=jpg`;
-    }
-
+    // 核心修改點：徹底移除外部代理網站，直接讀取 CSV 內的圖片網址
     function getReelThumbnail(item) {
       if (!item) return cuisineFallbacks['default'];
+      
+      // 優先使用 CSV 中填寫的圖片路徑 (現在應該已經是 images/XXXX.jpg 的本地路徑)
+      const rawImg = item.displayUrl || item.image || item.imageUrl || item.thumbnailUrl;
+      if (rawImg && typeof rawImg === 'string' && rawImg.trim() !== '') {
+        return rawImg; 
+      }
+      
+      // 退一步保護：如果有短代號，但 displayUrl 遺失，直接組合本地圖片路徑
       const code = item.shortCode || (item.id && item.id.length >= 8 && item.id.length <= 15 ? item.id : null) || extractShortcode(item.url);
       if (code) {
-        return `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=l&default=https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700`;
+        return `images/${code}.jpg`;
       }
-      const rawImg = item.image || item.displayUrl || item.imageUrl || item.thumbnailUrl;
-      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
-        return proxyImageUrl(rawImg, 600);
-      }
+      
+      // 如果真的沒有任何圖片資訊，才使用預設菜式圖
       return getCuisineImage(item.cuisine);
     }
 

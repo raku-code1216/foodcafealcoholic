@@ -21,16 +21,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
   
   <script>
     function onImageError(img) {
       if (!img) return;
       img.onerror = null;
-      // 僅在圖片真正損壞時讀取該卡片的菜式圖備援，不再出現單一煎牛扒預設圖
-      const fallbackUrl = img.getAttribute('data-fallback') || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
-      img.src = fallbackUrl;
+      img.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
     }
     window.onImageError = onImageError;
   </script>
@@ -108,6 +106,7 @@
       overflow: hidden;
     }
 
+    /* ================= 奢華黑金地圖與自訂控件樣式 ================= */
     #fcaLeafletMap {
       background: #0d0d0d !important;
     }
@@ -217,9 +216,11 @@
 </head>
 <body class="text-white antialiased min-h-screen flex flex-col selection:bg-brand-yellow selection:text-black">
 
-  <!-- 入 App Logo Splash Screen -->
+  <!-- 1. 入 App Logo Splash Screen (停留 1.5 秒) -->
   <div id="splashScreen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-opacity duration-500 opacity-100 pointer-events-auto">
-    <img src="logo.jpg" alt="" class="w-28 h-28 rounded-2xl shadow-2xl mb-4 object-contain animate-pulse" />
+    <img src="logo.jpg" 
+         alt="" 
+         class="w-28 h-28 rounded-2xl shadow-2xl mb-4 object-contain animate-pulse" />
     <h1 class="text-brand-yellow font-black tracking-widest text-lg">FOODCAFEALCOHOLIC</h1>
   </div>
 
@@ -250,7 +251,7 @@
     setTimeout(hideSplashScreen, 2000);
   </script>
 
-  <!-- 頂部導航列 -->
+  <!-- 頂部導航列 (單行排版，手機不換行) -->
   <nav id="navbar" class="fixed top-0 w-full z-50 px-3 sm:px-8 py-3 flex items-center justify-between gap-2 bg-black/95 backdrop-blur-md border-b border-brand-border">
     <div class="flex items-center space-x-5 min-w-0">
       <div onclick="handleLogoRefresh()" class="flex items-center gap-2 sm:gap-3 cursor-pointer group min-w-0" title="重新整理首頁">
@@ -293,7 +294,7 @@
     </div>
   </nav>
 
-  <!-- 搜尋框 -->
+  <!-- 置頂搜尋引擎 Sector -->
   <section class="w-full max-w-5xl mx-auto px-4 pt-20 sm:pt-24 pb-4 text-center relative z-10">
     <div class="relative max-w-3xl mx-auto shadow-2xl">
       <span class="absolute inset-y-0 left-5 sm:left-6 flex items-center text-brand-yellow text-2xl sm:text-3xl pointer-events-none">
@@ -310,7 +311,7 @@
       </button>
     </div>
 
-    <!-- 歷史搜尋紀錄 -->
+    <!-- 搜尋歷史紀錄 Sector -->
     <div id="searchHistoryContainer" class="max-w-3xl mx-auto mt-3 px-2 flex flex-wrap items-center gap-2 text-xs sm:text-sm hidden">
       <span class="text-zinc-400 font-bold flex items-center gap-1 shrink-0">
         <span>🕒</span> <span>最近搜尋:</span>
@@ -322,7 +323,7 @@
     </div>
   </section>
 
-  <!-- 篩選系統 -->
+  <!-- 放大版篩選系統 -->
   <section class="sticky top-14 z-40 bg-[#0A0A0A]/95 backdrop-blur-md border-y border-brand-border px-4 sm:px-8 lg:px-12 py-3.5 sm:py-4 shadow-2xl">
     <div class="max-w-7xl mx-auto space-y-3">
       
@@ -341,6 +342,8 @@
 
       <!-- 細分選單 -->
       <div class="flex flex-wrap items-center gap-3 pt-1">
+        
+        <!-- 地區篩選 -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-200 font-extrabold text-sm sm:text-base shrink-0">📍 地區：</span>
           <select id="districtRegionSelect" onchange="onDistrictChange(this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
@@ -384,6 +387,7 @@
           </select>
         </div>
 
+        <!-- 預算篩選 -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-200 font-extrabold text-sm sm:text-base shrink-0">💰 預算：</span>
           <select id="priceSelect" onchange="setFilter('price', this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
@@ -395,6 +399,7 @@
           </select>
         </div>
 
+        <!-- 菜式種類 -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-200 font-extrabold text-sm sm:text-base shrink-0">🍜 菜式：</span>
           <select id="cuisineSelect" onchange="setFilter('cuisine', this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
@@ -480,7 +485,7 @@
     </section>
   </main>
 
-  <!-- 懸浮美食地圖按鈕 -->
+  <!-- 懸浮黑金美食地圖入口按鈕 -->
   <button id="floatingMapBtn" onclick="openNearbyMapModal()"
           class="fixed bottom-5 right-4 sm:bottom-7 sm:right-7 z-40 bg-[#121212]/95 hover:bg-brand-yellow text-white hover:text-black border-2 border-brand-yellow px-4 py-3 rounded-full font-black text-xs sm:text-sm flex items-center gap-2 shadow-[0_8px_28px_rgba(0,0,0,0.9),0_0_20px_rgba(255,196,0,0.35)] backdrop-blur-md transition-all active:scale-95 group">
     <span class="w-2.5 h-2.5 rounded-full bg-brand-yellow group-hover:bg-black animate-ping absolute left-4 opacity-75"></span>
@@ -709,10 +714,10 @@
 
   <script>
     // ========================================================
-    // ⭐️ 1. MAPBOX API KEY
+    // ⭐️ 1. MAPBOX API KEY (貼在這裡即可啟用原廠奢華黑金圖磚)
     // ========================================================
-    const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicmFrdXNoaW4xMjE2IiwiYSI6ImNtd2pneXJuZjAzOWoyeXEzeXVtOHZzdDUifQ.OLeTe5xwwWroEIrj0A5DLA';
-    
+    const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1xxxxxxxxxxxxxxxxxxxxxxxxxxxx'; // 👈 貼入你的 Mapbox Default Token
+
     // 專屬 Firebase 即時資料庫連線設定
     const firebaseConfig = {
       apiKey: "AIzaSyDpBXu84kqQKtsmICc5UQopqh7nJiZ7EQw",
@@ -914,20 +919,22 @@
       return null;
     }
 
-    // ⭐️ 核心還原：使用乾淨無白條的純圖片路徑，不再加上導致全站變牛扒圖的強制 default 參數
+    function proxyImageUrl(url, size = 600) {
+      if (!url) return null;
+      if (url.includes('unsplash.com') || url.includes('placehold.co')) return url;
+      return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${size}&output=jpg`;
+    }
+
     function getReelThumbnail(item) {
       if (!item) return cuisineFallbacks['default'];
-
       const code = item.shortCode || (item.id && item.id.length >= 8 && item.id.length <= 15 ? item.id : null) || extractShortcode(item.url);
       if (code) {
-        return `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=l`;
+        return `https://images.weserv.nl/?url=https://www.instagram.com/p/${code}/media/?size=l&default=https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700`;
       }
-
-      const rawImg = item.displayUrl || item.display_url || item.image || item.imageUrl || item.thumbnailUrl;
-      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http') && !rawImg.includes('unsplash.com')) {
-        return `https://wsrv.nl/?url=${encodeURIComponent(rawImg)}&w=600&output=jpg`;
+      const rawImg = item.image || item.displayUrl || item.imageUrl || item.thumbnailUrl;
+      if (rawImg && typeof rawImg === 'string' && rawImg.startsWith('http')) {
+        return proxyImageUrl(rawImg, 600);
       }
-
       return getCuisineImage(item.cuisine);
     }
 
@@ -942,7 +949,6 @@
       return item.restaurant_name;
     }
 
-    // ⭐️ 原版純淨卡片視覺：純相片滿版背景，絕無白條
     function createCard(item, index, rankBadge = null, isGrid = false) {
       const img = getReelThumbnail(item);
       const isFav = savedFavorites.has(String(item.id));
@@ -956,12 +962,10 @@
           
           <div class="relative w-full aspect-[4/5] bg-zinc-950 overflow-hidden">
             <img src="${img}" alt="${item.restaurant_name}" 
-                 loading="lazy" decoding="async"
-                 data-fallback="${getCuisineImage(item.cuisine)}"
                  onerror="onImageError(this)" 
                  class="food-card-img w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out" />
             
-            <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-black/30 pointer-events-none flex flex-col justify-between p-3">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/30 pointer-events-none flex flex-col justify-between p-3">
               <div></div>
               
               <div class="space-y-1">
@@ -1484,7 +1488,6 @@
             id: uniqueId,
             restaurant_name: r.restaurant_name,
             district: distStr,
-            address: r.address || '',
             region: inferredRegion,
             cuisine: cuisineStr,
             price: r.price || '',
@@ -1577,56 +1580,60 @@
       occasion: 'all'
     };
 
-    const LANDMARK_COORDS = {
-      '時代廣場': [22.2783, 114.1824], '希慎廣場': [22.2797, 114.1839], '希慎': [22.2797, 114.1839], '利園': [22.2780, 114.1852],
-      'k11 musea': [22.2946, 114.1742], 'k11': [22.2975, 114.1738], '海港城': [22.2979, 114.1685],
-      '朗豪坊': [22.3191, 114.1685], '始創中心': [22.3228, 114.1689], 't.o.p': [22.3204, 114.1695],
-      'apm': [22.3123, 114.2251], 'megabox': [22.3198, 114.2082], 'airside': [22.3325, 114.1985],
-      '圍方': [22.3735, 114.1795], '新城市廣場': [22.3815, 114.1888], '南豐紗廠': [22.3745, 114.1118],
-      'd2 place': [22.3368, 114.1492], '又一城': [22.3372, 114.1748], '太古城中心': [22.2865, 114.2178],
-      '大館': [22.2815, 114.1539], 'pmq': [22.2835, 114.1519], '利東街': [22.2758, 114.1729]
-    };
-
+    // 涵蓋全港超過 120+ 個微商圈、地鐵站、街區與代表性地標之精準座標表
     const DISTRICT_COORDS = {
-      '中環': [22.2819, 114.1581], '蘭桂坊': [22.2810, 114.1557], '蘇豪': [22.2825, 114.1525], 'soho': [22.2825, 114.1525],
-      '上環': [22.2864, 114.1502], '西營盤': [22.2858, 114.1426], '石塘咀': [22.2862, 114.1355],
+      // 港島商圈
+      '中環': [22.2819, 114.1581], '蘭桂坊': [22.2810, 114.1557], '蘇豪': [22.2825, 114.1525], 'soho': [22.2825, 114.1525], '大館': [22.2815, 114.1539],
+      '上環': [22.2864, 114.1502], 'pmq': [22.2835, 114.1519], '西營盤': [22.2858, 114.1426], '石塘咀': [22.2862, 114.1355],
       '堅尼地城': [22.2812, 114.1283], '西環': [22.2835, 114.1360],
-      '金鐘': [22.2793, 114.1655], '灣仔': [22.2770, 114.1722],
-      '銅鑼灣': [22.2804, 114.1848], '跑馬地': [22.2693, 114.1835], 'happy valley': [22.2693, 114.1835], '黃泥涌': [22.2685, 114.1852],
+      '金鐘': [22.2793, 114.1655], '灣仔': [22.2770, 114.1722], '利東街': [22.2758, 114.1729],
+      '銅鑼灣': [22.2804, 114.1848], '時代廣場': [22.2783, 114.1824], '希慎': [22.2797, 114.1839],
+      '跑馬地': [22.2693, 114.1835], 'happy valley': [22.2693, 114.1835], '黃泥涌': [22.2685, 114.1852],
       '大坑': [22.2775, 114.1925], '天后': [22.2827, 114.1918], '炮台山': [22.2878, 114.1942],
       '北角': [22.2908, 114.2008], '鰂魚涌': [22.2879, 114.2121], '太古': [22.2856, 114.2170], '太古城': [22.2865, 114.2178],
       '西灣河': [22.2821, 114.2220], '筲箕灣': [22.2785, 114.2285], '杏花邨': [22.2768, 114.2398], '柴灣': [22.2647, 114.2372],
       '黃竹坑': [22.2481, 114.1681], '香港仔': [22.2478, 114.1553], '鴨脷洲': [22.2435, 114.1558], '海怡': [22.2425, 114.1488],
       '薄扶林': [22.2618, 114.1305], '數碼港': [22.2612, 114.1298], '淺水灣': [22.2365, 114.1972], '赤柱': [22.2185, 114.2125],
       '山頂': [22.2711, 114.1498], '半山': [22.2785, 114.1530],
-      '尖沙咀': [22.2988, 114.1722], '尖東': [22.2958, 114.1765], '西九龍': [22.3038, 114.1615], '柯士甸': [22.3046, 114.1663],
+
+      // 九龍商圈
+      '尖沙咀': [22.2988, 114.1722], '尖東': [22.2958, 114.1765], 'k11': [22.2975, 114.1738], '海港城': [22.2979, 114.1685],
+      '西九龍': [22.3038, 114.1615], '圓方': [22.3048, 114.1610], '柯士甸': [22.3046, 114.1663],
       '佐敦': [22.3049, 114.1717], '油麻地': [22.3129, 114.1706],
-      '旺角': [22.3193, 114.1694], '太子': [22.3245, 114.1683],
+      '旺角': [22.3193, 114.1694], '朗豪坊': [22.3191, 114.1685], '太子': [22.3245, 114.1683],
       '大角咀': [22.3218, 114.1627], '奧運': [22.3178, 114.1602],
-      '深水埗': [22.3307, 114.1622], '南昌': [22.3268, 114.1535], '長沙灣': [22.3364, 114.1563], '荔枝角': [22.3372, 114.1483],
+      '深水埗': [22.3307, 114.1622], '南昌': [22.3268, 114.1535], '長沙灣': [22.3364, 114.1563], '荔枝角': [22.3372, 114.1483], 'd2 place': [22.3368, 114.1492],
       '美孚': [22.3378, 114.1396], '石硤尾': [22.3346, 114.1685],
       '紅磡': [22.3051, 114.1882], '黃埔': [22.3045, 114.1906], '何文田': [22.3095, 114.1825], '土瓜灣': [22.3175, 114.1888],
-      '九龍城': [22.3282, 114.1915], '啟德': [22.3304, 114.1994], '九龍塘': [22.3369, 114.1762],
+      '九龍城': [22.3282, 114.1915], '啟德': [22.3304, 114.1994], 'airside': [22.3325, 114.1985], '九龍塘': [22.3369, 114.1762], '又一城': [22.3372, 114.1748],
       '樂富': [22.3381, 114.1872], '黃大仙': [22.3418, 114.1938], '鑽石山': [22.3401, 114.2016],
       '新蒲崗': [22.3358, 114.1968], '慈雲山': [22.3482, 114.2012], '彩虹': [22.3349, 114.2089],
-      '九龍灣': [22.3232, 114.2141], '牛頭角': [22.3155, 114.2191], '觀塘': [22.3122, 114.2255],
+      '九龍灣': [22.3232, 114.2141], 'megabox': [22.3198, 114.2082], '牛頭角': [22.3155, 114.2191], '觀塘': [22.3122, 114.2255], 'apm': [22.3123, 114.2251],
       '藍田': [22.3068, 114.2335], '油塘': [22.2978, 114.2372],
-      '荃灣': [22.3713, 114.1141], '葵芳': [22.3568, 114.1279], '葵興': [22.3632, 114.1312], '葵涌': [22.3610, 114.1325],
+
+      // 新界及離島
+      '荃灣': [22.3713, 114.1141], '南豐紗廠': [22.3745, 114.1118], '愉景新城': [22.3762, 114.1112],
+      '葵芳': [22.3568, 114.1279], '新都會': [22.3575, 114.1265], '葵興': [22.3632, 114.1312], '葵涌': [22.3610, 114.1325],
       '青衣': [22.3585, 114.1072], '深井': [22.3672, 114.0615],
-      '沙田': [22.3820, 114.1885], '大圍': [22.3730, 114.1786], '火炭': [22.3952, 114.1982], '馬鞍山': [22.4245, 114.2315],
+      '沙田': [22.3820, 114.1885], '新城市廣場': [22.3815, 114.1888], '大圍': [22.3730, 114.1786], '圍方': [22.3735, 114.1795],
+      '火炭': [22.3952, 114.1982], '馬鞍山': [22.4245, 114.2315], '烏溪沙': [22.4382, 114.2422],
       '大埔': [22.4508, 114.1642], '太和': [22.4512, 114.1610], '大埔墟': [22.4448, 114.1685],
       '粉嶺': [22.4921, 114.1388], '聯和墟': [22.5002, 114.1435], '上水': [22.5012, 114.1278],
-      '元朗': [22.4445, 114.0222], '錦田': [22.4415, 114.0622], '天水圍': [22.4482, 114.0045], '屯門': [22.3908, 113.9725],
+      '元朗': [22.4445, 114.0222], 'yohomall': [22.4448, 114.0345], 'yoho': [22.4448, 114.0345], '錦田': [22.4415, 114.0622],
+      '天水圍': [22.4482, 114.0045], '屯門': [22.3908, 113.9725], '屯門市廣場': [22.3928, 113.9765],
       '將軍澳': [22.3075, 114.2597], '調景嶺': [22.3045, 114.2525], '坑口': [22.3156, 114.2645], '寶琳': [22.3228, 114.2582], '康城': [22.2958, 114.2688],
       '西貢': [22.3814, 114.2705], '清水灣': [22.2865, 114.2885],
-      '東涌': [22.2892, 113.9412], '機場': [22.3155, 113.9365], '愉景灣': [22.2965, 114.0155],
-      '長洲': [22.2085, 114.0305], '南丫島': [22.2262, 114.1115], '坪洲': [22.2852, 114.0415], '大澳': [22.2542, 113.8622],
+      '東涌': [22.2892, 113.9412], '東薈城': [22.2898, 113.9415], '機場': [22.3155, 113.9365],
+      '愉景灣': [22.2965, 114.0155], '長洲': [22.2085, 114.0305], '南丫島': [22.2262, 114.1115], '坪洲': [22.2852, 114.0415], '大澳': [22.2542, 113.8622],
+
+      // 境外熱門
       '台北': [25.0330, 121.5654], '澳門': [22.1987, 113.5439], '深圳': [22.5431, 114.0579],
       '東京': [35.6762, 139.6503], '大阪': [34.6937, 135.5023], '首爾': [37.5665, 126.9780]
     };
 
     const SORTED_DISTRICT_KEYS = Object.keys(DISTRICT_COORDS).sort((a, b) => b.length - a.length);
 
+    // 圓形分佈微調偏移量（約 100-150m，避免同區餐廳重疊）
     function getDeterministicOffset(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -1639,27 +1646,33 @@
     }
 
     function getItemCoordinates(item) {
+      // 1. 優先讀取精準經緯度（由 admin.html 或 CSV 填入）
       if (item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng))) {
         return { lat: parseFloat(item.lat), lng: parseFloat(item.lng), isExact: true };
       }
 
-      const fullContent = `${item.restaurant_name || ''} ${item.address || ''} ${item.district || ''} ${item.caption || ''}`.toLowerCase();
-
-      for (const [landmark, coords] of Object.entries(LANDMARK_COORDS)) {
-        if (fullContent.includes(landmark)) {
-          const [dLat, dLng] = getDeterministicOffset(String(item.id || item.restaurant_name));
-          return { lat: coords[0] + dLat, lng: coords[1] + dLng, isExact: false };
-        }
-      }
-
+      // 2. 先比對 district 欄位
+      const dist = String(item.district || '').toLowerCase();
       let matchedBase = null;
       for (const key of SORTED_DISTRICT_KEYS) {
-        if (fullContent.includes(key)) {
+        if (dist.includes(key)) {
           matchedBase = DISTRICT_COORDS[key];
           break;
         }
       }
 
+      // 3. 若 district 填「香港」或未比對到，自動深度比對餐廳店名、內文及 Hashtag（例：#fca_跑馬地、時代廣場）
+      if (!matchedBase) {
+        const fullContent = `${item.restaurant_name || ''} ${item.caption || ''}`.toLowerCase();
+        for (const key of SORTED_DISTRICT_KEYS) {
+          if (fullContent.includes(key)) {
+            matchedBase = DISTRICT_COORDS[key];
+            break;
+          }
+        }
+      }
+
+      // 4. 若全無提示，採用維港中央座標，不再堆疊於紅磡理大
       const base = matchedBase || [22.2900, 114.1700];
       const [dLat, dLng] = getDeterministicOffset(String(item.id || item.restaurant_name));
       return { lat: base[0] + dLat, lng: base[1] + dLng, isExact: false };
@@ -1705,6 +1718,7 @@
         }).addTo(fcaMap);
         currentTileLayers = [streetLayer];
       } else {
+        // 🖤 奢華黑金模式：如果有提供 Mapbox Token，直接載入原廠 dark-v11 高清圖磚；未填則自動退回深色圖層
         if (typeof MAPBOX_ACCESS_TOKEN === 'string' && MAPBOX_ACCESS_TOKEN.startsWith('pk.')) {
           const mapboxDark = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/512/{z}/{x}/{y}@2x?access_token=${MAPBOX_ACCESS_TOKEN}`, {
             attribution: '© <a href="https://www.mapbox.com/">Mapbox</a> © OpenStreetMap',
@@ -1929,13 +1943,12 @@
 
       const boundsPoints = [];
       const markersToAdd = enriched.map(item => {
+        const thumbUrl = getReelThumbnail(item);
         boundsPoints.push([item.coords.lat, item.coords.lng]);
-
-        const pinImg = getReelThumbnail(item);
 
         const photoPinIcon = L.divIcon({
           html: `<div class="food-photo-pin" title="${item.restaurant_name}">
-                   <img src="${pinImg}" alt="${item.restaurant_name}" onerror="onImageError(this)" />
+                   <img src="${thumbUrl}" alt="${item.restaurant_name}" onerror="onImageError(this)" />
                  </div>`,
           className: '',
           iconSize: [48, 54],
@@ -1950,8 +1963,8 @@
         const popupHtml = `
           <div class="w-56 font-sans overflow-hidden">
             <div class="relative w-full h-28 rounded-lg overflow-hidden mb-2 bg-zinc-900">
-              <img src="${pinImg}" alt="${item.restaurant_name}" onerror="onImageError(this)" class="w-full h-full object-cover" />
-              <div class="absolute bottom-1.5 left-1.5 flex items-center gap-1 z-10">
+              <img src="${thumbUrl}" alt="${item.restaurant_name}" onerror="onImageError(this)" class="w-full h-full object-cover" />
+              <div class="absolute bottom-1.5 left-1.5 flex items-center gap-1">
                 <span class="bg-black/85 text-white text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-700">📍 ${item.district || '香港'}</span>
                 ${distLabel}
               </div>
@@ -1987,23 +2000,20 @@
       if (userLocation || isMapFiltering) {
         rail.classList.remove('hidden');
         if (enriched.length > 0) {
-          rail.innerHTML = enriched.slice(0, 20).map(item => {
-            const thumbImg = getReelThumbnail(item);
-            return `
-              <div onclick="focusPinAndPopup('${item.id}', ${item.coords.lat}, ${item.coords.lng})" 
-                   class="flex-none w-52 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
-                <img src="${thumbImg}" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
-                <div class="overflow-hidden">
-                  <div class="flex items-center gap-1">
-                    ${item.distKm !== null ? `<span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>` : ''}
-                    <span class="text-[10px] text-zinc-400 truncate">📍 ${item.district || '香港'}</span>
-                  </div>
-                  <h4 class="text-xs font-bold text-white truncate mt-0.5">${item.restaurant_name}</h4>
-                  <p class="text-[10px] text-zinc-400 truncate">${item.cuisine || ''}</p>
+          rail.innerHTML = enriched.slice(0, 20).map(item => `
+            <div onclick="focusPinAndPopup('${item.id}', ${item.coords.lat}, ${item.coords.lng})" 
+                 class="flex-none w-52 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
+              <img src="${getReelThumbnail(item)}" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
+              <div class="overflow-hidden">
+                <div class="flex items-center gap-1">
+                  ${item.distKm !== null ? `<span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>` : ''}
+                  <span class="text-[10px] text-zinc-400 truncate">📍 ${item.district || '香港'}</span>
                 </div>
+                <h4 class="text-xs font-bold text-white truncate mt-0.5">${item.restaurant_name}</h4>
+                <p class="text-[10px] text-zinc-400 truncate">${item.cuisine || ''}</p>
               </div>
-            `;
-          }).join('');
+            </div>
+          `).join('');
         } else {
           rail.innerHTML = `<span class="text-xs text-zinc-400 mx-auto py-2">沒有符合目前篩選條件的餐廳，試下按「重設」或放大搜尋範圍！</span>`;
         }

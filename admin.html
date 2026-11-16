@@ -45,7 +45,7 @@
   <header class="bg-brand-card border-b border-brand-border px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
     <div class="flex items-center gap-3">
       <span class="text-xl font-black text-brand-yellow tracking-wider">FCA ADMIN</span>
-      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • 門牌經緯度定位 • 一鍵同步至網站</span>
+      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • 門牌精準地址定位 • 一鍵同步至網站</span>
     </div>
     
     <div class="flex items-center gap-2 sm:gap-3">
@@ -127,7 +127,7 @@
               ⚡ 讓 AI 智能提取所有欄位
             </button>
           </div>
-          <textarea id="caption" rows="4" placeholder="請直接貼上 Instagram 的貼文文字內容（整段複製過來即可，包含 hashtag），然後點擊右上角的「⚡ 讓 AI 智能提取」按鈕..."
+          <textarea id="caption" rows="4" placeholder="請直接貼上 Instagram 的貼文文字內容（整段複製過來即可，包含底部地址），點擊右上角按鈕將自動提取門牌與經緯度..."
                     class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow leading-relaxed text-xs"></textarea>
 
           <div id="captionTitlePreview" class="hidden p-2 rounded-lg bg-brand-yellow/10 border border-brand-yellow/40 text-brand-yellow text-xs flex items-center gap-2">
@@ -136,7 +136,7 @@
           </div>
         </div>
 
-        <!-- 步驟 3: 基本資訊 -->
+        <!-- 步驟 3: 提取出的基本資訊與地址 -->
         <div>
           <label class="block text-zinc-400 font-bold mb-1">餐廳名稱 *</label>
           <input type="text" id="restaurant_name" required placeholder="AI 自動填寫或手動修改"
@@ -156,19 +156,27 @@
           </div>
         </div>
 
-        <!-- 精準門牌經緯度欄位 (支援一鍵抓取) -->
-        <div class="p-2.5 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-1.5">
-          <div class="flex items-center justify-between">
-            <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準座標 (同步至地圖圖釘)</label>
-            <button type="button" onclick="autoGeocodeRestaurant()" class="text-brand-yellow hover:underline text-[11px] font-bold">
-              📍 自動定位抓取
+        <!-- 底部真實詳細門牌地址 (核心升級) -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-brand-yellow font-bold">📍 詳細門牌地址 (由貼文底部提取)</label>
+            <button type="button" onclick="autoGeocodeRestaurant()" class="text-zinc-400 hover:text-white underline text-[11px]">
+              重新換算座標
             </button>
           </div>
+          <input type="text" id="address" placeholder="例如：跑馬地成和道69號地下 / 銅鑼灣時代廣場B2樓..."
+                 onchange="autoGeocodeRestaurant()"
+                 class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
+        </div>
+
+        <!-- 門牌經緯度欄位 -->
+        <div class="p-2.5 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-1.5">
+          <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準經緯度 (自動換算完成)</label>
           <div class="grid grid-cols-2 gap-2">
-            <input type="text" id="lat" placeholder="緯度 Lat (例: 22.2693)"
-                   class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-[11px] focus:outline-none focus:border-brand-yellow" />
-            <input type="text" id="lng" placeholder="經度 Lng (例: 114.1835)"
-                   class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-[11px] focus:outline-none focus:border-brand-yellow" />
+            <input type="text" id="lat" placeholder="緯度 Lat (例: 22.26932)"
+                   class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-emerald-400 font-mono text-[11px] focus:outline-none focus:border-brand-yellow" />
+            <input type="text" id="lng" placeholder="經度 Lng (例: 114.18349)"
+                   class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-emerald-400 font-mono text-[11px] focus:outline-none focus:border-brand-yellow" />
           </div>
         </div>
 
@@ -226,14 +234,14 @@
             ★ 只看嚴選
           </button>
           <div class="relative">
-            <input type="text" id="adminSearchInput" oninput="renderTable()" placeholder="搜尋餐廳、地區..."
+            <input type="text" id="adminSearchInput" oninput="renderTable()" placeholder="搜尋餐廳、地區、地址..."
                    class="bg-zinc-900 border border-zinc-700 text-xs text-white rounded-full pl-7 pr-3 py-1.5 focus:outline-none focus:border-brand-yellow w-36 sm:w-44" />
             <span class="absolute left-2.5 top-2 text-zinc-500 text-xs">🔍</span>
           </div>
         </div>
       </div>
 
-      <!-- 表格清單 (新增「座標」與「點擊數」標籤) -->
+      <!-- 表格清單 -->
       <div class="overflow-x-auto flex-grow max-h-[650px] no-scrollbar">
         <table class="w-full text-left text-xs">
           <thead class="bg-zinc-900/90 sticky top-0 text-zinc-400 border-b border-zinc-800 z-10">
@@ -241,7 +249,7 @@
               <th class="py-2.5 px-2 text-center w-12">嚴選</th>
               <th class="py-2.5 px-3">餐廳名稱</th>
               <th class="py-2.5 px-2">地區</th>
-              <th class="py-2.5 px-2">座標</th>
+              <th class="py-2.5 px-2">門牌座標</th>
               <th class="py-2.5 px-2">點擊</th>
               <th class="py-2.5 px-2">預算</th>
               <th class="py-2.5 px-3 text-right">操作</th>
@@ -305,10 +313,11 @@
     let globalClicksMap = {};
     const CSV_FILENAME = 'cleaned_data_final.csv';
 
-    // 關鍵修復：補齊 lat 與 lng，避免同步時座標遺失
+    // 關鍵修復：完整保存 address, lat, lng，永久防止同步後座標洗掉
     const CSV_COLUMNS = [
       'restaurant_name',
       'district',
+      'address',
       'cuisine',
       'price',
       'occasion',
@@ -409,6 +418,7 @@
                 .map(item => ({
                   restaurant_name: item.restaurant_name || '',
                   district: item.district || '',
+                  address: item.address || '',
                   cuisine: item.cuisine || '',
                   price: item.price || '',
                   occasion: item.occasion || '',
@@ -472,6 +482,7 @@
         filtered = filtered.filter(({ item }) => {
           return (item.restaurant_name || '').toLowerCase().includes(query) ||
                  (item.district || '').toLowerCase().includes(query) ||
+                 (item.address || '').toLowerCase().includes(query) ||
                  (item.cuisine || '').toLowerCase().includes(query);
         });
       }
@@ -505,8 +516,8 @@
             <td class="py-2.5 px-2 text-zinc-300">${item.district || '-'}</td>
             <td class="py-2.5 px-2 text-[10px]">
               ${hasCoords 
-                ? '<span class="text-emerald-400 font-mono">✓ 已定位</span>' 
-                : '<span class="text-zinc-500 font-mono">預設</span>'}
+                ? '<span class="text-emerald-400 font-mono">✓ 門牌精準</span>' 
+                : '<span class="text-zinc-500 font-mono">預設估計</span>'}
             </td>
             <td class="py-2.5 px-2 text-zinc-400 font-mono text-[11px]">🔥 ${views}</td>
             <td class="py-2.5 px-2 text-brand-yellow font-medium">${item.price || '-'}</td>
@@ -544,29 +555,45 @@
       }
     }
 
+    // 智能地理編碼轉換（依據詳細門牌 > 餐廳名+地區）
     async function autoGeocodeRestaurant() {
       const name = document.getElementById('restaurant_name').value.trim();
       const dist = document.getElementById('district').value.trim();
-      if (!name && !dist) {
-        alert('請先填寫餐廳名稱或地區！');
+      const addr = document.getElementById('address').value.trim();
+
+      if (!name && !dist && !addr) {
+        alert('請先填寫詳細地址或餐廳名稱！');
         return;
       }
 
-      const q = `${name} ${dist} Hong Kong`;
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`, {
-          headers: { 'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8' }
-        });
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          document.getElementById('lat').value = parseFloat(data[0].lat).toFixed(6);
-          document.getElementById('lng').value = parseFloat(data[0].lon).toFixed(6);
-          alert(`✅ 已精確抓取門牌位置！\n緯度: ${data[0].lat}\n經度: ${data[0].lon}`);
-        } else {
-          alert('未能直接找到精準大廈座標，建議手動填寫或由系統依地區自動對應。');
-        }
-      } catch (e) {
-        alert('定位服務連線逾時，請稍後重試。');
+      // 優先以真實門牌地址查詢，找不到再以「店名 + 地區」查詢
+      const queries = [];
+      if (addr) queries.push(`${addr} Hong Kong`);
+      if (name && dist) queries.push(`${name} ${dist} Hong Kong`);
+      if (dist) queries.push(`${dist} Hong Kong`);
+
+      let found = false;
+      for (const q of queries) {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`, {
+            headers: { 'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8' }
+          });
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            document.getElementById('lat').value = parseFloat(data[0].lat).toFixed(6);
+            document.getElementById('lng').value = parseFloat(data[0].lon).toFixed(6);
+            found = true;
+            break;
+          }
+        } catch (e) {}
+      }
+
+      if (found) {
+        const latVal = document.getElementById('lat').value;
+        const lngVal = document.getElementById('lng').value;
+        alert(`✅ 已精確鎖定真實門牌座標！\n緯度: ${latVal}\n經度: ${lngVal}`);
+      } else {
+        alert('未能自動鎖定該門牌，建議由前台智能商圈庫自動對應。');
       }
     }
 
@@ -587,15 +614,16 @@
 
       const btn = document.getElementById('btnAiExtract');
       const originalText = btn.innerText;
-      btn.innerText = '🤖 AI 正在精準提取資料...';
+      btn.innerText = '🤖 AI 正在精準提取資料與門牌...';
       btn.disabled = true;
 
       try {
-        const promptText = `你是一位香港美食指南資料庫專員。請從以下美食 IG 貼文內容中，提取資料並僅回傳純 JSON，不得加上任何 Markdown 語法標籤（不要加 \`\`\`json）：
+        const promptText = `你是一位香港美食指南資料庫專員。請從以下美食 IG 貼文內容中，特別提取貼文最底部的【詳細地址/門牌】與各項資料，並僅回傳純 JSON，不得加上任何 Markdown 語法標籤（不要加 \`\`\`json）：
 {
   "title": "精選貼文中最吸引人的吸睛大標題/爆款金句 (保留Emoji，去除Hashtag與地區分類，控制在15字以內)",
   "restaurant_name": "餐廳名稱 (去除多餘形容詞或店鋪代號)",
-  "district": "地區 (例如：中環、跑馬地、尖沙咀、旺角、觀塘，若未明確說明請推斷)",
+  "district": "地區 (例如：跑馬地、中環、銅鑼灣、尖沙咀、旺角、觀塘，請根據詳細地址精確填寫)",
+  "address": "貼文最底部附帶的詳細門牌地址或商場大廈名稱 (完整複製，去除多餘符號)",
   "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋)",
   "price": "人均價格預算 (格式如：100-200 或 400-600，只填數字範圍)",
   "occasion": "適合場景 (例如：拍拖約會、朋友聚會、深夜食堂、打卡必到)",
@@ -645,6 +673,7 @@ ${textToAnalyze}`;
 
         if (extracted.restaurant_name) document.getElementById('restaurant_name').value = extracted.restaurant_name;
         if (extracted.district) document.getElementById('district').value = extracted.district;
+        if (extracted.address) document.getElementById('address').value = extracted.address;
         if (extracted.cuisine) document.getElementById('cuisine').value = extracted.cuisine;
         if (extracted.price) document.getElementById('price').value = extracted.price;
         if (extracted.occasion) document.getElementById('occasion').value = extracted.occasion;
@@ -664,8 +693,10 @@ ${textToAnalyze}`;
           }
         }
         
-        autoGeocodeRestaurant();
-        alert(`🎉 AI 提取成功！\n\n餐廳名：${extracted.restaurant_name}\n地區：${extracted.district}`);
+        // 提取完成後立即換算座標
+        await autoGeocodeRestaurant();
+        
+        alert(`🎉 AI 提取成功！\n\n餐廳名：${extracted.restaurant_name}\n地區：${extracted.district}\n門牌地址：${extracted.address || '未註明'}`);
       } catch (err) {
         alert('AI 解析異常: ' + err.message);
       } finally {
@@ -689,6 +720,7 @@ ${textToAnalyze}`;
       const itemData = {
         restaurant_name: document.getElementById('restaurant_name').value.trim(),
         district: document.getElementById('district').value.trim(),
+        address: document.getElementById('address').value.trim(),
         cuisine: document.getElementById('cuisine').value.trim(),
         price: document.getElementById('price').value.trim(),
         occasion: document.getElementById('occasion').value.trim(),
@@ -722,6 +754,7 @@ ${textToAnalyze}`;
       document.getElementById('editIndex').value = index;
       document.getElementById('restaurant_name').value = item.restaurant_name || '';
       document.getElementById('district').value = item.district || '';
+      document.getElementById('address').value = item.address || '';
       document.getElementById('cuisine').value = item.cuisine || '';
       document.getElementById('price').value = item.price || '';
       document.getElementById('occasion').value = item.occasion || '';

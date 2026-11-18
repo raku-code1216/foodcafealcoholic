@@ -45,7 +45,7 @@
   <header class="bg-brand-card border-b border-brand-border px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
     <div class="flex items-center gap-3">
       <span class="text-xl font-black text-brand-yellow tracking-wider">FCA ADMIN</span>
-      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • 門牌經緯度定位 • 自動抓圖同步</span>
+      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • Google 精準定位 • 自動抓圖同步</span>
     </div>
     
     <div class="flex items-center gap-2 sm:gap-3">
@@ -160,11 +160,11 @@
           </div>
         </div>
 
-        <!-- 精準門牌經緯度欄位 (支援一鍵抓取) -->
+        <!-- 精準門牌經緯度欄位 (升級為 Google Places API) -->
         <div class="p-2.5 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-1.5">
           <div class="flex items-center justify-between">
-            <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準座標 (同步至地圖圖釘)</label>
-            <button type="button" onclick="autoGeocodeRestaurant()" class="text-brand-yellow hover:underline text-[11px] font-bold">
+            <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準座標 (Google Places 引擎)</label>
+            <button type="button" id="btnGeocode" onclick="autoGeocodeRestaurant()" class="text-brand-yellow hover:underline text-[11px] font-bold">
               📍 自動定位抓取
             </button>
           </div>
@@ -174,6 +174,7 @@
             <input type="text" id="lng" placeholder="經度 Lng (例: 114.1835)"
                    class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-[11px] focus:outline-none focus:border-brand-yellow" />
           </div>
+          <p id="geocodeMatchedAddress" class="hidden text-[10px] text-emerald-400 truncate"></p>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -275,6 +276,11 @@
           <input type="password" id="cfgGeminiKey" placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxx"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
         </div>
+        <div>
+          <label class="block text-emerald-400 font-bold mb-1">Google Places API Key (選填，留空則用預設)</label>
+          <input type="password" id="cfgPlacesKey" placeholder="留空即自動使用內建定位金鑰"
+                 class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
+        </div>
         <div class="border-t border-zinc-800 pt-3">
           <label class="block text-zinc-300 font-bold mb-1">GitHub 使用者帳號 (Owner)</label>
           <input type="text" id="cfgOwner" placeholder="例如：raku-code1216"
@@ -307,7 +313,9 @@
     let adminList = [];
     let filterOnlyPicks = false;
     let globalClicksMap = {};
+    let lastExtractedAddress = '';
     const CSV_FILENAME = 'cleaned_data_final.csv';
+    const DEFAULT_PLACES_KEY = 'AIzaSyDpBXu84kqQKTsmICc5UQopqh7nJiZ7EQw';
 
     const CSV_COLUMNS = [
       'restaurant_name',
@@ -346,6 +354,7 @@
     function loadConfig() {
       return {
         geminiKey: localStorage.getItem('fca_gemini_key') || '',
+        placesKey: localStorage.getItem('fca_places_key') || DEFAULT_PLACES_KEY,
         owner: localStorage.getItem('fca_gh_owner') || '',
         repo: localStorage.getItem('fca_gh_repo') || '',
         branch: localStorage.getItem('fca_gh_branch') || 'main',
@@ -356,6 +365,7 @@
     function openConfigModal() {
       const cfg = loadConfig();
       document.getElementById('cfgGeminiKey').value = cfg.geminiKey;
+      document.getElementById('cfgPlacesKey').value = localStorage.getItem('fca_places_key') || '';
       document.getElementById('cfgOwner').value = cfg.owner;
       document.getElementById('cfgRepo').value = cfg.repo;
       document.getElementById('cfgBranch').value = cfg.branch;
@@ -369,6 +379,7 @@
 
     function saveConfig() {
       const geminiKey = document.getElementById('cfgGeminiKey').value.trim();
+      const placesKey = document.getElementById('cfgPlacesKey').value.trim();
       const owner = document.getElementById('cfgOwner').value.trim();
       const repo = document.getElementById('cfgRepo').value.trim();
       const branch = document.getElementById('cfgBranch').value.trim() || 'main';
@@ -380,6 +391,8 @@
       }
 
       localStorage.setItem('fca_gemini_key', geminiKey);
+      if (placesKey) localStorage.setItem('fca_places_key', placesKey);
+      else localStorage.removeItem('fca_places_key');
       localStorage.setItem('fca_gh_owner', owner);
       localStorage.setItem('fca_gh_repo', repo);
       localStorage.setItem('fca_gh_branch', branch);
@@ -564,29 +577,107 @@
       }
     }
 
-    async function autoGeocodeRestaurant() {
+    function extractAddressFromCaption(caption) {
+      if (!caption) return '';
+      const regex = /(?:📍|地址[：:]|Address[：:]|地點[：:])\s*([^\n]+)/i;
+      const match = caption.match(regex);
+      if (match && match[1] && match[1].trim().length > 3) {
+        return match[1].trim();
+      }
+      return '';
+    }
+
+    async function searchGooglePlaces(query, apiKey) {
+      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': 'places.location,places.formattedAddress,places.displayName'
+        },
+        body: JSON.stringify({
+          textQuery: query,
+          languageCode: 'zh-HK'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.places && data.places.length > 0) {
+        return data.places[0];
+      }
+      return null;
+    }
+
+    async function autoGeocodeRestaurant(aiAddress = '') {
       const name = document.getElementById('restaurant_name').value.trim();
       const dist = document.getElementById('district').value.trim();
-      if (!name && !dist) {
+      const caption = document.getElementById('caption').value.trim();
+      const cfg = loadConfig();
+
+      if (!name && !dist && !aiAddress) {
         alert('請先填寫餐廳名稱或地區！');
         return;
       }
 
-      const q = `${name} ${dist} Hong Kong`;
+      const btn = document.getElementById('btnGeocode');
+      const addrHint = document.getElementById('geocodeMatchedAddress');
+      if (btn) btn.innerText = '⏳ 定位中...';
+      if (addrHint) addrHint.classList.add('hidden');
+
+      const captionAddr = aiAddress || lastExtractedAddress || extractAddressFromCaption(caption);
+      const overseasKeywords = ['台北', '台灣', '台中', '高雄', '澳門', '深圳', '東京', '大阪', '京都', '首爾', '日本', '韓國', '曼谷', '新加坡'];
+      const isOverseas = overseasKeywords.some(kw => dist.includes(kw) || captionAddr.includes(kw));
+      const regionSuffix = isOverseas ? '' : ' 香港';
+
+      // 多層次搜尋策略：優先找「餐廳+地址」，找不到再退回「純地址/商場」或「餐廳+地區」
+      const queries = [];
+      if (captionAddr) {
+        queries.push(`${name} ${captionAddr}${regionSuffix}`.trim());
+        queries.push(`${captionAddr}${regionSuffix}`.trim());
+      }
+      queries.push(`${name} ${dist}${regionSuffix}`.trim());
+
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`, {
+        let foundPlace = null;
+        for (const q of queries) {
+          if (!q) continue;
+          foundPlace = await searchGooglePlaces(q, cfg.placesKey);
+          if (foundPlace && foundPlace.location) break;
+        }
+
+        if (foundPlace && foundPlace.location) {
+          const lat = foundPlace.location.latitude.toFixed(6);
+          const lng = foundPlace.location.longitude.toFixed(6);
+          document.getElementById('lat').value = lat;
+          document.getElementById('lng').value = lng;
+
+          const matchedName = foundPlace.displayName?.text || '';
+          const matchedAddr = foundPlace.formattedAddress || '';
+          if (addrHint) {
+            addrHint.innerText = `✓ 已對應：${matchedName} (${matchedAddr})`;
+            addrHint.classList.remove('hidden');
+          }
+          return;
+        }
+
+        // 備援：若 Google Places 真的找不到，才退回 OpenStreetMap
+        const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queries[0])}&limit=1`, {
           headers: { 'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8' }
         });
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          document.getElementById('lat').value = parseFloat(data[0].lat).toFixed(6);
-          document.getElementById('lng').value = parseFloat(data[0].lon).toFixed(6);
-          alert(`✅ 已精確抓取門牌位置！\n緯度: ${data[0].lat}\n經度: ${data[0].lon}`);
+        const osmData = await osmRes.json();
+        if (Array.isArray(osmData) && osmData.length > 0) {
+          document.getElementById('lat').value = parseFloat(osmData[0].lat).toFixed(6);
+          document.getElementById('lng').value = parseFloat(osmData[0].lon).toFixed(6);
+          if (addrHint) {
+            addrHint.innerText = `✓ 已透過備援定位：${osmData[0].display_name}`;
+            addrHint.classList.remove('hidden');
+          }
         } else {
           alert('未能直接找到精準大廈座標，建議手動填寫或由系統依地區自動對應。');
         }
       } catch (e) {
         alert('定位服務連線逾時，請稍後重試。');
+      } finally {
+        if (btn) btn.innerText = '📍 自動定位抓取';
       }
     }
 
@@ -615,7 +706,8 @@
 {
   "title": "精選貼文中最吸引人的吸睛大標題/爆款金句 (保留Emoji，去除Hashtag與地區分類，控制在15字以內)",
   "restaurant_name": "餐廳名稱 (去除多餘形容詞或店鋪代號)",
-  "district": "地區 (例如：中環、跑馬地、尖沙咀、旺角、觀塘，若未明確說明請推斷)",
+  "district": "地區 (例如：中環、跑馬地、尖沙咀、旺角、太古、台北，若未明確說明請推斷)",
+  "address": "詳細地址或商場名稱 (例如：太古城中心二期中庭、尖沙咀海港城，若內文沒有則留空字串)",
   "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋)",
   "price": "人均價格預算 (格式如：100-200 或 400-600，只填數字範圍)",
   "occasion": "適合場景 (例如：拍拖約會、朋友聚會、深夜食堂、打卡必到)",
@@ -670,6 +762,7 @@ ${textToAnalyze}`;
         if (extracted.price) document.getElementById('price').value = extracted.price;
         if (extracted.occasion) document.getElementById('occasion').value = extracted.occasion;
         if (extracted.must_try) document.getElementById('must_try').value = extracted.must_try;
+        lastExtractedAddress = extracted.address || '';
 
         if (extracted.title) {
           const previewEl = document.getElementById('captionTitlePreview');
@@ -685,7 +778,7 @@ ${textToAnalyze}`;
           }
         }
         
-        autoGeocodeRestaurant();
+        await autoGeocodeRestaurant(lastExtractedAddress);
         alert(`🎉 AI 提取成功！\n\n餐廳名：${extracted.restaurant_name}\n地區：${extracted.district}`);
       } catch (err) {
         alert('AI 解析異常: ' + err.message);
@@ -745,6 +838,7 @@ ${textToAnalyze}`;
       const item = adminList[index];
       if (!item) return;
 
+      lastExtractedAddress = '';
       document.getElementById('editIndex').value = index;
       document.getElementById('restaurant_name').value = item.restaurant_name || '';
       document.getElementById('district').value = item.district || '';
@@ -756,6 +850,7 @@ ${textToAnalyze}`;
       document.getElementById('shortCode').value = item.shortCode || '';
       document.getElementById('lat').value = item.lat || '';
       document.getElementById('lng').value = item.lng || '';
+      document.getElementById('geocodeMatchedAddress').classList.add('hidden');
       
       const img = item.displayUrl || item.imageUrl || (item.shortCode ? `images/${item.shortCode}.jpg` : '');
       document.getElementById('displayUrl').value = img;
@@ -783,6 +878,7 @@ ${textToAnalyze}`;
     }
 
     function resetForm() {
+      lastExtractedAddress = '';
       document.getElementById('postForm').reset();
       document.getElementById('editIndex').value = '-1';
       document.getElementById('is_editor_pick').checked = false;
@@ -790,6 +886,7 @@ ${textToAnalyze}`;
       document.getElementById('submitBtn').innerText = '暫存至列表';
       document.getElementById('cancelEditBtn').classList.add('hidden');
       document.getElementById('imagePreviewBox').classList.add('hidden');
+      document.getElementById('geocodeMatchedAddress').classList.add('hidden');
       const previewEl = document.getElementById('captionTitlePreview');
       if (previewEl) previewEl.classList.add('hidden');
     }

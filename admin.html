@@ -627,11 +627,12 @@ ${textToAnalyze}`;
 
         const candidateModels = [
           'gemini-2.5-flash',
-          'gemini-1.5-flash'
+          'gemini-2.5-flash-lite',
+          'gemini-2.0-flash'
         ];
         
         let aiData = null;
-        let lastErrorMsg = '';
+        let errorLogs = [];
 
         for (const model of candidateModels) {
           try {
@@ -648,15 +649,15 @@ ${textToAnalyze}`;
               aiData = data;
               break;
             } else if (data.error) {
-              lastErrorMsg = data.error.message;
+              errorLogs.push(`${model}: ${data.error.message}`);
             }
           } catch (err) {
-            lastErrorMsg = err.message;
+            errorLogs.push(`${model}: ${err.message}`);
           }
         }
 
         if (!aiData) {
-          throw new Error(lastErrorMsg || '所有可用模型均呼叫失敗，請確認 API Key 是否有效。');
+          throw new Error(errorLogs.join('\n') || '所有可用模型均呼叫失敗，請確認 API Key 是否有效。');
         }
 
         let rawJson = aiData.candidates[0].content.parts[0].text.trim();

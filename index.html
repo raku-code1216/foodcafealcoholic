@@ -716,7 +716,7 @@
     // ========================================================
     // ⭐️ 1. MAPBOX API KEY (貼在這裡即可啟用原廠奢華黑金圖磚)
     // ========================================================
-    const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicmFrdXNoaW4xMjE2IiwiYSI6ImNtd2pneXJuZjAzOWoyeXEzeXVtOHZzdDUifQ.OLeTe5xwwWroEIrj0A5DLA'; // 👈 貼入你的 Mapbox Default Token
+    const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicmFrdXNoaW4xMjE2IiwiYSI6ImNtd2pneXJuZjAzOWoyeXEzeXVtOHZzdDUifQ.OLeTe5xwwWroEIrj0A5DLA';
 
     // 專屬 Firebase 即時資料庫連線設定
     const firebaseConfig = {
@@ -919,23 +919,19 @@
       return null;
     }
 
-    // 核心修改點：徹底移除外部代理網站，直接讀取 CSV 內的圖片網址
     function getReelThumbnail(item) {
       if (!item) return cuisineFallbacks['default'];
       
-      // 優先使用 CSV 中填寫的圖片路徑 (現在應該已經是 images/XXXX.jpg 的本地路徑)
       const rawImg = item.displayUrl || item.image || item.imageUrl || item.thumbnailUrl;
       if (rawImg && typeof rawImg === 'string' && rawImg.trim() !== '') {
         return rawImg; 
       }
       
-      // 退一步保護：如果有短代號，但 displayUrl 遺失，直接組合本地圖片路徑
       const code = item.shortCode || (item.id && item.id.length >= 8 && item.id.length <= 15 ? item.id : null) || extractShortcode(item.url);
       if (code) {
         return `images/${code}.jpg`;
       }
       
-      // 如果真的沒有任何圖片資訊，才使用預設菜式圖
       return getCuisineImage(item.cuisine);
     }
 
@@ -1574,6 +1570,12 @@
     let userLocation = null;
     let currentMapRadius = 'all';
 
+    // 香港地圖邊界鎖定（避免滑出香港或看到重複世界地圖）
+    const HK_MAP_BOUNDS = [
+      [22.13, 113.80], // 西南角（大嶼山 / 南丫島）
+      [22.58, 114.45]  // 東北角（新界北 / 西貢）
+    ];
+
     let mapFilters = {
       search: '',
       cuisine: 'all',
@@ -1634,7 +1636,6 @@
 
     const SORTED_DISTRICT_KEYS = Object.keys(DISTRICT_COORDS).sort((a, b) => b.length - a.length);
 
-    // 圓形分佈微調偏移量（約 100-150m，避免同區餐廳重疊）
     function getDeterministicOffset(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -1647,12 +1648,10 @@
     }
 
     function getItemCoordinates(item) {
-      // 1. 優先讀取精準經緯度（由 admin.html 或 CSV 填入）
       if (item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng))) {
         return { lat: parseFloat(item.lat), lng: parseFloat(item.lng), isExact: true };
       }
 
-      // 2. 先比對 district 欄位
       const dist = String(item.district || '').toLowerCase();
       let matchedBase = null;
       for (const key of SORTED_DISTRICT_KEYS) {
@@ -1662,7 +1661,6 @@
         }
       }
 
-      // 3. 若 district 填「香港」或未比對到，自動深度比對餐廳店名、內文及 Hashtag（例：#fca_跑馬地、時代廣場）
       if (!matchedBase) {
         const fullContent = `${item.restaurant_name || ''} ${item.caption || ''}`.toLowerCase();
         for (const key of SORTED_DISTRICT_KEYS) {
@@ -1673,7 +1671,6 @@
         }
       }
 
-      // 4. 若全無提示，採用維港中央座標，不再堆疊於紅磡理大
       const base = matchedBase || [22.2900, 114.1700];
       const [dLat, dLng] = getDeterministicOffset(String(item.id || item.restaurant_name));
       return { lat: base[0] + dLat, lng: base[1] + dLng, isExact: false };
@@ -1704,39 +1701,44 @@
         const hkBase = L.tileLayer('https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/xyz/basemap/WGS84/{z}/{x}/{y}.png', {
           attribution: '© 地政總署 Lands Department',
           maxNativeZoom: 19,
-          maxZoom: 20
+          maxZoom: 20,
+          noWrap: true
         }).addTo(fcaMap);
         const hkLabel = L.tileLayer('https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/xyz/label/hk/tc/WGS84/{z}/{x}/{y}.png', {
           maxNativeZoom: 19,
-          maxZoom: 20
+          maxZoom: 20,
+          noWrap: true
         }).addTo(fcaMap);
         currentTileLayers = [hkBase, hkLabel];
       } else if (styleKey === 'street') {
         const streetLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
           attribution: '© Esri, HERE, Garmin, OpenStreetMap',
           maxNativeZoom: 18,
-          maxZoom: 19
+          maxZoom: 19,
+          noWrap: true
         }).addTo(fcaMap);
         currentTileLayers = [streetLayer];
       } else {
-        // 🖤 奢華黑金模式：如果有提供 Mapbox Token，直接載入原廠 dark-v11 高清圖磚；未填則自動退回深色圖層
         if (typeof MAPBOX_ACCESS_TOKEN === 'string' && MAPBOX_ACCESS_TOKEN.startsWith('pk.')) {
           const mapboxDark = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/512/{z}/{x}/{y}@2x?access_token=${MAPBOX_ACCESS_TOKEN}`, {
             attribution: '© <a href="https://www.mapbox.com/">Mapbox</a> © OpenStreetMap',
             tileSize: 512,
             zoomOffset: -1,
-            maxZoom: 19
+            maxZoom: 19,
+            noWrap: true
           }).addTo(fcaMap);
           currentTileLayers = [mapboxDark];
         } else {
           const darkBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
             attribution: '© Esri, HERE, Garmin, OpenStreetMap',
             maxNativeZoom: 16,
-            maxZoom: 19
+            maxZoom: 19,
+            noWrap: true
           }).addTo(fcaMap);
           const darkRef = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
             maxNativeZoom: 16,
-            maxZoom: 19
+            maxZoom: 19,
+            noWrap: true
           }).addTo(fcaMap);
           currentTileLayers = [darkBase, darkRef];
         }
@@ -1827,7 +1829,14 @@
 
       setTimeout(() => {
         if (!fcaMap) {
-          fcaMap = L.map('fcaLeafletMap').setView([22.2950, 114.1722], 13);
+          fcaMap = L.map('fcaLeafletMap', {
+            center: [22.2950, 114.1722],
+            zoom: 13,
+            minZoom: 11,
+            maxBounds: HK_MAP_BOUNDS,
+            maxBoundsViscosity: 1.0,
+            worldCopyJump: false
+          });
           applyMapTileStyle(currentMapStyle);
 
           mapMarkersLayer = L.markerClusterGroup({

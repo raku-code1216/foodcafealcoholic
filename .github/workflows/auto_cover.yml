@@ -1,0 +1,69 @@
+name: Auto Extract IG Cover Photos
+
+on:
+  push:
+    paths:
+      - 'cleaned_data_final.csv'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-covers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 下載專案檔案
+        uses: actions/checkout@v4
+
+      - name: 安裝 Python 與免登入抓圖工具 (yt-dlp)
+        run: |
+          pip install pandas requests yt-dlp
+
+      - name: 自動檢查並抓取缺少的封面圖
+        run: |
+          python -c "
+          import os, subprocess, pandas as pd, requests
+
+          os.makedirs('images', exist_ok=True)
+          df = pd.read_csv('cleaned_data_final.csv', dtype=str).fillna('')
+          updated = False
+
+          for idx, row in df.iterrows():
+              code = row.get('shortCode', '').strip()
+              url = row.get('url', '').strip()
+              if not code:
+                  continue
+
+              img_path = f'images/{code}.jpg'
+              
+              # 如果資料夾裡還沒有這張圖，就用 yt-dlp 免 Token 抓取封面
+              if not os.path.exists(img_path) and url:
+                  try:
+                      cmd = ['yt-dlp', '--get-thumbnail', url]
+                      thumb_url = subprocess.check_output(cmd, text=True, timeout=20).strip().split('\n')[0]
+                      if thumb_url.startswith('http'):
+                          r = requests.get(thumb_url, timeout=15)
+                          if r.status_code == 200:
+                              with open(img_path, 'wb') as f:
+                                  f.write(r.content)
+                              print(f'✅ 成功下載封面: {img_path}')
+                  except Exception as e:
+                      print(f'⚠️ 抓取失敗 ({code}): {e}')
+
+              # 只要本地圖片存在，就確保 CSV 路徑指向 images/短代號.jpg
+              if os.path.exists(img_path) and row.get('displayUrl') != img_path:
+                  df.loc[idx, 'displayUrl'] = img_path
+                  updated = True
+
+          if updated:
+              df.to_csv('cleaned_data_final.csv', index=False)
+          "
+
+      - name: 自動將新封面存回 GitHub
+        run: |
+          git config user.name "FCA Auto Bot"
+          git config user.email "bot@foodcafealcoholic.com"
+          git add images/ cleaned_data_final.csv
+          git diff --staged --quiet || git commit -m "🤖 自動擷取新貼文封面圖"
+          git push

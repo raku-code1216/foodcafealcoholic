@@ -303,7 +303,7 @@
       <input type="text" id="mainSearchInput" 
              oninput="handleSearch(this.value)"
              onkeydown="handleSearchKeyDown(event)"
-             placeholder="輸入餐廳名稱、地鐵站、地區（例如：中環、跑馬地、燒肉、Cafe）..." 
+             placeholder="輸入餐廳名稱、地鐵站、地區（例如：中環、跑馬地、台北、燒肉）..." 
              class="w-full bg-zinc-900/95 text-white placeholder-zinc-400 text-lg sm:text-2xl font-bold pl-16 sm:pl-20 pr-14 py-4 sm:py-5 rounded-3xl border-2 border-brand-yellow focus:border-brand-yellowLight focus:outline-none focus:ring-4 focus:ring-brand-yellow/30 transition-all shadow-inner" />
       <button type="button" onclick="clearSearch()" 
               class="absolute inset-y-0 right-5 sm:right-6 flex items-center text-zinc-400 hover:text-white text-xl sm:text-2xl font-bold">
@@ -347,11 +347,12 @@
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-200 font-extrabold text-sm sm:text-base shrink-0">📍 地區：</span>
           <select id="districtRegionSelect" onchange="onDistrictChange(this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
-            <option value="all" id="opt-all">🗺️ 全港所有地區 (All)</option>
+            <option value="all" id="opt-all">🗺️ 所有地區 (All)</option>
             <optgroup label="── 快速大區 ──">
               <option value="region:港島" id="opt-reg-hk">🇭🇰 港島全區 (Hong Kong Island)</option>
               <option value="region:九龍" id="opt-reg-kln">🏮 九龍全區 (Kowloon)</option>
               <option value="region:新界" id="opt-reg-nt">🌳 新界全區 (New Territories)</option>
+              <option value="region:海外" id="opt-reg-overseas">✈️ 海外 / 旅遊推介 (Overseas)</option>
             </optgroup>
             <optgroup label="── 港島熱門商圈 ──">
               <option value="中環">中環 (Central / SOHO / 大館)</option>
@@ -621,7 +622,7 @@
         <div class="relative flex-1 min-w-[150px] sm:max-w-[220px]">
           <span class="absolute inset-y-0 left-2.5 flex items-center text-brand-yellow text-xs pointer-events-none">🔍</span>
           <input type="text" id="mapSearchInput" oninput="onMapFilterChange(true)"
-                 placeholder="搜尋店名 / 地區 (如跑馬地)..."
+                 placeholder="搜尋店名 / 地區 (如跑馬地、台北)..."
                  class="w-full bg-zinc-900 border border-zinc-700 focus:border-brand-yellow text-white placeholder-zinc-500 rounded-lg pl-7 pr-6 py-1.5 text-xs focus:outline-none" />
           <button type="button" onclick="clearMapSearch()" class="absolute inset-y-0 right-2 flex items-center text-zinc-500 hover:text-white text-[10px]">✕</button>
         </div>
@@ -661,19 +662,28 @@
         </button>
       </div>
 
-      <!-- 距離與底圖切換列 -->
+      <!-- 地區切換、距離與底圖切換列 -->
       <div class="px-3 sm:px-4 py-1.5 bg-zinc-950/95 border-b border-zinc-800/80 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar text-[11px] shrink-0">
-        <div class="flex items-center gap-1 shrink-0">
-          <button onclick="setMapRadius('all', this)" class="map-radius-pill pill-active px-2 py-1 rounded-md border border-zinc-700 font-bold">全部</button>
-          <button onclick="setMapRadius(0.5, this)" class="map-radius-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">500m</button>
-          <button onclick="setMapRadius(1, this)" class="map-radius-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">1km</button>
-          <button onclick="setMapRadius(3, this)" class="map-radius-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">3km</button>
+        <div class="flex items-center gap-2 shrink-0">
+          <!-- 香港 / 海外 切換鍵 -->
+          <div class="flex items-center gap-1 pr-2 border-r border-zinc-800 shrink-0">
+            <button onclick="switchMapScope('hk', this)" class="map-scope-pill pill-active px-2.5 py-1 rounded-md border border-zinc-700 font-bold">🇭🇰 香港</button>
+            <button onclick="switchMapScope('overseas', this)" class="map-scope-pill px-2.5 py-1 rounded-md border border-zinc-700 text-zinc-300">✈️ 海外</button>
+          </div>
+
+          <!-- 距離篩選 -->
+          <div class="flex items-center gap-1 shrink-0">
+            <button onclick="setMapRadius('all', this)" class="map-radius-pill pill-active px-2 py-1 rounded-md border border-zinc-700 font-bold">全部</button>
+            <button onclick="setMapRadius(0.5, this)" class="map-radius-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">500m</button>
+            <button onclick="setMapRadius(1, this)" class="map-radius-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">1km</button>
+            <button onclick="setMapRadius(3, this)" class="map-radius-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">3km</button>
+          </div>
         </div>
 
         <div class="flex items-center gap-1 shrink-0">
-          <button onclick="switchMapStyle('blackgold', this)" class="map-style-pill pill-active px-2 py-1 rounded-md border border-zinc-700 font-bold">🖤 奢華黑金</button>
-          <button onclick="switchMapStyle('hk', this)" class="map-style-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">🇭🇰 香港詳細</button>
-          <button onclick="switchMapStyle('street', this)" class="map-style-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">☀️ 日間街道</button>
+          <button onclick="switchMapStyle('blackgold', this)" id="btnStyleBlackgold" class="map-style-pill pill-active px-2 py-1 rounded-md border border-zinc-700 font-bold">🖤 奢華黑金</button>
+          <button onclick="switchMapStyle('hk', this)" id="btnStyleHk" class="map-style-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">🇭🇰 香港詳細</button>
+          <button onclick="switchMapStyle('street', this)" id="btnStyleStreet" class="map-style-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">☀️ 日間街道</button>
         </div>
       </div>
 
@@ -877,7 +887,13 @@
       return cuisineFallbacks['default'];
     }
 
+    // 判斷座標是否在香港境內
+    function isInHongKong(lat, lng) {
+      return lat >= 22.13 && lat <= 22.58 && lng >= 113.80 && lng <= 114.45;
+    }
+
     const REGION_MAP = {
+      '海外': ['海外', '台北', '台灣', '台中', '台南', '高雄', '澳門', '深圳', '廣州', '珠海', '東京', '大阪', '京都', '橫濱', '福岡', '北海道', '沖繩', '日本', '首爾', '釜山', '韓國', '曼谷', '泰國', '新加坡', '倫敦', '巴黎', '歐洲'],
       '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '大坑', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '黃竹坑', '金鐘', '香港仔', '赤柱', '柴灣', '筲箕灣'],
       '九龍': ['九龍', '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣', '何文田', '土瓜灣', '九龍塘', '黃大仙', '新蒲崗', '荔枝角', '奧運'],
       '新界': ['新界', '荃灣', '葵芳', '青衣', '沙田', '大圍', '火炭', '馬鞍山', '元朗', '屯門', '大埔', '粉嶺', '上水', '將軍澳', '康城', '西貢', '東涌']
@@ -885,6 +901,13 @@
 
     function inferRegionFromItem(item) {
       if (!item) return '九龍';
+      // 1. 若有明確經緯度且在香港境外，直接歸類為海外
+      if (item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng))) {
+        if (!isInHongKong(parseFloat(item.lat), parseFloat(item.lng))) {
+          return '海外';
+        }
+      }
+      // 2. 依地區文字判斷
       const cleanDistrict = String(item.district || '').toLowerCase();
       for (const [region, keywords] of Object.entries(REGION_MAP)) {
         for (const kw of keywords) {
@@ -1213,7 +1236,7 @@
     }
 
     function updateDropdownCounts() {
-      const counts = { '港島': 0, '九龍': 0, '新界': 0 };
+      const counts = { '港島': 0, '九龍': 0, '新界': 0, '海外': 0 };
       restaurants.forEach(r => {
         const reg = r.region || inferRegionFromItem(r);
         if (counts[reg] !== undefined) counts[reg]++;
@@ -1224,11 +1247,13 @@
       const optHk = document.getElementById('opt-reg-hk');
       const optKln = document.getElementById('opt-reg-kln');
       const optNt = document.getElementById('opt-reg-nt');
+      const optOverseas = document.getElementById('opt-reg-overseas');
 
-      if (optAll) optAll.innerText = `🗺️ 全港所有地區 (共 ${restaurants.length} 間)`;
+      if (optAll) optAll.innerText = `🗺️ 所有地區 (共 ${restaurants.length} 間)`;
       if (optHk) optHk.innerText = `🇭🇰 港島全區 (${counts['港島']} 間)`;
       if (optKln) optKln.innerText = `🏮 九龍全區 (${counts['九龍']} 間)`;
       if (optNt) optNt.innerText = `🌳 新界全區 (${counts['新界']} 間)`;
+      if (optOverseas) optOverseas.innerText = `✈️ 海外 / 旅遊推介 (${counts['海外']} 間)`;
     }
 
     const HK_DISTRICTS = [
@@ -1476,7 +1501,9 @@
             restaurant_name: r.restaurant_name,
             district: distStr,
             cuisine: cuisineStr,
-            caption: captionStr
+            caption: captionStr,
+            lat: r.lat || '',
+            lng: r.lng || ''
           };
 
           const inferredRegion = inferRegionFromItem(tempItem);
@@ -1564,6 +1591,7 @@
     let fcaMap = null;
     let currentTileLayers = [];
     let currentMapStyle = 'blackgold';
+    let currentMapScope = 'hk'; // 'hk' (香港鎖定) 或 'overseas' (海外旅遊)
     let mapMarkersLayer = null;
     let mapMarkersById = {};
     let userMarker = null;
@@ -1574,6 +1602,11 @@
     const HK_MAP_BOUNDS = [
       [22.13, 113.80], // 西南角（大嶼山 / 南丫島）
       [22.58, 114.45]  // 東北角（新界北 / 西貢）
+    ];
+
+    const WORLD_MAP_BOUNDS = [
+      [-85, -180],
+      [85, 180]
     ];
 
     let mapFilters = {
@@ -1630,8 +1663,9 @@
       '愉景灣': [22.2965, 114.0155], '長洲': [22.2085, 114.0305], '南丫島': [22.2262, 114.1115], '坪洲': [22.2852, 114.0415], '大澳': [22.2542, 113.8622],
 
       // 境外熱門
-      '台北': [25.0330, 121.5654], '澳門': [22.1987, 113.5439], '深圳': [22.5431, 114.0579],
-      '東京': [35.6762, 139.6503], '大阪': [34.6937, 135.5023], '首爾': [37.5665, 126.9780]
+      '台北': [25.0330, 121.5654], '台灣': [25.0330, 121.5654], '澳門': [22.1987, 113.5439], '深圳': [22.5431, 114.0579],
+      '東京': [35.6762, 139.6503], '京都': [35.0116, 135.7681], '大阪': [34.6937, 135.5023], '橫濱': [35.4437, 139.6380],
+      '首爾': [37.5665, 126.9780], '曼谷': [13.7563, 100.5018], '新加坡': [1.3521, 103.8198]
     };
 
     const SORTED_DISTRICT_KEYS = Object.keys(DISTRICT_COORDS).sort((a, b) => b.length - a.length);
@@ -1757,6 +1791,38 @@
       applyMapTileStyle(styleKey);
     }
 
+    function switchMapScope(scope, btnEl) {
+      currentMapScope = scope;
+      if (btnEl) {
+        document.querySelectorAll('.map-scope-pill').forEach(b => {
+          b.classList.remove('pill-active');
+          b.classList.add('text-zinc-300');
+        });
+        btnEl.classList.add('pill-active');
+        btnEl.classList.remove('text-zinc-300');
+      }
+
+      if (!fcaMap) return;
+
+      const statusEl = document.getElementById('mapStatusText');
+      if (scope === 'hk') {
+        fcaMap.setMaxBounds(HK_MAP_BOUNDS);
+        fcaMap.setMinZoom(11);
+        fcaMap.setView([22.2950, 114.1722], 13);
+        if (statusEl && !userLocation) statusEl.innerText = '已鎖定香港範圍 • 點擊相片圖釘睇短片';
+        renderMapPins(false);
+      } else {
+        fcaMap.setMaxBounds(WORLD_MAP_BOUNDS);
+        fcaMap.setMinZoom(3);
+        // 若目前底圖為香港地政總署圖層，切海外時自動改回奢華黑金以免空白
+        if (currentMapStyle === 'hk') {
+          switchMapStyle('blackgold', document.getElementById('btnStyleBlackgold'));
+        }
+        if (statusEl) statusEl.innerText = '✈️ 海外模式 • 點擊下方卡片即可飛往該餐廳';
+        renderMapPins(true);
+      }
+    }
+
     function toggleMapFilterDrawer() {
       const panel = document.getElementById('mapFilterPanel');
       const btn = document.getElementById('btnToggleMapFilters');
@@ -1816,8 +1882,8 @@
         }
       });
 
-      renderMapPins(false);
-      if (fcaMap && !userLocation) {
+      renderMapPins(currentMapScope === 'overseas');
+      if (fcaMap && !userLocation && currentMapScope === 'hk') {
         fcaMap.setView([22.2950, 114.1722], 13);
       }
     }
@@ -1854,7 +1920,7 @@
         }
 
         fcaMap.invalidateSize();
-        renderMapPins(false);
+        renderMapPins(currentMapScope === 'overseas');
       }, 150);
 
       setTimeout(() => {
@@ -1885,6 +1951,12 @@
           userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           statusEl.innerText = '✅ 已定位！以下按距離由近至遠排列';
           btn.disabled = false;
+
+          // 若使用者目前人在海外，自動切換至海外模式以免被香港邊界擋住
+          if (!isInHongKong(userLocation.lat, userLocation.lng) && currentMapScope === 'hk') {
+            const overseasBtn = document.querySelectorAll('.map-scope-pill')[1];
+            switchMapScope('overseas', overseasBtn);
+          }
 
           if (fcaMap) {
             fcaMap.invalidateSize();
@@ -1940,6 +2012,10 @@
           const coords = getItemCoordinates(item);
           const distKm = userLocation ? calcDistanceKm(userLocation.lat, userLocation.lng, coords.lat, coords.lng) : null;
           return { ...item, coords, distKm };
+        })
+        .filter(item => {
+          const inHK = isInHongKong(item.coords.lat, item.coords.lng);
+          return currentMapScope === 'hk' ? inHK : !inHK;
         });
 
       if (userLocation) {
@@ -1998,26 +2074,26 @@
 
       mapMarkersLayer.addLayers(markersToAdd);
 
-      if (autoZoom && isMapFiltering && boundsPoints.length > 0 && !userLocation) {
+      if (autoZoom && boundsPoints.length > 0 && !userLocation) {
         if (boundsPoints.length === 1) {
-          fcaMap.setView(boundsPoints[0], 16);
+          fcaMap.setView(boundsPoints[0], 15);
         } else {
           fcaMap.fitBounds(boundsPoints, { padding: [50, 50], maxZoom: 15 });
         }
       }
 
       const rail = document.getElementById('nearbyCardsRail');
-      if (userLocation || isMapFiltering) {
+      if (userLocation || isMapFiltering || currentMapScope === 'overseas') {
         rail.classList.remove('hidden');
         if (enriched.length > 0) {
-          rail.innerHTML = enriched.slice(0, 20).map(item => `
+          rail.innerHTML = enriched.slice(0, 30).map(item => `
             <div onclick="focusPinAndPopup('${item.id}', ${item.coords.lat}, ${item.coords.lng})" 
                  class="flex-none w-52 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
               <img src="${getReelThumbnail(item)}" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
               <div class="overflow-hidden">
                 <div class="flex items-center gap-1">
                   ${item.distKm !== null ? `<span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>` : ''}
-                  <span class="text-[10px] text-zinc-400 truncate">📍 ${item.district || '香港'}</span>
+                  <span class="text-[10px] text-zinc-400 truncate">📍 ${item.district || '海外'}</span>
                 </div>
                 <h4 class="text-xs font-bold text-white truncate mt-0.5">${item.restaurant_name}</h4>
                 <p class="text-[10px] text-zinc-400 truncate">${item.cuisine || ''}</p>
@@ -2025,7 +2101,7 @@
             </div>
           `).join('');
         } else {
-          rail.innerHTML = `<span class="text-xs text-zinc-400 mx-auto py-2">沒有符合目前篩選條件的餐廳，試下按「重設」或放大搜尋範圍！</span>`;
+          rail.innerHTML = `<span class="text-xs text-zinc-400 mx-auto py-2">目前範圍內沒有符合條件的餐廳，試下按「重設」或切換「香港 / 海外」！</span>`;
         }
       } else {
         rail.classList.add('hidden');

@@ -42,13 +42,27 @@
 <body class="min-h-screen flex flex-col bg-brand-dark text-zinc-100">
 
   <!-- 頂部導航列 -->
-  <header class="bg-brand-card border-b border-brand-border px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
-    <div class="flex items-center gap-3">
-      <span class="text-xl font-black text-brand-yellow tracking-wider">FCA ADMIN</span>
-      <span class="text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • Google 精準定位 • 自動抓圖同步</span>
+  <header class="bg-brand-card border-b border-brand-border px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30">
+    <div class="flex items-center gap-3 flex-wrap">
+      <div class="flex items-center gap-2.5">
+        <span class="text-xl font-black text-brand-yellow tracking-wider">FCA ADMIN</span>
+        <span class="hidden md:inline text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • Google 精準定位 • 自動抓圖同步</span>
+      </div>
+
+      <!-- 視圖切換頁籤 -->
+      <div class="flex items-center gap-1 bg-zinc-900 p-1 rounded-xl border border-zinc-700 text-xs">
+        <button type="button" id="tabManageBtn" onclick="switchAdminView('manage')"
+                class="px-3 py-1 rounded-lg bg-brand-yellow text-black font-black transition">
+          📝 資料庫管理
+        </button>
+        <button type="button" id="tabAnalyticsBtn" onclick="switchAdminView('analytics')"
+                class="px-3 py-1 rounded-lg text-zinc-300 hover:text-white font-bold transition">
+          📊 數據分析
+        </button>
+      </div>
     </div>
     
-    <div class="flex items-center gap-2 sm:gap-3">
+    <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
       <a href="index.html" target="_blank" class="text-xs text-zinc-400 hover:text-brand-yellow transition px-2 py-1">
         ↗ 查看前台
       </a>
@@ -64,8 +78,8 @@
     </div>
   </header>
 
-  <!-- 主要工作區 -->
-  <main class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+  <!-- 主要工作區：資料庫管理 -->
+  <main id="manageView" class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
     
     <!-- 左側：發布 / 編輯表單 -->
     <section class="lg:col-span-5 bg-brand-card border border-brand-border rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
@@ -263,6 +277,90 @@
 
   </main>
 
+  <!-- 數據分析儀表板視圖 -->
+  <section id="analyticsView" class="hidden flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-4">
+      <div>
+        <h2 class="text-lg font-black text-white flex items-center gap-2">
+          <span class="text-brand-yellow">📊</span> 食評內容與網站點擊分析
+        </h2>
+        <p class="text-xs text-zinc-400 mt-0.5">即時彙整 Firebase 網站點擊數（`restaurant_clicks`）與餐廳資料庫分佈</p>
+      </div>
+      <button type="button" onclick="refreshAnalyticsData()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold px-3.5 py-2 rounded-lg border border-zinc-700 transition self-start sm:self-auto">
+        🔄 重新整理數據
+      </button>
+    </div>
+
+    <!-- 1. 核心 KPI 卡片 -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-brand-card border border-brand-border rounded-2xl p-4">
+        <p class="text-xs text-zinc-400">總收錄餐廳數</p>
+        <p id="kpiTotalRestaurants" class="text-2xl font-black text-white mt-1">0</p>
+        <p class="text-[11px] text-zinc-500 mt-1">CSV 資料庫現存筆數</p>
+      </div>
+      <div class="bg-brand-card border border-brand-border rounded-2xl p-4">
+        <p class="text-xs text-zinc-400">全站總點擊次數</p>
+        <p id="kpiTotalClicks" class="text-2xl font-black text-brand-yellow mt-1">0</p>
+        <p class="text-[11px] text-zinc-500 mt-1">Firebase 即時累計查看</p>
+      </div>
+      <div class="bg-brand-card border border-brand-border rounded-2xl p-4">
+        <p class="text-xs text-zinc-400">本週嚴選推介</p>
+        <p id="kpiEditorPicks" class="text-2xl font-black text-emerald-400 mt-1">0</p>
+        <p id="kpiEditorPicksRatio" class="text-[11px] text-zinc-500 mt-1">佔比 0%</p>
+      </div>
+      <div class="bg-brand-card border border-brand-border rounded-2xl p-4">
+        <p class="text-xs text-zinc-400">待補精準座標</p>
+        <p id="kpiMissingCoords" class="text-2xl font-black text-amber-400 mt-1">0</p>
+        <p class="text-[11px] text-zinc-500 mt-1">尚未填入 lat / lng</p>
+      </div>
+    </div>
+
+    <!-- 2. 熱門點擊 TOP 10 & 地區分佈 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-6 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-3">
+        <h3 class="text-sm font-black text-white flex items-center gap-2">
+          <span>🔥</span> 全站點擊排行榜 TOP 10
+        </h3>
+        <div id="analyticsTopList" class="divide-y divide-zinc-800/70 text-xs">
+          <p class="py-8 text-center text-zinc-500">載入中...</p>
+        </div>
+      </div>
+
+      <div class="lg:col-span-6 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-3">
+        <h3 class="text-sm font-black text-white flex items-center gap-2">
+          <span>📍</span> 熱門地區 / 商圈分佈（前 10 名）
+        </h3>
+        <div id="analyticsDistrictList" class="space-y-2.5 text-xs">
+          <p class="py-8 text-center text-zinc-500">載入中...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 菜式分佈 & 待補座標清單 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-6 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-3">
+        <h3 class="text-sm font-black text-white flex items-center gap-2">
+          <span>🍜</span> 菜式種類分佈與點擊熱度
+        </h3>
+        <div id="analyticsCuisineList" class="space-y-2.5 text-xs">
+          <p class="py-8 text-center text-zinc-500">載入中...</p>
+        </div>
+      </div>
+
+      <div class="lg:col-span-6 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-black text-white flex items-center gap-2">
+            <span>⚠️</span> 尚未設定精準座標的餐廳
+          </h3>
+          <span id="missingCoordsBadge" class="text-[11px] text-amber-400 font-bold">0 間</span>
+        </div>
+        <div id="analyticsMissingCoordsList" class="max-h-72 overflow-y-auto no-scrollbar divide-y divide-zinc-800/70 text-xs">
+          <p class="py-8 text-center text-zinc-500">載入中...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- 系統與 API 設定彈窗 -->
   <div id="configModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-brand-card border border-brand-border rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
@@ -351,6 +449,194 @@
       rtdb = firebase.database();
     } catch (e) {}
 
+    function switchAdminView(viewName) {
+      const manageEl = document.getElementById('manageView');
+      const analyticsEl = document.getElementById('analyticsView');
+      const tabManage = document.getElementById('tabManageBtn');
+      const tabAnalytics = document.getElementById('tabAnalyticsBtn');
+
+      const isAnalytics = viewName === 'analytics';
+      if (manageEl) manageEl.classList.toggle('hidden', isAnalytics);
+      if (analyticsEl) analyticsEl.classList.toggle('hidden', !isAnalytics);
+
+      if (tabManage && tabAnalytics) {
+        if (isAnalytics) {
+          tabAnalytics.className = 'px-3 py-1 rounded-lg bg-brand-yellow text-black font-black transition';
+          tabManage.className = 'px-3 py-1 rounded-lg text-zinc-300 hover:text-white font-bold transition';
+          renderAnalytics();
+        } else {
+          tabManage.className = 'px-3 py-1 rounded-lg bg-brand-yellow text-black font-black transition';
+          tabAnalytics.className = 'px-3 py-1 rounded-lg text-zinc-300 hover:text-white font-bold transition';
+          renderTable();
+        }
+      }
+    }
+
+    function refreshAnalyticsData() {
+      if (rtdb) {
+        rtdb.ref('restaurant_clicks').once('value').then(snapshot => {
+          globalClicksMap = snapshot.val() || {};
+          renderTable();
+          renderAnalytics();
+        }).catch(() => renderAnalytics());
+      } else {
+        renderAnalytics();
+      }
+    }
+
+    function getItemClickCount(item, index) {
+      const safeId = String(item.shortCode || item.id || `item_${index}`).replace(/[^a-zA-Z0-9]/g, '');
+      return Number(globalClicksMap[safeId]) || 0;
+    }
+
+    function renderAnalytics() {
+      const totalEl = document.getElementById('kpiTotalRestaurants');
+      const clicksEl = document.getElementById('kpiTotalClicks');
+      const picksEl = document.getElementById('kpiEditorPicks');
+      const picksRatioEl = document.getElementById('kpiEditorPicksRatio');
+      const missingEl = document.getElementById('kpiMissingCoords');
+      const missingBadgeEl = document.getElementById('missingCoordsBadge');
+
+      const totalCount = adminList.length;
+      let totalClicks = 0;
+      let picksCount = 0;
+      const missingItems = [];
+      const districtStats = {};
+      const cuisineStats = {};
+
+      const enriched = adminList.map((item, idx) => {
+        const clicks = getItemClickCount(item, idx);
+        totalClicks += clicks;
+        if (item.is_editor_pick === '1') picksCount++;
+
+        const hasCoords = Boolean(item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng)));
+        if (!hasCoords) missingItems.push({ item, idx });
+
+        const distKey = (item.district || '未分類').trim() || '未分類';
+        if (!districtStats[distKey]) districtStats[distKey] = { count: 0, clicks: 0 };
+        districtStats[distKey].count++;
+        districtStats[distKey].clicks += clicks;
+
+        const cuisKey = (item.cuisine || '未分類').trim() || '未分類';
+        if (!cuisineStats[cuisKey]) cuisineStats[cuisKey] = { count: 0, clicks: 0 };
+        cuisineStats[cuisKey].count++;
+        cuisineStats[cuisKey].clicks += clicks;
+
+        return { item, idx, clicks };
+      });
+
+      if (totalEl) totalEl.innerText = totalCount;
+      if (clicksEl) clicksEl.innerText = totalClicks.toLocaleString();
+      if (picksEl) picksEl.innerText = picksCount;
+      if (picksRatioEl) {
+        const ratio = totalCount > 0 ? ((picksCount / totalCount) * 100).toFixed(1) : '0.0';
+        picksRatioEl.innerText = `佔比 ${ratio}%`;
+      }
+      if (missingEl) missingEl.innerText = missingItems.length;
+      if (missingBadgeEl) missingBadgeEl.innerText = `${missingItems.length} 間`;
+
+      // TOP 10 點擊排行
+      const topListEl = document.getElementById('analyticsTopList');
+      if (topListEl) {
+        const top10 = [...enriched].sort((a, b) => b.clicks - a.clicks).slice(0, 10);
+        if (top10.length === 0) {
+          topListEl.innerHTML = `<p class="py-8 text-center text-zinc-500">暫無資料</p>`;
+        } else {
+          topListEl.innerHTML = top10.map((entry, rank) => `
+            <div class="py-2.5 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <span class="w-5 h-5 rounded-md ${rank < 3 ? 'bg-brand-yellow text-black font-black' : 'bg-zinc-800 text-zinc-400 font-bold'} flex items-center justify-center text-[11px] shrink-0">
+                  ${rank + 1}
+                </span>
+                <div class="truncate">
+                  <p class="font-bold text-white truncate">${entry.item.restaurant_name || '未命名'}</p>
+                  <p class="text-[11px] text-zinc-500 truncate">${entry.item.district || '-'} • ${entry.item.cuisine || '-'}</p>
+                </div>
+              </div>
+              <span class="font-mono font-bold text-brand-yellow shrink-0">🔥 ${entry.clicks}</span>
+            </div>
+          `).join('');
+        }
+      }
+
+      // 地區分佈
+      const distListEl = document.getElementById('analyticsDistrictList');
+      if (distListEl) {
+        const sortedDist = Object.entries(districtStats)
+          .sort((a, b) => b[1].count - a[1].count)
+          .slice(0, 10);
+        const maxDistCount = sortedDist.length > 0 ? sortedDist[0][1].count : 1;
+
+        distListEl.innerHTML = sortedDist.length === 0
+          ? `<p class="py-8 text-center text-zinc-500">暫無地區統計</p>`
+          : sortedDist.map(([name, stat]) => {
+              const pct = Math.max(6, Math.round((stat.count / maxDistCount) * 100));
+              return `
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="font-bold text-zinc-200">${name}</span>
+                    <span class="text-zinc-400 font-mono">${stat.count} 間 • 🔥 ${stat.clicks}</span>
+                  </div>
+                  <div class="w-full h-2 bg-zinc-900 rounded-full overflow-hidden">
+                    <div class="h-full bg-brand-yellow rounded-full" style="width: ${pct}%"></div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+      }
+
+      // 菜式分佈
+      const cuisListEl = document.getElementById('analyticsCuisineList');
+      if (cuisListEl) {
+        const sortedCuis = Object.entries(cuisineStats)
+          .sort((a, b) => b[1].count - a[1].count)
+          .slice(0, 10);
+        const maxCuisCount = sortedCuis.length > 0 ? sortedCuis[0][1].count : 1;
+
+        cuisListEl.innerHTML = sortedCuis.length === 0
+          ? `<p class="py-8 text-center text-zinc-500">暫無菜式統計</p>`
+          : sortedCuis.map(([name, stat]) => {
+              const pct = Math.max(6, Math.round((stat.count / maxCuisCount) * 100));
+              return `
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="font-bold text-zinc-200">${name}</span>
+                    <span class="text-zinc-400 font-mono">${stat.count} 間 • 🔥 ${stat.clicks}</span>
+                  </div>
+                  <div class="w-full h-2 bg-zinc-900 rounded-full overflow-hidden">
+                    <div class="h-full bg-emerald-400 rounded-full" style="width: ${pct}%"></div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+      }
+
+      // 缺座標清單
+      const missingListEl = document.getElementById('analyticsMissingCoordsList');
+      if (missingListEl) {
+        if (missingItems.length === 0) {
+          missingListEl.innerHTML = `<p class="py-8 text-center text-emerald-400 font-bold">✓ 所有餐廳都已設定經緯度座標！</p>`;
+        } else {
+          missingListEl.innerHTML = missingItems.slice(0, 30).map(({ item, idx }) => `
+            <div class="py-2 flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <p class="font-bold text-white truncate">${item.restaurant_name || '未命名'}</p>
+                <p class="text-[11px] text-zinc-500 truncate">地區：${item.district || '未填寫'}</p>
+              </div>
+              <button type="button" onclick="editItemFromAnalytics(${idx})" class="text-brand-yellow hover:underline font-bold shrink-0">
+                去定位 →
+              </button>
+            </div>
+          `).join('');
+        }
+      }
+    }
+
+    function editItemFromAnalytics(index) {
+      switchAdminView('manage');
+      editItem(index);
+    }
+
     function loadConfig() {
       return {
         geminiKey: localStorage.getItem('fca_gemini_key') || '',
@@ -407,6 +693,9 @@
         rtdb.ref('restaurant_clicks').once('value').then(snapshot => {
           globalClicksMap = snapshot.val() || {};
           renderTable();
+          if (!document.getElementById('analyticsView').classList.contains('hidden')) {
+            renderAnalytics();
+          }
         }).catch(() => {});
       }
 
@@ -439,6 +728,9 @@
                   lng: item.lng || ''
                 }));
               renderTable();
+              if (!document.getElementById('analyticsView').classList.contains('hidden')) {
+                renderAnalytics();
+              }
             }
           });
         })
@@ -500,8 +792,7 @@
       tbody.innerHTML = filtered.map(({ item, originalIndex }) => {
         const isPick = item.is_editor_pick === '1';
         const hasCoords = Boolean(item.lat && item.lng);
-        const safeId = String(item.shortCode || item.id || `item_${originalIndex}`).replace(/[^a-zA-Z0-9]/g, '');
-        const views = globalClicksMap[safeId] !== undefined ? globalClicksMap[safeId] : 0;
+        const views = getItemClickCount(item, originalIndex);
 
         return `
           <tr class="hover:bg-zinc-900/60 transition ${isPick ? 'bg-brand-yellow/5' : ''}">
@@ -628,7 +919,6 @@
       const isOverseas = overseasKeywords.some(kw => dist.includes(kw) || captionAddr.includes(kw));
       const regionSuffix = isOverseas ? '' : ' 香港';
 
-      // 多層次搜尋策略：優先找「餐廳+地址」，找不到再退回「純地址/商場」或「餐廳+地區」
       const queries = [];
       if (captionAddr) {
         queries.push(`${name} ${captionAddr}${regionSuffix}`.trim());
@@ -659,7 +949,6 @@
           return;
         }
 
-        // 備援：若 Google Places 真的找不到，才退回 OpenStreetMap
         const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queries[0])}&limit=1`, {
           headers: { 'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8' }
         });

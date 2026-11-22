@@ -47,7 +47,7 @@
     <div class="flex items-center gap-3 flex-wrap">
       <div class="flex items-center gap-2.5">
         <span class="text-xl font-black text-brand-yellow tracking-wider">FCA ADMIN</span>
-        <span class="hidden md:inline text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • Google 精準定位 • 壞圖監測補傳</span>
+        <span class="hidden md:inline text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • Google + 政府官方精準定位 • 壞圖監測</span>
       </div>
 
       <!-- 視圖切換頁籤 -->
@@ -221,11 +221,10 @@
             </button>
           </div>
 
-          <!-- 新增：直接輸入詳細地址換算座標 -->
           <div class="flex items-center gap-1.5">
             <input type="text" id="manualAddress"
                    onkeydown="if(event.key==='Enter'){event.preventDefault(); autoGeocodeByAddress();}"
-                   placeholder="輸入詳細地址 / 商場（例：銅鑼灣登龍街28號、澳門官也街）..."
+                   placeholder="輸入詳細地址 / 商場（例：銅鑼灣勿地臣街1號時代廣場B1樓）..."
                    class="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-brand-yellow" />
             <button type="button" id="btnGeocodeAddress" onclick="autoGeocodeByAddress()"
                     class="bg-zinc-800 hover:bg-brand-yellow text-brand-yellow hover:text-black border border-brand-yellow/50 font-bold px-2.5 py-1.5 rounded-lg text-[11px] transition shrink-0">
@@ -1518,6 +1517,37 @@
       return '';
     }
 
+    function buildAddressVariants(rawAddr) {
+      const variants = [];
+      const clean = String(rawAddr || '').replace(/[（(][^）)]*[）)]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!clean) return variants;
+      variants.push(clean);
+
+      // 去除樓層與舖位編號（例如 B1樓B110B號舖、2樓201室、地下G5號舖、Shop B110B）
+      const noFloorShop = clean
+        .replace(/(?:地下|地庫|閣樓|天台|[A-Z]?\d+樓|\d+\s*\/\s*F|G\s*\/\s*F|LG\s*\/\s*F|UG\s*\/\s*F|M\s*\/\s*F|B\d+\s*樓?).*$/i, '')
+        .replace(/(?:Shop|Unit|Flat|Rm|Room)\s*[A-Z0-9-]+.*$/i, '')
+        .replace(/[A-Z]?\d+[A-Z]?(?:[-–]\d+[A-Z]?)?\s*號?[舖鋪室座].*$/i, '')
+        .trim();
+      if (noFloorShop && noFloorShop.length >= 3) variants.push(noFloorShop);
+
+      // 提取「路/街/道 + 門牌號」（如：勿地臣街1號）
+      const streetMatch = clean.match(/([\u4e00-\u9fa5]{2,8}(?:街|道|路|里|巷|坊|徑|廣場)\s*\d+(?:[-–]\d+)?號)/);
+      if (streetMatch && streetMatch[1]) {
+        variants.push(streetMatch[1].replace(/\s+/g, ''));
+      }
+
+      // 提取門牌後的商場／大廈名稱（如：時代廣場）
+      if (noFloorShop.includes('號')) {
+        const afterNo = noFloorShop.split('號').slice(1).join('').trim();
+        if (afterNo && afterNo.length >= 2) {
+          variants.push(afterNo);
+        }
+      }
+
+      return Array.from(new Set(variants));
+    }
+
     async function searchGooglePlaces(query, apiKey) {
       const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
@@ -1538,6 +1568,29 @@
       return null;
     }
 
+    async function searchHkOgcioAls(query) {
+      const res = await fetch(`https://www.als.ogcio.gov.hk/lookup?q=${encodeURIComponent(query)}&n=3`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const list = data && data.SuggestedAddress;
+      if (!Array.isArray(list) || list.length === 0) return null;
+      const prem = list[0]?.Address?.PremisesAddress;
+      if (!prem) return null;
+      const geoRaw = prem.GeospatialInformation;
+      const geo = Array.isArray(geoRaw) ? geoRaw[0] : geoRaw;
+      if (!geo || !geo.Latitude || !geo.Longitude) return null;
+      const lat = parseFloat(geo.Latitude);
+      const lng = parseFloat(geo.Longitude);
+      if (isNaN(lat) || isNaN(lng)) return null;
+      const chi = prem.ChiPremisesAddress || {};
+      const eng = prem.EngPremisesAddress || {};
+      const streetPart = chi.ChiStreet ? `${chi.ChiStreet.StreetName || ''}${chi.ChiStreet.BuildingNoFrom ? chi.ChiStreet.BuildingNoFrom + '號' : ''}` : '';
+      const label = [chi.BuildingName || eng.BuildingName || '', streetPart].filter(Boolean).join(' ') || query;
+      return { lat, lng, label };
+    }
+
     function isCoordinateValidForScope(lat, lng, expectedScope) {
       if (isNaN(lat) || isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) {
         return false;
@@ -1551,27 +1604,36 @@
     async function geocodeRestaurantData({ name, dist, caption, aiAddress = '', prioritizeAddressOnly = false }, cfg) {
       const captionAddr = aiAddress || extractAddressFromCaption(caption);
       const expectedScope = getExpectedScope(dist, captionAddr);
-      const regionSuffix = expectedScope === 'overseas' ? '' : (expectedScope === 'hk' ? ' 香港' : '');
+      const regionSuffix = expectedScope === 'overseas' ? '' : ' 香港';
 
-      const queries = [];
-      if (captionAddr) {
-        if (prioritizeAddressOnly) {
-          queries.push(`${captionAddr}${regionSuffix}`.trim());
-          if (name) queries.push(`${name} ${captionAddr}${regionSuffix}`.trim());
-          if (regionSuffix === '') queries.push(`${captionAddr} 香港`.trim());
-        } else {
-          queries.push(`${name} ${captionAddr}${regionSuffix}`.trim());
-          queries.push(`${captionAddr}${regionSuffix}`.trim());
-        }
+      const addrVariants = buildAddressVariants(captionAddr);
+      const googleQueries = [];
+      const osmQueries = [];
+
+      if (addrVariants.length > 0) {
+        addrVariants.forEach(v => {
+          const withDist = dist && !v.includes(dist) ? `${dist} ${v}` : v;
+          if (prioritizeAddressOnly) {
+            googleQueries.push(`${withDist}${regionSuffix}`.trim());
+            osmQueries.push(`${withDist}${regionSuffix}`.trim());
+          } else if (name) {
+            googleQueries.push(`${name} ${v}${regionSuffix}`.trim());
+            osmQueries.push(`${v}${regionSuffix}`.trim());
+          }
+          googleQueries.push(`${v}${regionSuffix}`.trim());
+          osmQueries.push(`${v}${regionSuffix}`.trim());
+        });
       }
       if (name || dist) {
-        const suffix = expectedScope === 'overseas' ? '' : ' 香港';
-        queries.push(`${name} ${dist}${suffix}`.trim());
+        googleQueries.push(`${name} ${dist}${regionSuffix}`.trim());
+        osmQueries.push(`${name} ${dist}${regionSuffix}`.trim());
       }
 
-      const uniqueQueries = Array.from(new Set(queries.filter(Boolean)));
+      const uniqueGoogleQueries = Array.from(new Set(googleQueries.filter(Boolean)));
+      const uniqueOsmQueries = Array.from(new Set(osmQueries.filter(Boolean)));
 
-      for (const q of uniqueQueries) {
+      // 1. Google Places API
+      for (const q of uniqueGoogleQueries) {
         try {
           const foundPlace = await searchGooglePlaces(q, cfg.placesKey);
           if (foundPlace && foundPlace.location) {
@@ -1589,7 +1651,26 @@
         } catch (err) {}
       }
 
-      for (const q of uniqueQueries) {
+      // 2. 香港政府官方 OGCIO 地址搜尋服務 (專治香港商場、樓層及門牌)
+      if (expectedScope !== 'overseas') {
+        const alsCandidates = Array.from(new Set([...addrVariants, `${dist} ${name}`.trim(), name].filter(Boolean)));
+        for (const q of alsCandidates) {
+          try {
+            const alsHit = await searchHkOgcioAls(q);
+            if (alsHit && isCoordinateValidForScope(alsHit.lat, alsHit.lng, expectedScope)) {
+              return {
+                lat: alsHit.lat.toFixed(6),
+                lng: alsHit.lng.toFixed(6),
+                source: 'ogcio',
+                matchedText: `${alsHit.label} (香港政府地址庫)`
+              };
+            }
+          } catch (err) {}
+        }
+      }
+
+      // 3. OpenStreetMap Nominatim 備援
+      for (const q of uniqueOsmQueries) {
         try {
           const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`, {
             headers: { 'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8' }
@@ -1619,9 +1700,11 @@
       const mapVerifyLink = document.getElementById('geocodeVerifyMapLink');
       if (!rowEl || !addrHint || !mapVerifyLink) return;
 
-      addrHint.innerText = result.source === 'google'
-        ? `✓ 已對應：${result.matchedText}`
-        : `✓ 備援定位：${result.matchedText}`;
+      let prefix = '✓ 備援定位：';
+      if (result.source === 'google') prefix = '✓ Google 定位：';
+      else if (result.source === 'ogcio') prefix = '✓ 官方地址庫：';
+
+      addrHint.innerText = `${prefix}${result.matchedText}`;
       addrHint.className = 'text-emerald-400 truncate';
       mapVerifyLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(result.lat + ',' + result.lng)}`;
       rowEl.classList.remove('hidden');
@@ -1658,7 +1741,7 @@
           document.getElementById('lng').value = result.lng;
           showMatchedGeocodeResult(result);
         } else {
-          alert('找不到該地址的座標，請嘗試補上地區名稱（例如「銅鑼灣」或「澳門」）後重試，或直接輸入 Lat / Lng。');
+          alert('找不到該地址的座標，建議精簡至「街道＋門牌」或「商場名稱」（例如：時代廣場 或 勿地臣街1號）後重試。');
         }
       } catch (e) {
         alert('地址轉換服務連線逾時，請稍後重試。');
@@ -1698,7 +1781,7 @@
           document.getElementById('lng').value = result.lng;
           showMatchedGeocodeResult(result);
         } else {
-          alert('未能直接找到符合該地區範圍的精準座標（已自動攔截跨區錯誤結果），建議在地址欄輸入更完整地址或手動填寫座標。');
+          alert('未能直接找到符合該地區範圍的精準座標（已自動攔截跨區錯誤結果），建議在地址欄輸入「街道＋門牌」或「商場名」。');
         }
       } catch (e) {
         alert('定位服務連線逾時，請稍後重試。');
@@ -1726,7 +1809,7 @@
         return;
       }
 
-      if (!confirm(`即將為 ${targetIndices.length} 間缺少或座標異常的餐廳自動重新抓取 Google 定位座標，完成後請記得按「🚀 一鍵自動同步到網站」。是否開始？`)) {
+      if (!confirm(`即將為 ${targetIndices.length} 間缺少或座標異常的餐廳自動重新抓取定位座標，完成後請記得按「🚀 一鍵自動同步到網站」。是否開始？`)) {
         return;
       }
 
@@ -2188,3 +2271,4 @@ ${textToAnalyze}`;
   </script>
 </body>
 </html>
+

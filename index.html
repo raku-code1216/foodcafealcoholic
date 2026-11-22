@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
@@ -15,7 +16,17 @@
     gtag('config', 'G-WFBF6J54XY');
   </script>
 
-  <title>Foodcafealcoholic | 香港美食搜尋引擎</title>
+  <title>Foodcafealcoholic | 香港美食搜尋引擎 &amp; 黑金美食地圖</title>
+  <meta name="description" content="Foodcafealcoholic (@foodcafealcoholic) 香港美食搜尋引擎｜收錄數百間香港、澳門及旅遊高質餐廳、Cafe、日本料理、酒吧與打卡熱點，提供奢華黑金互動地圖、每週熱門點擊榜及 IG Reel 短片食評。" />
+  <link rel="canonical" href="https://foodcafealcoholic.com/" />
+
+  <!-- ================= PWA 與手機桌面 App 設定 ================= -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="FCA 搵食" />
 
   <!-- ================= 網站圖標 (Favicon) ================= -->
   <link rel="icon" type="image/jpeg" sizes="192x192" href="logo.jpg?v=9">
@@ -23,10 +34,21 @@
   <link rel="shortcut icon" type="image/jpeg" href="logo.jpg?v=9">
   <link rel="apple-touch-icon" href="logo.jpg?v=9">
 
+  <!-- ================= Open Graph / 社群分享預覽 ================= -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Foodcafealcoholic" />
+  <meta property="og:locale" content="zh_HK" />
+  <meta property="og:url" content="https://foodcafealcoholic.com/" />
+  <meta property="og:title" content="Foodcafealcoholic | 香港美食搜尋引擎 &amp; 黑金美食地圖" />
+  <meta property="og:description" content="跟住 @foodcafealcoholic 搵食！一鍵搜尋全港熱門餐廳、Cafe、日本料理、約會好去處與 IG Reel 實拍短片。" />
   <meta property="og:image" content="https://foodcafealcoholic.com/logo.jpg?v=9">
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="512">
   <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Foodcafealcoholic | 香港美食搜尋引擎" />
+  <meta name="twitter:description" content="收錄 @foodcafealcoholic 嚴選香港及海外美食餐廳、黑金美食地圖與 IG Reel 食評短片。" />
+  <meta name="twitter:image" content="https://foodcafealcoholic.com/logo.jpg?v=9" />
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -88,12 +110,6 @@
       transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.3s ease, border-color 0.3s ease;
       transform-origin: center bottom;
     }
-    .card-zoom:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 16px 36px rgba(0,0,0,0.9), 0 0 16px rgba(255, 196, 0, 0.25);
-      border-color: rgba(255, 196, 0, 0.7) !important;
-      z-index: 30;
-    }
     .pill-active {
       background-color: #FFC400 !important;
       color: #000000 !important;
@@ -104,8 +120,21 @@
     .food-card-img {
       transition: transform 0.5s ease;
     }
-    .card-zoom:hover .food-card-img {
-      transform: scale(1.08);
+    @media (hover: hover) {
+      .card-zoom:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 16px 36px rgba(0,0,0,0.9), 0 0 16px rgba(255, 196, 0, 0.25);
+        border-color: rgba(255, 196, 0, 0.7) !important;
+        z-index: 30;
+      }
+      .card-zoom:hover .food-card-img {
+        transform: scale(1.08);
+      }
+      .food-photo-pin:hover {
+        transform: scale(1.22);
+        border-color: #ffffff;
+        z-index: 999 !important;
+      }
     }
     .reel-container {
       position: relative;
@@ -176,11 +205,6 @@
       box-shadow: 0 0 14px rgba(255, 196, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.85);
       transition: transform 0.2s ease, border-color 0.2s ease;
     }
-    .food-photo-pin:hover {
-      transform: scale(1.22);
-      border-color: #ffffff;
-      z-index: 999 !important;
-    }
     .leaflet-container .leaflet-marker-pane .food-photo-pin img {
       width: 100% !important;
       height: 100% !important;
@@ -229,7 +253,7 @@
   <!-- 1. 入 App Logo Splash Screen (停留 1.5 秒) -->
   <div id="splashScreen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-opacity duration-500 opacity-100 pointer-events-auto">
     <img src="logo.jpg" 
-         alt="" 
+         alt="Foodcafealcoholic" 
          class="w-28 h-28 rounded-2xl shadow-2xl mb-4 object-contain animate-pulse" />
     <h1 class="text-brand-yellow font-black tracking-widest text-lg">FOODCAFEALCOHOLIC</h1>
   </div>
@@ -261,12 +285,15 @@
     setTimeout(hideSplashScreen, 2000);
   </script>
 
+  <!-- 全域輕提示 Toast -->
+  <div id="fcaToast" class="fixed top-20 left-1/2 -translate-x-1/2 z-[110] hidden bg-brand-yellow text-black font-black text-xs sm:text-sm px-4 py-2 rounded-full shadow-2xl border border-black/20 pointer-events-none transition-opacity duration-300 whitespace-nowrap"></div>
+
   <!-- 頂部導航列 (單行排版，手機不換行) -->
   <nav id="navbar" class="fixed top-0 w-full z-50 px-3 sm:px-8 py-3 flex items-center justify-between gap-2 bg-black/95 backdrop-blur-md border-b border-brand-border">
     <div class="flex items-center space-x-5 min-w-0">
       <div onclick="handleLogoRefresh()" class="flex items-center gap-2 sm:gap-3 cursor-pointer group min-w-0" title="重新整理首頁">
         <img src="logo.jpg" 
-             alt="" 
+             alt="FCA Logo" 
              class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain border border-brand-yellow/40 group-hover:scale-105 transition shadow-md shrink-0" />
         <div class="flex flex-col border-l border-zinc-700 pl-2 sm:pl-2.5 leading-tight min-w-0">
           <span class="text-white font-black text-[11px] sm:text-sm tracking-wide group-hover:text-brand-yellow transition truncate">
@@ -283,8 +310,14 @@
       </div>
     </div>
 
-    <!-- 右側地圖與清單按鈕 -->
-    <div class="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
+    <!-- 右側隨機揀、地圖與清單按鈕 -->
+    <div class="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+      <button onclick="pickRandomRestaurant()" title="隨機抽一間餐廳"
+              class="bg-zinc-900 hover:bg-brand-yellow text-white hover:text-black border border-zinc-700 hover:border-brand-yellow text-xs sm:text-sm font-black px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full transition flex items-center gap-1 whitespace-nowrap shadow active:scale-95">
+        <span>🎲</span>
+        <span class="hidden md:inline">幫我揀</span>
+      </button>
+
       <button onclick="openNearbyMapModal()" class="bg-zinc-900 hover:bg-brand-yellow text-brand-yellow hover:text-black border border-brand-yellow/75 text-xs sm:text-sm font-black px-3 sm:px-4 py-1.5 sm:py-2 rounded-full transition flex items-center gap-1.5 whitespace-nowrap shadow-[0_0_14px_rgba(255,196,0,0.22)] active:scale-95">
         <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/>
@@ -299,24 +332,22 @@
         <span class="hidden sm:inline">搵食清單</span>
         <span id="favCountBadge" class="bg-brand-yellow text-black text-[11px] font-black rounded-full px-1.5 py-0.2 leading-tight">0</span>
       </button>
-
-      <input type="file" id="csvFileInput" accept=".csv" style="display: none !important;" />
     </div>
   </nav>
 
   <!-- 置頂搜尋引擎 Sector -->
-  <section class="w-full max-w-5xl mx-auto px-4 pt-20 sm:pt-24 pb-4 text-center relative z-10">
+  <section class="w-full max-w-5xl mx-auto px-4 pt-20 sm:pt-24 pb-3 sm:pb-4 text-center relative z-10">
     <div class="relative max-w-3xl mx-auto shadow-2xl">
-      <span class="absolute inset-y-0 left-5 sm:left-6 flex items-center text-brand-yellow text-2xl sm:text-3xl pointer-events-none">
+      <span class="absolute inset-y-0 left-4 sm:left-6 flex items-center text-brand-yellow text-xl sm:text-3xl pointer-events-none">
         🔍
       </span>
       <input type="text" id="mainSearchInput" 
              oninput="handleSearch(this.value)"
              onkeydown="handleSearchKeyDown(event)"
              placeholder="輸入餐廳名稱、地鐵站、地區（例如：中環、跑馬地、台北、燒肉）..." 
-             class="w-full bg-zinc-900/95 text-white placeholder-zinc-400 text-lg sm:text-2xl font-bold pl-16 sm:pl-20 pr-14 py-4 sm:py-5 rounded-3xl border-2 border-brand-yellow focus:border-brand-yellowLight focus:outline-none focus:ring-4 focus:ring-brand-yellow/30 transition-all shadow-inner" />
+             class="w-full bg-zinc-900/95 text-white placeholder-zinc-400 text-base sm:text-2xl font-bold pl-12 sm:pl-20 pr-12 sm:pr-14 py-3.5 sm:py-5 rounded-3xl border-2 border-brand-yellow focus:border-brand-yellowLight focus:outline-none focus:ring-4 focus:ring-brand-yellow/30 transition-all shadow-inner" />
       <button type="button" onclick="clearSearch()" 
-              class="absolute inset-y-0 right-5 sm:right-6 flex items-center text-zinc-400 hover:text-white text-xl sm:text-2xl font-bold">
+              class="absolute inset-y-0 right-4 sm:right-6 flex items-center text-zinc-400 hover:text-white text-lg sm:text-2xl font-bold">
         ✕
       </button>
     </div>
@@ -333,25 +364,41 @@
     </div>
   </section>
 
-  <!-- 放大版篩選系統 -->
-  <section class="sticky top-14 z-40 bg-[#0A0A0A]/95 backdrop-blur-md border-y border-brand-border px-4 sm:px-8 lg:px-12 py-3.5 sm:py-4 shadow-2xl">
-    <div class="max-w-7xl mx-auto space-y-3">
+  <!-- 篩選系統（手機端預設收合下拉選單，桌面端維持 sticky） -->
+  <section class="sm:sticky sm:top-14 z-40 bg-[#0A0A0A]/95 backdrop-blur-md border-y border-brand-border px-4 sm:px-8 lg:px-12 py-3 sm:py-4 shadow-2xl">
+    <div class="max-w-7xl mx-auto space-y-2.5 sm:space-y-3">
       
       <!-- 場景標籤 -->
-      <div class="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1">
-        <span class="text-zinc-200 font-black text-sm sm:text-base shrink-0 flex items-center gap-1.5">
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+        <span class="text-zinc-200 font-black text-xs sm:text-base shrink-0 flex items-center gap-1">
           <span>🎉</span> <span>場景：</span>
         </span>
-        <button onclick="setFilter('occasion', 'all', this)" class="filter-pill occasion-pill pill-active shrink-0 px-4 sm:px-5 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-bold text-zinc-200 hover:border-brand-yellow transition shadow-sm">全部</button>
-        <button onclick="setFilter('occasion', '拍拖約會', this)" class="filter-pill occasion-pill shrink-0 px-4 sm:px-5 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">💑 拍拖約會</button>
-        <button onclick="setFilter('occasion', '聚會', this)" class="filter-pill occasion-pill shrink-0 px-4 sm:px-5 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🍻 大班聚會</button>
-        <button onclick="setFilter('occasion', '打卡Cafe', this)" class="filter-pill occasion-pill shrink-0 px-4 sm:px-5 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">📸 打卡必到</button>
-        <button onclick="setFilter('occasion', '深夜食堂', this)" class="filter-pill occasion-pill shrink-0 px-4 sm:px-5 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🌙 深夜食堂</button>
-        <button onclick="setFilter('occasion', '寵物友善', this)" class="filter-pill occasion-pill shrink-0 px-4 sm:px-5 py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🐾 寵物友善</button>
+        <button onclick="setFilter('occasion', 'all', this)" class="filter-pill occasion-pill pill-active shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-bold text-zinc-200 hover:border-brand-yellow transition shadow-sm">全部</button>
+        <button onclick="setFilter('occasion', '拍拖約會', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">💑 拍拖約會</button>
+        <button onclick="setFilter('occasion', '聚會', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🍻 大班聚會</button>
+        <button onclick="setFilter('occasion', '打卡Cafe', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">📸 打卡必到</button>
+        <button onclick="setFilter('occasion', '深夜食堂', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🌙 深夜食堂</button>
+        <button onclick="setFilter('occasion', '寵物友善', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🐾 寵物友善</button>
       </div>
 
-      <!-- 細分選單 -->
-      <div class="flex flex-wrap items-center gap-3 pt-1">
+      <!-- 手機端快速操作列：展開細分篩選 + 隨機揀 -->
+      <div class="flex sm:hidden items-center justify-between gap-2 pt-0.5">
+        <button type="button" id="mobileFilterToggleBtn" onclick="toggleMobileFilters()"
+                class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-700 text-zinc-200 text-xs font-bold px-3.5 py-2 rounded-xl transition active:scale-95">
+          <span>🎛️</span>
+          <span>地區 / 預算 / 菜式</span>
+          <span id="mobileFilterBadge" class="hidden bg-brand-yellow text-black text-[10px] font-black px-1.5 rounded-full">0</span>
+          <span id="mobileFilterArrow" class="text-[10px] text-zinc-400 ml-0.5">▼</span>
+        </button>
+
+        <button type="button" onclick="pickRandomRestaurant()"
+                class="flex items-center gap-1 bg-brand-yellow/15 border border-brand-yellow/60 text-brand-yellow text-xs font-black px-3.5 py-2 rounded-xl transition active:scale-95">
+          <span>🎲</span> <span>今日食咩好</span>
+        </button>
+      </div>
+
+      <!-- 細分選單（手機可收合，桌面常駐） -->
+      <div id="advancedFilterRow" class="hidden sm:flex flex-wrap items-center gap-3 pt-1">
         
         <!-- 地區篩選 -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
@@ -436,9 +483,9 @@
   </section>
 
   <!-- 主要內容區 -->
-  <main class="flex-grow space-y-10 relative z-20 px-4 sm:px-8 lg:px-12 py-8 pb-24">
+  <main class="flex-grow space-y-10 relative z-20 px-4 sm:px-8 lg:px-12 py-6 sm:py-8 pb-24">
     <div class="flex items-center justify-between text-xs sm:text-sm text-zinc-400 border-b border-brand-border pb-3">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
         <span class="w-2.5 h-2.5 rounded-full bg-brand-yellow animate-pulse"></span>
         <span>共收錄 <strong id="totalCount" class="text-brand-yellow text-sm sm:text-base">0</strong> 間由 @foodcafealcoholic 推薦餐廳</span>
         <span id="activeFilterNotice" class="hidden text-brand-yellow font-bold bg-brand-yellow/15 px-2.5 py-1 rounded-lg border border-brand-yellow/40">
@@ -506,7 +553,7 @@
   </button>
 
   <!-- 詳情視窗 -->
-  <div id="detailModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
+  <div id="detailModal" onclick="if(event.target === this) closeModal()" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
     <div class="bg-brand-card border border-brand-border rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-2xl relative flex flex-col">
       
       <div class="p-3.5 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 sticky top-0 z-30">
@@ -521,15 +568,22 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 overflow-y-auto no-scrollbar flex-grow">
         <div class="lg:col-span-5 bg-black/60 border-b lg:border-b-0 lg:border-r border-brand-border p-4 flex flex-col justify-between">
           <div class="space-y-3">
-            <div class="reel-container border border-zinc-800 flex items-center justify-center bg-zinc-950">
-              <video id="modalDirectVideo" class="w-full h-full object-contain hidden" controls playsinline></video>
-              <iframe id="modalReelIframe" class="w-full h-full border-0 rounded-xl" src="" 
+            <div class="reel-container border border-zinc-800 flex items-center justify-center bg-zinc-950 relative">
+              <!-- 底層封面背景圖（IG Embed 載入中或被擋時提供美觀視覺預覽） -->
+              <img id="modalReelPoster" src="" alt="" onerror="onImageError(this)" class="absolute inset-0 w-full h-full object-cover opacity-30 blur-[1px] pointer-events-none" />
+              <div id="modalReelLoadingHint" class="absolute inset-0 flex flex-col items-center justify-center text-center p-4 pointer-events-none z-0">
+                <span class="w-12 h-12 rounded-full bg-brand-yellow/90 text-black flex items-center justify-center font-black text-lg shadow-xl mb-2">▶</span>
+                <span class="text-xs text-zinc-200 font-bold bg-black/70 px-3 py-1 rounded-full">正在載入 IG 短片⋯</span>
+              </div>
+
+              <video id="modalDirectVideo" class="w-full h-full object-contain hidden relative z-10" controls playsinline></video>
+              <iframe id="modalReelIframe" class="w-full h-full border-0 rounded-xl relative z-10" src="" 
                       allowtransparency="true" allowfullscreen="true" frameborder="0" scrolling="no"
                       allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
                       referrerpolicy="strict-origin-when-cross-origin"></iframe>
-              <div id="modalVideoFallback" class="hidden flex-col items-center justify-center p-6 text-center text-xs text-zinc-400 space-y-3">
+              <div id="modalVideoFallback" class="hidden flex-col items-center justify-center p-6 text-center text-xs text-zinc-200 space-y-3 relative z-10">
                 <span class="text-3xl">🎬</span>
-                <p>點擊下方按鈕即可於 Instagram App 直接觀看完整 Reel 原片與留言！</p>
+                <p class="bg-black/70 px-3 py-1.5 rounded-lg">點擊下方按鈕即可於 Instagram App 直接觀看完整 Reel 原片與留言！</p>
               </div>
             </div>
           </div>
@@ -576,7 +630,7 @@
                 <span id="modalFavIcon">🤍</span> <span id="modalFavText">收藏</span>
               </button>
               <button id="modalShareBtn" onclick="shareCurrentRestaurant()" class="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-3 py-2 rounded-lg border border-zinc-700 hover:border-brand-yellow transition flex items-center gap-1.5">
-                <span class="text-base">📤</span> 分享
+                <span class="text-base">📤</span> 分享連結
               </button>
             </div>
 
@@ -709,7 +763,7 @@
   </div>
 
   <!-- 我的搵食清單 Modal -->
-  <div id="myListModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+  <div id="myListModal" onclick="if(event.target === this) toggleMyListModal()" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-brand-card border border-brand-border rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl relative">
       <div class="p-5 border-b border-brand-border flex items-center justify-between">
         <h3 class="text-xl font-bold flex items-center gap-2 text-white">
@@ -759,6 +813,7 @@
     } catch (e) {
       console.warn("Firebase 初始化提示:", e);
     }
+
     let restaurants = [];
     const FAVORITES_STORAGE_KEY = 'foodcafe_user_favorites_v2';
     const HISTORY_STORAGE_KEY = 'foodcafe_search_history_v1';
@@ -766,6 +821,10 @@
     let savedFavorites = new Set();
     let searchHistory = [];
     let openedDetailFromMap = false;
+    let deepLinkHandled = false;
+    let showAllNewArrivals = false;
+    let lastRandomPickedId = null;
+    let toastTimer = null;
 
     function escapeHtml(str) {
       return String(str ?? '')
@@ -774,6 +833,54 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function showToast(message, duration = 2400) {
+      const toast = document.getElementById('fcaToast');
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.remove('hidden', 'opacity-0');
+      toast.classList.add('opacity-100');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.add('opacity-0');
+        setTimeout(() => toast.classList.add('hidden'), 300);
+      }, duration);
+    }
+
+    function updateUrlDeepLink(shareKey) {
+      try {
+        if (!window.history || !window.history.replaceState) return;
+        const url = new URL(window.location.href);
+        if (shareKey) url.searchParams.set('r', shareKey);
+        else url.searchParams.delete('r');
+        window.history.replaceState(null, '', url.toString());
+      } catch (e) {}
+    }
+
+    function toggleMobileFilters() {
+      const row = document.getElementById('advancedFilterRow');
+      const arrow = document.getElementById('mobileFilterArrow');
+      if (!row) return;
+      const isHidden = row.classList.contains('hidden');
+      row.classList.toggle('hidden', !isHidden);
+      row.classList.toggle('flex', isHidden);
+      if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
+    }
+
+    function updateMobileFilterBadge() {
+      const badge = document.getElementById('mobileFilterBadge');
+      const btn = document.getElementById('mobileFilterToggleBtn');
+      if (!badge || !btn) return;
+      let count = 0;
+      if (filters.region !== 'all' || filters.district !== 'all') count++;
+      if (filters.price !== 'all') count++;
+      if (filters.cuisine !== 'all') count++;
+
+      badge.textContent = String(count);
+      badge.classList.toggle('hidden', count === 0);
+      btn.classList.toggle('border-brand-yellow', count > 0);
+      btn.classList.toggle('text-brand-yellow', count > 0);
     }
 
     function loadSearchHistory() {
@@ -919,13 +1026,12 @@
       return cuisineFallbacks['default'];
     }
 
-    // 判斷座標是否在香港境內
     function isInHongKong(lat, lng) {
       return lat >= 22.13 && lat <= 22.58 && lng >= 113.80 && lng <= 114.45;
     }
 
     const REGION_MAP = {
-      '海外': ['海外', '澳門', '氹仔', '路氹', '路環', '官也街', '大三巴', '新馬路', '威尼斯人', '銀河', '倫敦人', '巴黎人', '台北', '台灣', '台中', '台南', '高雄', '澳門', '深圳', '廣州', '珠海', '東京', '大阪', '京都', '橫濱', '福岡', '北海道', '沖繩', '日本', '首爾', '釜山', '韓國', '曼谷', '泰國', '新加坡', '倫敦', '巴黎', '歐洲', 'overseas', 'macau', 'macao', 'taipa', 'cotai', 'coloane', 'taipei', 'taiwan', 'shenzhen', 'tokyo', 'osaka', 'kyoto', 'japan', 'seoul', 'korea', 'bangkok', 'thailand', 'singapore'],
+      '海外': ['海外', '澳門', '氹仔', '路氹', '路環', '官也街', '大三巴', '新馬路', '威尼斯人', '銀河', '倫敦人', '巴黎人', '台北', '台灣', '台中', '台南', '高雄', '深圳', '廣州', '珠海', '東京', '大阪', '京都', '橫濱', '福岡', '北海道', '沖繩', '日本', '首爾', '釜山', '韓國', '曼谷', '泰國', '新加坡', '倫敦', '巴黎', '歐洲', 'overseas', 'macau', 'macao', 'taipa', 'cotai', 'coloane', 'taipei', 'taiwan', 'shenzhen', 'tokyo', 'osaka', 'kyoto', 'japan', 'seoul', 'korea', 'bangkok', 'thailand', 'singapore'],
       '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '大坑', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '石塘咀', '黃竹坑', '金鐘', '香港仔', '鴨脷洲', '海怡', '赤柱', '淺水灣', '薄扶林', '數碼港', '柴灣', '筲箕灣', '西灣河', '杏花邨', '山頂', '半山', '蘭桂坊', '蘇豪', 'soho', '大館', 'pmq', 'central', 'sheung wan', 'wan chai', 'causeway bay', 'happy valley', 'tin hau', 'fortress hill', 'north point', 'quarry bay', 'tai koo', 'sai wan', 'sai ying pun', 'kennedy town', 'wong chuk hang', 'admiralty', 'aberdeen', 'stanley', 'repulse bay', 'hong kong island'],
       '九龍': ['九龍', '尖沙咀', '尖東', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣', '牛頭角', '藍田', '油塘', '何文田', '土瓜灣', '九龍塘', '黃大仙', '鑽石山', '新蒲崗', '慈雲山', '彩虹', '樂富', '荔枝角', '美孚', '石硤尾', '南昌', '奧運', '西九龍', '柯士甸', '圓方', '海港城', '朗豪坊', '又一城', 'airside', 'k11', 'apm', 'megabox', 'd2 place', 'kowloon', 'tsim sha tsui', 'tst', 'jordan', 'yau ma tei', 'mong kok', 'prince edward', 'sham shui po', 'cheung sha wan', 'lai chi kok', 'tai kok tsui', 'olympic', 'hung hom', 'whampoa', 'kowloon city', 'kai tak', 'kwun tong', 'kowloon bay', 'ho man tin', 'to kwa wan', 'kowloon tong'],
       '新界': ['新界', '荃灣', '葵芳', '葵興', '葵涌', '青衣', '深井', '沙田', '大圍', '火炭', '馬鞍山', '烏溪沙', '元朗', '天水圍', '錦田', '屯門', '大埔', '太和', '粉嶺', '上水', '將軍澳', '坑口', '寶琳', '調景嶺', '康城', '西貢', '清水灣', '東涌', '機場', '大嶼山', '離島', '愉景灣', '長洲', '南丫島', '坪洲', '大澳', '馬灣', '南豐紗廠', '愉景新城', '新城市廣場', '圍方', 'yoho', 'new territories', 'tsuen wan', 'kwai fong', 'tsing yi', 'sha tin', 'tai wai', 'ma on shan', 'yuen long', 'tin shui wai', 'tuen mun', 'tai po', 'fanling', 'sheung shui', 'tseung kwan o', 'tko', 'sai kung', 'tung chung', 'lantau', 'discovery bay', 'cheung chau', 'lamma']
@@ -1089,7 +1195,7 @@
             <img src="${escapeHtml(img)}" alt="${safeName}" 
                  loading="lazy" decoding="async"
                  onerror="onImageError(this)" 
-                 class="food-card-img w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out" />
+                 class="food-card-img w-full h-full object-cover object-center transition-transform duration-500 ease-out" />
             
             <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/30 pointer-events-none flex flex-col justify-between p-3">
               <div></div>
@@ -1184,6 +1290,8 @@
       if (!item) return;
       currentModalItem = item;
 
+      updateUrlDeepLink(item.shortCode || item.id);
+
       item.views = (item.views || 0) + 1;
       globalClicksMap[item.id] = item.views;
 
@@ -1201,6 +1309,11 @@
       document.getElementById('modalPrice').innerText = `💰 預算: ${item.priceInfo ? item.priceInfo.text : (item.price || '依現場菜單')}`;
       document.getElementById('modalMustTry').innerText = item.must_try || '請參考下方食評詳細推介。';
       document.getElementById('modalCaption').innerText = item.caption || '暫無詳細食評內容。';
+
+      const posterEl = document.getElementById('modalReelPoster');
+      const loadingHintEl = document.getElementById('modalReelLoadingHint');
+      if (posterEl) posterEl.src = getReelThumbnail(item);
+      if (loadingHintEl) loadingHintEl.classList.remove('hidden');
 
       const directVideo = document.getElementById('modalDirectVideo');
       const iframeEl = document.getElementById('modalReelIframe');
@@ -1220,6 +1333,7 @@
         iframeEl.src = "";
         iframeEl.classList.add('hidden');
         fallbackEl.classList.add('hidden');
+        if (loadingHintEl) loadingHintEl.classList.add('hidden');
 
         directVideo.classList.remove('hidden');
         directVideo.src = item.videoUrl;
@@ -1231,6 +1345,7 @@
         directVideo.classList.add('hidden');
         iframeEl.src = "";
         iframeEl.classList.add('hidden');
+        if (loadingHintEl) loadingHintEl.classList.add('hidden');
         fallbackEl.classList.remove('hidden');
       }
 
@@ -1256,6 +1371,7 @@
       const iframeEl = document.getElementById('modalReelIframe');
       if (iframeEl) iframeEl.src = "";
       document.getElementById('detailModal').classList.add('hidden');
+      updateUrlDeepLink(null);
 
       const backTextEl = document.getElementById('modalBackBtnText');
       if (backTextEl) backTextEl.innerText = '返回首頁';
@@ -1266,6 +1382,22 @@
       } else {
         setFloatingMapBtnVisible(true);
       }
+    }
+
+    function pickRandomRestaurant() {
+      const pool = restaurants.filter(item => matchRestaurantByFilters(item, filters));
+      if (pool.length === 0) {
+        showToast('⚠️ 目前篩選條件沒有餐廳，試下重設篩選！');
+        return;
+      }
+      let candidates = pool;
+      if (pool.length > 1 && lastRandomPickedId) {
+        candidates = pool.filter(item => String(item.id) !== String(lastRandomPickedId));
+      }
+      const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+      lastRandomPickedId = chosen.id;
+      openModalById(chosen.id);
+      showToast(`🎲 為你抽中：《${chosen.restaurant_name}》`);
     }
 
     function updateFavBadge() {
@@ -1448,8 +1580,14 @@
       return true;
     }
 
+    function expandAllNewArrivals() {
+      showAllNewArrivals = true;
+      renderApp();
+    }
+
     function renderApp() {
       updateFavBadge();
+      updateMobileFilterBadge();
 
       const isFiltering = Boolean(
         filters.search || 
@@ -1510,7 +1648,23 @@
         if (railEditor) railEditor.innerHTML = editorPicks.map((item, idx) => createCard(item, idx)).join('');
 
         const railNew = document.getElementById('railNew');
-        if (railNew) railNew.innerHTML = restaurants.map((item, idx) => createCard(item, idx)).join('');
+        if (railNew) {
+          const initialLimit = 40;
+          const visibleItems = showAllNewArrivals ? restaurants : restaurants.slice(0, initialLimit);
+          let newHtml = visibleItems.map((item, idx) => createCard(item, idx)).join('');
+          if (!showAllNewArrivals && restaurants.length > initialLimit) {
+            newHtml += `
+              <div onclick="expandAllNewArrivals()"
+                   class="flex-none w-52 sm:w-56 bg-zinc-900/90 hover:bg-zinc-800 border-2 border-dashed border-brand-yellow/60 hover:border-brand-yellow rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition group space-y-3">
+                <span class="w-12 h-12 rounded-full bg-brand-yellow text-black font-black text-xl flex items-center justify-center group-hover:scale-110 transition shadow-lg">＋</span>
+                <div>
+                  <p class="text-white font-black text-sm">查看全部食評</p>
+                  <p class="text-brand-yellow font-bold text-xs mt-1">還有 ${restaurants.length - initialLimit} 間餐廳 →</p>
+                </div>
+              </div>`;
+          }
+          railNew.innerHTML = newHtml;
+        }
       }
     }
 
@@ -1546,11 +1700,38 @@
       handleSearch('');
     }
 
-    function shareCurrentRestaurant() {
+    async function shareCurrentRestaurant() {
       if (!currentModalItem) return;
-      const shareText = `🍽️ 睇下呢間餐廳：《${currentModalItem.restaurant_name}》\n📍 地區：${currentModalItem.district || '香港'}\n⭐ 招牌：${currentModalItem.must_try || '必食推介'}\n💰 預算：${currentModalItem.price || '未註明'}\n\n睇睇 @foodcafealcoholic 嘅食評推介啦！`;
+      const shareKey = currentModalItem.shortCode || currentModalItem.id;
+      const baseUrl = window.location.protocol.startsWith('http')
+        ? `${window.location.origin}${window.location.pathname}`
+        : 'https://foodcafealcoholic.com/';
+      const deepLink = `${baseUrl}?r=${encodeURIComponent(shareKey)}`;
+      const shareTitle = `${currentModalItem.restaurant_name} | Foodcafealcoholic`;
+      const shareText = `🍽️ 睇下呢間餐廳：《${currentModalItem.restaurant_name}》\n📍 地區：${currentModalItem.district || '香港'}\n⭐ 招牌：${currentModalItem.must_try || '必食推介'}\n💰 預算：${currentModalItem.price || '未註明'}\n\n睇食評短片與地圖 👉 ${deepLink}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: shareTitle,
+            text: `🍽️ 《${currentModalItem.restaurant_name}》（${currentModalItem.district || '香港'}）— @foodcafealcoholic 食評推介`,
+            url: deepLink
+          });
+          return;
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;
+        }
+      }
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(deepLink);
+          showToast('🔗 已複製專屬分享連結！');
+        }
+      } catch (e) {}
+
       const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-      window.open(whatsappUrl, '_blank');
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     }
 
     function setFilter(type, value, element = null) {
@@ -1601,6 +1782,7 @@
     }
 
     function handleLogoRefresh() {
+      updateUrlDeepLink(null);
       triggerSplashScreen(1500);
       resetAllFilters();
       window.scrollTo({ top: 0, behavior: 'instant' });
@@ -1664,6 +1846,21 @@
         restaurants = parsed;
         updateDropdownCounts();
         renderApp();
+
+        if (!deepLinkHandled) {
+          deepLinkHandled = true;
+          const rParam = new URLSearchParams(window.location.search).get('r');
+          if (rParam) {
+            const cleanParam = rParam.trim().toLowerCase();
+            const target = restaurants.find(item =>
+              String(item.shortCode || '').toLowerCase() === cleanParam ||
+              String(item.id || '').toLowerCase() === cleanParam
+            );
+            if (target) {
+              openModalById(target.id);
+            }
+          }
+        }
       }
     }
 
@@ -1715,6 +1912,20 @@
       });
     }
 
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const detailModal = document.getElementById('detailModal');
+      const mapModal = document.getElementById('nearbyMapModal');
+      const listModal = document.getElementById('myListModal');
+      if (detailModal && !detailModal.classList.contains('hidden')) {
+        closeModal();
+      } else if (listModal && !listModal.classList.contains('hidden')) {
+        toggleMyListModal();
+      } else if (mapModal && !mapModal.classList.contains('hidden')) {
+        closeNearbyMapModal();
+      }
+    });
+
     // ================= 附近美食地圖與黑金主題系統 =================
     let fcaMap = null;
     let currentTileLayers = [];
@@ -1744,7 +1955,6 @@
       occasion: 'all'
     };
 
-    // 涵蓋全港超過 120+ 個微商圈、地鐵站、街區、澳門與境外熱門地區之精準座標表
     const DISTRICT_COORDS = {
       // 港島商圈
       '中環': [22.2819, 114.1581], '蘭桂坊': [22.2810, 114.1557], '蘇豪': [22.2825, 114.1525], 'soho': [22.2825, 114.1525], '大館': [22.2815, 114.1539],
@@ -1829,7 +2039,6 @@
         !(parsedLat === 0 && parsedLng === 0)
       );
 
-      // 地區與座標一致性防呆檢查：防止尖沙咀餐廳因錯誤座標飛去海外，或澳門/海外餐廳誤跌入香港
       if (hasValidNumbers) {
         const coordsInHK = isInHongKong(parsedLat, parsedLng);
         const isBrokenHK = expectedScope === 'hk' && !coordsInHK;
@@ -1980,6 +2189,12 @@
       }
     }
 
+    function switchMapScopeByKey(scope) {
+      const targetIdx = scope === 'hk' ? 0 : 1;
+      const btnEl = document.querySelectorAll('.map-scope-pill')[targetIdx];
+      switchMapScope(scope, btnEl);
+    }
+
     function toggleMapFilterDrawer() {
       const panel = document.getElementById('mapFilterPanel');
       const btn = document.getElementById('btnToggleMapFilters');
@@ -2110,8 +2325,7 @@
           btn.disabled = false;
 
           if (!isInHongKong(userLocation.lat, userLocation.lng) && currentMapScope === 'hk') {
-            const overseasBtn = document.querySelectorAll('.map-scope-pill')[1];
-            switchMapScope('overseas', overseasBtn);
+            switchMapScopeByKey('overseas');
           }
 
           if (fcaMap) {
@@ -2162,17 +2376,24 @@
         mapFilters.occasion !== 'all'
       );
 
-      let enriched = restaurants
+      const allMatching = restaurants
         .filter(item => matchRestaurantByFilters(item, mapFilters))
         .map(item => {
           const coords = getItemCoordinates(item);
           const distKm = userLocation ? calcDistanceKm(userLocation.lat, userLocation.lng, coords.lat, coords.lng) : null;
           return { ...item, coords, distKm };
-        })
-        .filter(item => {
-          const inHK = isInHongKong(item.coords.lat, item.coords.lng);
-          return currentMapScope === 'hk' ? inHK : !inHK;
         });
+
+      const otherScope = currentMapScope === 'hk' ? 'overseas' : 'hk';
+      const otherScopeCount = allMatching.filter(item => {
+        const inHK = isInHongKong(item.coords.lat, item.coords.lng);
+        return otherScope === 'hk' ? inHK : !inHK;
+      }).length;
+
+      let enriched = allMatching.filter(item => {
+        const inHK = isInHongKong(item.coords.lat, item.coords.lng);
+        return currentMapScope === 'hk' ? inHK : !inHK;
+      });
 
       if (userLocation) {
         enriched.sort((a, b) => a.distKm - b.distKm);
@@ -2229,7 +2450,10 @@
           </div>
         `;
 
-        const marker = L.marker([item.coords.lat, item.coords.lng], { icon: photoPinIcon }).bindPopup(popupHtml);
+        const marker = L.marker([item.coords.lat, item.coords.lng], { icon: photoPinIcon }).bindPopup(popupHtml, {
+          autoPanPaddingTopLeft: [16, 16],
+          autoPanPaddingBottomRight: [16, 16]
+        });
         mapMarkersById[String(item.id)] = marker;
         return marker;
       });
@@ -2262,6 +2486,16 @@
               </div>
             </div>
           `).join('');
+        } else if (otherScopeCount > 0) {
+          const scopeLabel = otherScope === 'overseas' ? '✈️ 海外' : '🇭🇰 香港';
+          rail.innerHTML = `
+            <div class="mx-auto flex items-center gap-3 py-1">
+              <span class="text-xs text-zinc-400">目前分頁沒有結果</span>
+              <button type="button" onclick="switchMapScopeByKey('${otherScope}')"
+                      class="bg-brand-yellow hover:bg-brand-yellowHover text-black text-xs font-black px-3 py-1.5 rounded-full transition shadow">
+                ${scopeLabel} 找到 ${otherScopeCount} 間，點擊切換 →
+              </button>
+            </div>`;
         } else {
           rail.innerHTML = `<span class="text-xs text-zinc-400 mx-auto py-2">目前範圍內沒有符合條件的餐廳，試下按「重設」或切換「香港 / 海外」！</span>`;
         }

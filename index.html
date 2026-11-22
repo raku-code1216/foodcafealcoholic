@@ -767,12 +767,21 @@
     let searchHistory = [];
     let openedDetailFromMap = false;
 
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function loadSearchHistory() {
       try {
         const cached = localStorage.getItem(HISTORY_STORAGE_KEY);
         if (cached) {
           const arr = JSON.parse(cached);
-          if (Array.isArray(arr)) searchHistory = arr;
+          if (Array.isArray(arr)) searchHistory = arr.map(String);
         }
       } catch (e) {
         searchHistory = [];
@@ -799,12 +808,14 @@
       renderSearchHistoryUI();
     }
 
-    function removeSearchHistoryItem(keyword, e) {
+    function removeSearchHistoryItem(index, e) {
       if (e) {
         e.stopPropagation();
         e.preventDefault();
       }
-      searchHistory = searchHistory.filter(item => item !== keyword);
+      const idx = Number(index);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= searchHistory.length) return;
+      searchHistory.splice(idx, 1);
       saveSearchHistory();
       renderSearchHistoryUI();
     }
@@ -827,14 +838,25 @@
       }
 
       container.classList.remove('hidden');
-      listEl.innerHTML = searchHistory.map(kw => `
-        <span onclick="applySearchHistory('${kw}')" 
+      listEl.innerHTML = searchHistory.map((kw, idx) => `
+        <span data-history-index="${idx}" onclick="handleHistoryPillClick(this)" 
               class="inline-flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-brand-yellow border border-zinc-700/80 hover:border-brand-yellow/60 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition shadow-sm group">
-          <span>${kw}</span>
-          <button type="button" onclick="removeSearchHistoryItem('${kw}', event)" 
+          <span>${escapeHtml(kw)}</span>
+          <button type="button" data-history-index="${idx}" onclick="handleHistoryRemoveClick(event, this)" 
                   class="text-zinc-500 hover:text-white text-[11px] font-bold ml-0.5 rounded-full px-1">✕</button>
         </span>
       `).join('');
+    }
+
+    function handleHistoryPillClick(el) {
+      const idx = Number(el.getAttribute('data-history-index'));
+      if (!Number.isInteger(idx) || !searchHistory[idx]) return;
+      applySearchHistory(searchHistory[idx]);
+    }
+
+    function handleHistoryRemoveClick(e, el) {
+      const idx = Number(el.getAttribute('data-history-index'));
+      removeSearchHistoryItem(idx, e);
     }
 
     function applySearchHistory(keyword) {
@@ -903,14 +925,54 @@
     }
 
     const REGION_MAP = {
-      '海外': ['海外', '台北', '台灣', '台中', '台南', '高雄', '澳門', '深圳', '廣州', '珠海', '東京', '大阪', '京都', '橫濱', '福岡', '北海道', '沖繩', '日本', '首爾', '釜山', '韓國', '曼谷', '泰國', '新加坡', '倫敦', '巴黎', '歐洲'],
-      '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '大坑', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '黃竹坑', '金鐘', '香港仔', '赤柱', '柴灣', '筲箕灣'],
-      '九龍': ['九龍', '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣', '何文田', '土瓜灣', '九龍塘', '黃大仙', '新蒲崗', '荔枝角', '奧運'],
-      '新界': ['新界', '荃灣', '葵芳', '青衣', '沙田', '大圍', '火炭', '馬鞍山', '元朗', '屯門', '大埔', '粉嶺', '上水', '將軍澳', '康城', '西貢', '東涌']
+      '海外': ['海外', '台北', '台灣', '台中', '台南', '高雄', '澳門', '深圳', '廣州', '珠海', '東京', '大阪', '京都', '橫濱', '福岡', '北海道', '沖繩', '日本', '首爾', '釜山', '韓國', '曼谷', '泰國', '新加坡', '倫敦', '巴黎', '歐洲', 'overseas', 'taipei', 'taiwan', 'macau', 'shenzhen', 'tokyo', 'osaka', 'kyoto', 'japan', 'seoul', 'korea', 'bangkok', 'thailand', 'singapore'],
+      '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '大坑', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '石塘咀', '黃竹坑', '金鐘', '香港仔', '鴨脷洲', '海怡', '赤柱', '淺水灣', '薄扶林', '數碼港', '柴灣', '筲箕灣', '西灣河', '杏花邨', '山頂', '半山', '蘭桂坊', '蘇豪', 'soho', '大館', 'pmq', 'central', 'sheung wan', 'wan chai', 'causeway bay', 'happy valley', 'tin hau', 'fortress hill', 'north point', 'quarry bay', 'tai koo', 'sai wan', 'sai ying pun', 'kennedy town', 'wong chuk hang', 'admiralty', 'aberdeen', 'stanley', 'repulse bay', 'hong kong island'],
+      '九龍': ['九龍', '尖沙咀', '尖東', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣', '牛頭角', '藍田', '油塘', '何文田', '土瓜灣', '九龍塘', '黃大仙', '鑽石山', '新蒲崗', '慈雲山', '彩虹', '樂富', '荔枝角', '美孚', '石硤尾', '南昌', '奧運', '西九龍', '柯士甸', '圓方', '海港城', '朗豪坊', '又一城', 'airside', 'k11', 'apm', 'megabox', 'd2 place', 'kowloon', 'tsim sha tsui', 'tst', 'jordan', 'yau ma tei', 'mong kok', 'prince edward', 'sham shui po', 'cheung sha wan', 'lai chi kok', 'tai kok tsui', 'olympic', 'hung hom', 'whampoa', 'kowloon city', 'kai tak', 'kwun tong', 'kowloon bay', 'ho man tin', 'to kwa wan', 'kowloon tong'],
+      '新界': ['新界', '荃灣', '葵芳', '葵興', '葵涌', '青衣', '深井', '沙田', '大圍', '火炭', '馬鞍山', '烏溪沙', '元朗', '天水圍', '錦田', '屯門', '大埔', '太和', '粉嶺', '上水', '將軍澳', '坑口', '寶琳', '調景嶺', '康城', '西貢', '清水灣', '東涌', '機場', '大嶼山', '離島', '愉景灣', '長洲', '南丫島', '坪洲', '大澳', '馬灣', '南豐紗廠', '愉景新城', '新城市廣場', '圍方', 'yoho', 'new territories', 'tsuen wan', 'kwai fong', 'tsing yi', 'sha tin', 'tai wai', 'ma on shan', 'yuen long', 'tin shui wai', 'tuen mun', 'tai po', 'fanling', 'sheung shui', 'tseung kwan o', 'tko', 'sai kung', 'tung chung', 'lantau', 'discovery bay', 'cheung chau', 'lamma']
+    };
+
+    const DISTRICT_ALIAS_MAP = {
+      '中環': ['中環', 'central', 'soho', '蘇豪', '蘭桂坊', '大館'],
+      '上環': ['上環', 'sheung wan', 'pmq'],
+      '灣仔': ['灣仔', 'wan chai', '利東街'],
+      '銅鑼灣': ['銅鑼灣', 'causeway bay', '時代廣場', '希慎'],
+      '跑馬地': ['跑馬地', 'happy valley', '黃泥涌'],
+      '天后': ['天后', '炮台山', '北角', '大坑', 'tin hau', 'fortress hill', 'north point'],
+      '鰂魚涌': ['鰂魚涌', '太古', '太古城', 'quarry bay', 'tai koo'],
+      '西環': ['西環', '堅尼地城', '西營盤', '石塘咀', 'sai wan', 'kennedy town', 'sai ying pun'],
+      '黃竹坑': ['黃竹坑', '南區', '香港仔', '鴨脷洲', '海怡', '淺水灣', '赤柱', '薄扶林', '數碼港', 'wong chuk hang'],
+      '尖沙咀': ['尖沙咀', '尖東', 'tsim sha tsui', 'tst', 'k11', '海港城', '西九龍', '圓方', '柯士甸'],
+      '佐敦': ['佐敦', '油麻地', 'jordan', 'yau ma tei'],
+      '旺角': ['旺角', 'mong kok', '朗豪坊'],
+      '太子': ['太子', 'prince edward'],
+      '深水埗': ['深水埗', '長沙灣', '荔枝角', '南昌', '石硤尾', 'sham shui po', 'd2 place'],
+      '紅磡': ['紅磡', '黃埔', '何文田', '土瓜灣', 'hung hom', 'whampoa'],
+      '九龍城': ['九龍城', '啟德', 'airside', 'kowloon city', 'kai tak'],
+      '觀塘': ['觀塘', '九龍灣', '牛頭角', 'apm', 'megabox', 'kwun tong', 'kowloon bay'],
+      '大角咀': ['大角咀', '奧運', 'tai kok tsui', 'olympic'],
+      '荃灣': ['荃灣', '南豐紗廠', '愉景新城', '葵芳', '葵涌', '青衣', 'tsuen wan'],
+      '沙田': ['沙田', '大圍', '圍方', '新城市廣場', '火炭', '馬鞍山', 'sha tin', 'tai wai'],
+      '元朗': ['元朗', '天水圍', '錦田', 'yoho', 'yuen long'],
+      '屯門': ['屯門', 'tuen mun'],
+      '大埔': ['大埔', '太和', '粉嶺', '上水', 'tai po'],
+      '將軍澳': ['將軍澳', '坑口', '寶琳', '調景嶺', '康城', 'tko', 'tseung kwan o'],
+      '西貢': ['西貢', '清水灣', 'sai kung']
+    };
+
+    const CUISINE_SYNONYM_MAP = {
+      '日本': ['日本', '日式', '日菜', '壽司', '刺身', '燒肉', '居酒屋', '拉麵', '烏冬', '天婦羅', 'omakase', '廚師發辦', '串燒', '丼', '壽喜燒', '日式火鍋', 'shabu', 'sushi', 'ramen', 'izakaya', 'yakiniku', 'japanese'],
+      'Cafe': ['cafe', '咖啡', 'brunch', '早午餐', 'coffee', 'espresso', 'roastery', '吐司', 'bagel', 'croissant', '牛角包', '輕食'],
+      '西式': ['西式', '西餐', '牛扒', 'steak', '意粉', 'pasta', 'pizza', '薄餅', 'bistro', '法國', '法式', '意大利', '西班牙', '地中海', 'tapas', '歐陸'],
+      '火鍋': ['火鍋', '打邊爐', '放題', '雞煲', '酸菜魚', '烤魚', '鍋物', 'hotpot', '麻辣鍋', '壽喜燒'],
+      '東南亞': ['東南亞', '泰國', '泰菜', '越南', '越式', '馬來西亞', '大馬', '星馬', '新加坡', '印尼', '南洋', '海南雞', 'pho', 'thai', 'vietnamese', 'laksa', '冬蔭功', '印度', '咖喱'],
+      '中菜': ['中菜', '中式', '粵菜', '廣東', '小炒', '點心', '大牌檔', '大排檔', '川菜', '四川', '上海', '京川滬', '潮州', '茶樓', '飲茶', '燒味', '片皮鴨', '順德'],
+      '甜品': ['甜品', '烘焙', '蛋糕', '蛋撻', '麵包', '糖水', '雪糕', 'gelato', 'cake', 'bakery', 'dessert', 'pastry', '窩夫', 'waffle', 'pancake', '班戟', '可麗露', '麻糬', '茶飲', '手搖'],
+      '酒吧': ['酒吧', 'bar', 'cocktail', '調酒', '微醺', '清酒', 'sake', 'wine', '紅酒', '啤酒', 'craft beer', 'pub', 'lounge', 'speakeasy', 'whisky'],
+      '快餐': ['快餐', '街頭小食', '小食', '漢堡', 'burger', '車仔麵', '茶餐廳', '冰室', '米線', '魚蛋', '燒賣', '三文治', '熱狗', '炸雞']
     };
 
     function inferRegionFromItem(item) {
-      if (!item) return '九龍';
+      if (!item) return '其他';
       // 1. 若有明確經緯度且在香港境外，直接歸類為海外
       if (item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng))) {
         if (!isInHongKong(parseFloat(item.lat), parseFloat(item.lng))) {
@@ -918,13 +980,22 @@
         }
       }
       // 2. 依地區文字判斷
-      const cleanDistrict = String(item.district || '').toLowerCase();
-      for (const [region, keywords] of Object.entries(REGION_MAP)) {
-        for (const kw of keywords) {
-          if (cleanDistrict.includes(kw)) return region;
+      const cleanDistrict = String(item.district || '').trim().toLowerCase();
+      if (cleanDistrict && cleanDistrict !== '香港' && cleanDistrict !== 'hong kong' && cleanDistrict !== '未知') {
+        for (const [region, keywords] of Object.entries(REGION_MAP)) {
+          for (const kw of keywords) {
+            if (cleanDistrict.includes(kw)) return region;
+          }
         }
       }
-      return '九龍';
+      // 3. 若地區欄位過於籠統，嘗試從店名輔助判斷
+      const cleanName = String(item.restaurant_name || '').toLowerCase();
+      for (const [region, keywords] of Object.entries(REGION_MAP)) {
+        for (const kw of keywords) {
+          if (cleanName.includes(kw)) return region;
+        }
+      }
+      return '其他';
     }
 
     function parseBudgetTier(rawPrice) {
@@ -985,13 +1056,22 @@
       const widthClass = isGrid ? 'w-full' : 'flex-none w-60 sm:w-64';
       const mainTitle = getPostMainTitle(item);
       const viewsCount = (item.views !== undefined && item.views !== null) ? item.views : 0;
+      const safeId = escapeHtml(item.id);
+      const safeName = escapeHtml(item.restaurant_name || '人氣餐廳');
+      const safeDistrict = escapeHtml(item.district || '香港');
+      const safeCuisine = escapeHtml(item.cuisine || '美食');
+      const safeTitle = escapeHtml(mainTitle);
+      const safeOccasion = escapeHtml(item.occasion || '');
+      const safeMustTry = escapeHtml(item.must_try || '');
+      const safePriceText = escapeHtml(item.priceInfo ? item.priceInfo.text : (item.price || '依現場菜單'));
 
       return `
-        <div data-rest-id="${item.id}" onclick="handleCardClick(this)"
+        <div data-rest-id="${safeId}" onclick="handleCardClick(this)"
              class="${widthClass} bg-brand-surface rounded-2xl overflow-hidden cursor-pointer card-zoom shadow-xl border border-brand-border hover:border-brand-yellow/50 group relative flex flex-col transition-all duration-300">
           
           <div class="relative w-full aspect-[4/5] bg-zinc-950 overflow-hidden">
-            <img src="${img}" alt="${item.restaurant_name}" 
+            <img src="${escapeHtml(img)}" alt="${safeName}" 
+                 loading="lazy" decoding="async"
                  onerror="onImageError(this)" 
                  class="food-card-img w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out" />
             
@@ -1001,22 +1081,22 @@
               <div class="space-y-1">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="bg-black/90 text-[10px] px-2 py-0.5 rounded text-zinc-200 border border-zinc-700">
-                    📍 ${item.district || '香港'}
+                    📍 ${safeDistrict}
                   </span>
                   <span class="text-[10px] font-extrabold text-brand-yellow uppercase tracking-wide bg-black/60 px-1.5 py-0.5 rounded">
-                    ${item.cuisine || '美食'}
+                    ${safeCuisine}
                   </span>
                 </div>
                 
                 <h3 class="text-white text-xs sm:text-sm font-black line-clamp-2 leading-tight tracking-wide drop-shadow-md">
-                  ${mainTitle}
+                  ${safeTitle}
                 </h3>
               </div>
             </div>
             
             ${rankBadge ? `
               <span class="absolute top-2.5 left-2.5 bg-brand-yellow text-black font-black text-xs px-2.5 py-0.5 rounded shadow-lg z-10">
-                ${rankBadge}
+                ${escapeHtml(rankBadge)}
               </span>
             ` : ''}
 
@@ -1024,9 +1104,9 @@
               <span>🎬</span> <span>REEL</span>
             </span>
 
-            <button type="button" data-fav-id="${item.id}" onclick="handleFavClick(event, this)"
+            <button type="button" data-fav-id="${safeId}" aria-pressed="${isFav ? 'true' : 'false'}" onclick="handleFavClick(event, this)"
                     class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/70 hover:bg-black flex items-center justify-center transition border border-zinc-700 z-20 shadow-lg">
-              <span class="${isFav ? 'text-brand-yellow' : 'text-zinc-400'} text-xs font-bold">
+              <span class="fav-star-icon ${isFav ? 'text-brand-yellow' : 'text-zinc-400'} text-xs font-bold">
                 ${isFav ? '★' : '☆'}
               </span>
             </button>
@@ -1040,21 +1120,21 @@
             <div>
               <div class="flex items-center justify-between mb-1">
                 <h4 class="font-extrabold text-sm text-zinc-200 group-hover:text-brand-yellow transition truncate max-w-[150px]">
-                  ${item.restaurant_name || '人氣餐廳'}
+                  ${safeName}
                 </h4>
-                ${item.occasion ? `<span class="text-[10px] text-zinc-400 bg-zinc-800 border border-zinc-700/60 px-1.5 py-0.5 rounded shrink-0">${item.occasion}</span>` : ''}
+                ${safeOccasion ? `<span class="text-[10px] text-zinc-400 bg-zinc-800 border border-zinc-700/60 px-1.5 py-0.5 rounded shrink-0">${safeOccasion}</span>` : ''}
               </div>
             </div>
 
-            ${item.must_try ? `
+            ${safeMustTry ? `
               <div class="bg-black/40 border border-zinc-800 rounded-lg p-1.5 text-[11px] text-zinc-300 leading-snug line-clamp-1">
-                <span class="text-brand-yellow font-bold">必食:</span> ${item.must_try}
+                <span class="text-brand-yellow font-bold">必食:</span> ${safeMustTry}
               </div>
             ` : ''}
 
             <div class="flex items-center justify-between text-[11px] text-zinc-400 pt-2 border-t border-brand-border">
               <span class="text-brand-yellow font-semibold text-[11px]">
-                💰 ${item.priceInfo ? item.priceInfo.text : (item.price || '依現場菜單')}
+                💰 ${safePriceText}
               </span>
               <span class="text-[10px] text-zinc-500">🔥 ${viewsCount} 次查看</span>
             </div>
@@ -1177,6 +1257,21 @@
       if (badge) badge.innerText = savedFavorites.size;
     }
 
+    function updateCardFavoriteButtons(id) {
+      const safeId = String(id);
+      const isFav = savedFavorites.has(safeId);
+      document.querySelectorAll('button[data-fav-id]').forEach(btn => {
+        if (btn.getAttribute('data-fav-id') === safeId) {
+          btn.setAttribute('aria-pressed', isFav ? 'true' : 'false');
+          const iconSpan = btn.querySelector('.fav-star-icon') || btn.querySelector('span');
+          if (iconSpan) {
+            iconSpan.className = `fav-star-icon ${isFav ? 'text-brand-yellow' : 'text-zinc-400'} text-xs font-bold`;
+            iconSpan.textContent = isFav ? '★' : '☆';
+          }
+        }
+      });
+    }
+
     function toggleFavorite(id) {
       if (!id) return;
       const safeId = String(id).trim();
@@ -1186,7 +1281,7 @@
       saveFavorites();
       updateFavBadge();
       updateModalFavButton();
-      renderApp();
+      updateCardFavoriteButtons(safeId);
       
       const modal = document.getElementById('myListModal');
       if (modal && !modal.classList.contains('hidden')) renderMyListModal();
@@ -1229,11 +1324,11 @@
 
       container.innerHTML = favList.map(item => `
         <div class="flex items-center justify-between bg-zinc-900 border border-brand-border p-3.5 sm:p-4 rounded-xl hover:border-brand-yellow transition">
-          <div class="space-y-0.5 cursor-pointer" onclick="closeMyListAndOpen('${item.id}')">
-            <h4 class="font-bold text-sm sm:text-base text-white hover:text-brand-yellow transition">${item.restaurant_name}</h4>
-            <p class="text-xs sm:text-sm text-zinc-400">📍 ${item.district || '香港'} • ${item.cuisine || '美食'} • <span class="text-brand-yellow">${item.price || ''}</span></p>
+          <div class="space-y-0.5 cursor-pointer" data-rest-id="${escapeHtml(item.id)}" onclick="closeMyListAndOpen(this.getAttribute('data-rest-id'))">
+            <h4 class="font-bold text-sm sm:text-base text-white hover:text-brand-yellow transition">${escapeHtml(item.restaurant_name)}</h4>
+            <p class="text-xs sm:text-sm text-zinc-400">📍 ${escapeHtml(item.district || '香港')} • ${escapeHtml(item.cuisine || '美食')} • <span class="text-brand-yellow">${escapeHtml(item.price || '')}</span></p>
           </div>
-          <button type="button" onclick="toggleFavorite('${item.id}')" class="text-xs sm:text-sm text-zinc-400 hover:text-white px-3 sm:px-4 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg transition">
+          <button type="button" data-fav-id="${escapeHtml(item.id)}" onclick="toggleFavorite(this.getAttribute('data-fav-id'))" class="text-xs sm:text-sm text-zinc-400 hover:text-white px-3 sm:px-4 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg transition">
             移除
           </button>
         </div>
@@ -1246,11 +1341,11 @@
     }
 
     function updateDropdownCounts() {
-      const counts = { '港島': 0, '九龍': 0, '新界': 0, '海外': 0 };
+      const counts = { '港島': 0, '九龍': 0, '新界': 0, '海外': 0, '其他': 0 };
       restaurants.forEach(r => {
         const reg = r.region || inferRegionFromItem(r);
         if (counts[reg] !== undefined) counts[reg]++;
-        else counts['九龍']++;
+        else counts['其他']++;
       });
 
       const optAll = document.getElementById('opt-all');
@@ -1269,7 +1364,7 @@
     const HK_DISTRICTS = [
       '中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '大坑', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '黃竹坑', '金鐘',
       '尖沙咀', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣', '何文田', '土瓜灣', '九龍塘',
-      '荃灣', '葵芳', '青衣', '沙田', '大圍', '火炭', '馬鞍山', '元朗', '屯門', '大埔', '粉嶺', '上水', '將軍澳', '康城', '西貢', '東涌'
+      '荃灣', '葵芳', '青衣', '沙田', '大圍', '火炭', '馬鞍山', '元朗', '屯門', '大埔', '粉嶺', '上水', '將軍澳', '康城', '西貢', '東涌', '長洲', '南丫島', '坪洲', '大澳', '愉景灣'
     ];
 
     function matchRestaurantByFilters(item, fObj) {
@@ -1301,10 +1396,13 @@
       }
 
       if (fObj.district && fObj.district !== 'all') {
-        const dTerm = fObj.district.toLowerCase();
         const cleanItemDist = String(item.district || '').toLowerCase();
         const cleanName = String(item.restaurant_name || '').toLowerCase();
-        const inDistrict = cleanItemDist.includes(dTerm) || cleanName.includes(dTerm);
+        const districtKeywords = DISTRICT_ALIAS_MAP[fObj.district] || [fObj.district.toLowerCase()];
+        const inDistrict = districtKeywords.some(kw => {
+          const k = kw.toLowerCase();
+          return cleanItemDist.includes(k) || cleanName.includes(k);
+        });
         if (!inDistrict) return false;
       }
 
@@ -1323,7 +1421,11 @@
         const cTarget = fObj.cuisine;
         const cleanCuisine = String(item.cuisine || '').toLowerCase();
         const cleanName = String(item.restaurant_name || '').toLowerCase();
-        const matched = cleanCuisine.includes(cTarget.toLowerCase()) || cleanName.includes(cTarget.toLowerCase());
+        const cuisineKeywords = CUISINE_SYNONYM_MAP[cTarget] || [cTarget.toLowerCase()];
+        const matched = cuisineKeywords.some(kw => {
+          const k = kw.toLowerCase();
+          return cleanCuisine.includes(k) || cleanName.includes(k);
+        });
         if (!matched) return false;
       }
 
@@ -2040,11 +2142,17 @@
       const boundsPoints = [];
       const markersToAdd = enriched.map(item => {
         const thumbUrl = getReelThumbnail(item);
+        const safeId = escapeHtml(item.id);
+        const safeName = escapeHtml(item.restaurant_name);
+        const safeDistrict = escapeHtml(item.district || '香港');
+        const safeCuisine = escapeHtml(item.cuisine || '美食');
+        const safeMustTry = escapeHtml(item.must_try || '招牌推介');
+        const safeThumb = escapeHtml(thumbUrl);
         boundsPoints.push([item.coords.lat, item.coords.lng]);
 
         const photoPinIcon = L.divIcon({
-          html: `<div class="food-photo-pin" title="${item.restaurant_name}">
-                   <img src="${thumbUrl}" alt="${item.restaurant_name}" onerror="onImageError(this)" />
+          html: `<div class="food-photo-pin" title="${safeName}">
+                   <img src="${safeThumb}" alt="${safeName}" loading="lazy" decoding="async" onerror="onImageError(this)" />
                  </div>`,
           className: '',
           iconSize: [48, 54],
@@ -2059,17 +2167,17 @@
         const popupHtml = `
           <div class="w-56 font-sans overflow-hidden">
             <div class="relative w-full h-28 rounded-lg overflow-hidden mb-2 bg-zinc-900">
-              <img src="${thumbUrl}" alt="${item.restaurant_name}" onerror="onImageError(this)" class="w-full h-full object-cover" />
+              <img src="${safeThumb}" alt="${safeName}" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-full h-full object-cover" />
               <div class="absolute bottom-1.5 left-1.5 flex items-center gap-1">
-                <span class="bg-black/85 text-white text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-700">📍 ${item.district || '香港'}</span>
+                <span class="bg-black/85 text-white text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-700">📍 ${safeDistrict}</span>
                 ${distLabel}
               </div>
             </div>
             <div class="space-y-1 px-0.5">
-              <div class="text-[10px] text-brand-yellow font-bold">${item.cuisine || '美食'}</div>
-              <div class="font-black text-sm text-white leading-tight">${item.restaurant_name}</div>
-              <div class="text-[11px] text-zinc-300 truncate">必食: ${item.must_try || '招牌推介'}</div>
-              <button onclick="openModalFromMap('${item.id}')" 
+              <div class="text-[10px] text-brand-yellow font-bold">${safeCuisine}</div>
+              <div class="font-black text-sm text-white leading-tight">${safeName}</div>
+              <div class="text-[11px] text-zinc-300 truncate">必食: ${safeMustTry}</div>
+              <button data-rest-id="${safeId}" onclick="openModalFromMap(this.getAttribute('data-rest-id'))" 
                       style="background:#FFC400; color:#000; width:100%; padding:6px 0; border-radius:8px; font-weight:900; font-size:11px; margin-top:6px; cursor:pointer;">
                 🎬 睇食評短片 →
               </button>
@@ -2097,16 +2205,16 @@
         rail.classList.remove('hidden');
         if (enriched.length > 0) {
           rail.innerHTML = enriched.slice(0, 30).map(item => `
-            <div onclick="focusPinAndPopup('${item.id}', ${item.coords.lat}, ${item.coords.lng})" 
+            <div data-rest-id="${escapeHtml(item.id)}" onclick="focusPinAndPopup(this.getAttribute('data-rest-id'), ${item.coords.lat}, ${item.coords.lng})" 
                  class="flex-none w-52 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
-              <img src="${getReelThumbnail(item)}" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
+              <img src="${escapeHtml(getReelThumbnail(item))}" alt="${escapeHtml(item.restaurant_name)}" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
               <div class="overflow-hidden">
                 <div class="flex items-center gap-1">
                   ${item.distKm !== null ? `<span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>` : ''}
-                  <span class="text-[10px] text-zinc-400 truncate">📍 ${item.district || '海外'}</span>
+                  <span class="text-[10px] text-zinc-400 truncate">📍 ${escapeHtml(item.district || '海外')}</span>
                 </div>
-                <h4 class="text-xs font-bold text-white truncate mt-0.5">${item.restaurant_name}</h4>
-                <p class="text-[10px] text-zinc-400 truncate">${item.cuisine || ''}</p>
+                <h4 class="text-xs font-bold text-white truncate mt-0.5">${escapeHtml(item.restaurant_name)}</h4>
+                <p class="text-[10px] text-zinc-400 truncate">${escapeHtml(item.cuisine || '')}</p>
               </div>
             </div>
           `).join('');

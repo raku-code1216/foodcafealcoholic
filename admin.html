@@ -170,7 +170,7 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">地區 * (例：跑馬地、中環)</label>
+            <label class="block text-zinc-400 font-bold mb-1">地區 * (例：跑馬地、中環、澳門)</label>
             <input type="text" id="district" required placeholder="AI 自動填寫"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
@@ -258,7 +258,7 @@
           </button>
           <button type="button" id="filterMissingCoordsBtn" onclick="toggleMissingCoordsFilter()" 
                   class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-amber-400 text-xs px-2.5 py-1.5 rounded-full transition">
-            ⚠️ 缺座標
+            ⚠️ 缺/異常座標
           </button>
           <div class="relative">
             <input type="text" id="adminSearchInput" oninput="renderTable()" placeholder="搜尋餐廳、地區..."
@@ -325,9 +325,9 @@
         <p id="kpiEditorPicksRatio" class="text-[11px] text-zinc-500 mt-1">佔比 0%</p>
       </div>
       <div class="bg-brand-card border border-brand-border rounded-2xl p-4">
-        <p class="text-xs text-zinc-400">待補精準座標</p>
+        <p class="text-xs text-zinc-400">待補 / 異常座標</p>
         <p id="kpiMissingCoords" class="text-2xl font-black text-amber-400 mt-1">0</p>
-        <p class="text-[11px] text-zinc-500 mt-1">尚未填入 lat / lng</p>
+        <p class="text-[11px] text-zinc-500 mt-1">空白或與地區不符</p>
       </div>
     </div>
 
@@ -352,7 +352,7 @@
       </div>
     </div>
 
-    <!-- 3. 菜式分佈 & 待補座標清單 -->
+    <!-- 3. 菜式分佈 & 待補/異常座標清單 -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div class="lg:col-span-6 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-3">
         <h3 class="text-sm font-black text-white flex items-center gap-2">
@@ -367,7 +367,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2">
             <h3 class="text-sm font-black text-white flex items-center gap-2">
-              <span>⚠️</span> 尚未設定精準座標的餐廳
+              <span>⚠️</span> 缺漏或異常座標的餐廳
             </h3>
             <span id="missingCoordsBadge" class="text-[11px] text-amber-400 font-bold">0 間</span>
           </div>
@@ -481,6 +481,49 @@
       rtdb = firebase.database();
     } catch (e) {}
 
+    const OVERSEAS_KEYWORDS = [
+      '海外', '澳門', '氹仔', '路氹', '路環', '官也街', '大三巴', '新馬路', '威尼斯人', '銀河', '倫敦人', '巴黎人',
+      'macau', 'macao', 'taipa', 'cotai', 'coloane',
+      '台北', '台灣', '台中', '台南', '高雄', '深圳', '廣州', '珠海',
+      '東京', '大阪', '京都', '橫濱', '福岡', '北海道', '沖繩', '日本',
+      '首爾', '釜山', '韓國', '曼谷', '泰國', '越南', '新加坡', '倫敦', '巴黎', '歐洲',
+      'taipei', 'taiwan', 'tokyo', 'osaka', 'kyoto', 'seoul', 'bangkok', 'singapore', 'shenzhen'
+    ];
+
+    const HK_KEYWORDS = [
+      '港島', '中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '大坑', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '石塘咀', '黃竹坑', '金鐘', '香港仔', '鴨脷洲', '海怡', '赤柱', '淺水灣', '薄扶林', '數碼港', '柴灣', '筲箕灣', '西灣河', '杏花邨', '山頂', '半山', '蘭桂坊', '蘇豪', 'soho', '大館', 'pmq',
+      '九龍', '尖沙咀', '尖東', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣', '牛頭角', '藍田', '油塘', '何文田', '土瓜灣', '九龍塘', '黃大仙', '鑽石山', '新蒲崗', '慈雲山', '彩虹', '樂富', '荔枝角', '美孚', '石硤尾', '南昌', '奧運', '西九龍', '柯士甸', '圓方', '海港城', '朗豪坊', '又一城', 'airside', 'k11', 'apm', 'megabox', 'd2 place',
+      '新界', '荃灣', '葵芳', '葵興', '葵涌', '青衣', '深井', '沙田', '大圍', '火炭', '馬鞍山', '烏溪沙', '元朗', '天水圍', '錦田', '屯門', '大埔', '太和', '粉嶺', '上水', '將軍澳', '坑口', '寶琳', '調景嶺', '康城', '西貢', '清水灣', '東涌', '機場', '大嶼山', '離島', '愉景灣', '長洲', '南丫島', '坪洲', '大澳', '馬灣',
+      'central', 'sheung wan', 'wan chai', 'causeway bay', 'happy valley', 'tin hau', 'north point', 'quarry bay', 'tai koo', 'sai ying pun', 'kennedy town', 'tsim sha tsui', 'tst', 'mong kok', 'jordan', 'sham shui po', 'kwun tong', 'tsuen wan', 'sha tin', 'yuen long', 'tuen mun', 'tai po', 'sai kung', 'tseung kwan o', 'tung chung'
+    ];
+
+    function isInHongKong(lat, lng) {
+      return lat >= 22.13 && lat <= 22.58 && lng >= 113.80 && lng <= 114.45;
+    }
+
+    function getExpectedScope(district, captionAddr = '') {
+      const dist = String(district || '').trim().toLowerCase();
+      const addr = String(captionAddr || '').trim().toLowerCase();
+      if (OVERSEAS_KEYWORDS.some(kw => dist.includes(kw) || addr.includes(kw))) return 'overseas';
+      if (HK_KEYWORDS.some(kw => dist.includes(kw))) return 'hk';
+      return 'unknown';
+    }
+
+    function getCoordStatus(item) {
+      const hasRaw = Boolean(item.lat !== '' && item.lng !== '' && item.lat !== undefined && item.lng !== undefined);
+      if (!hasRaw) return 'missing';
+      const lat = parseFloat(item.lat);
+      const lng = parseFloat(item.lng);
+      if (isNaN(lat) || isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) {
+        return 'abnormal';
+      }
+      const scope = getExpectedScope(item.district);
+      const inHK = isInHongKong(lat, lng);
+      if (scope === 'hk' && !inHK) return 'abnormal';
+      if (scope === 'overseas' && inHK) return 'abnormal';
+      return 'ok';
+    }
+
     function escapeHtml(str) {
       return String(str ?? '')
         .replace(/&/g, '&amp;')
@@ -553,7 +596,6 @@
       }
     }
 
-    // 與 index.html 完全對齊的 Firebase Click ID 規則
     function getItemClickCount(item, index) {
       const code = item.shortCode || extractShortcode(item.url) || '';
       const postUrl = item.url || (code ? `https://www.instagram.com/reel/${code}/` : 'https://instagram.com/foodcafealcoholic');
@@ -583,8 +625,8 @@
         totalClicks += clicks;
         if (item.is_editor_pick === '1') picksCount++;
 
-        const hasCoords = Boolean(item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng)));
-        if (!hasCoords) missingItems.push({ item, idx });
+        const coordStatus = getCoordStatus(item);
+        if (coordStatus !== 'ok') missingItems.push({ item, idx, coordStatus });
 
         const distKey = (item.district || '未分類').trim() || '未分類';
         if (!districtStats[distKey]) districtStats[distKey] = { count: 0, clicks: 0 };
@@ -688,16 +730,22 @@
             }).join('');
       }
 
-      // 缺座標清單
+      // 缺漏 / 異常座標清單（異常座標排在最前）
       const missingListEl = document.getElementById('analyticsMissingCoordsList');
       if (missingListEl) {
         if (missingItems.length === 0) {
-          missingListEl.innerHTML = `<p class="py-8 text-center text-emerald-400 font-bold">✓ 所有餐廳都已設定經緯度座標！</p>`;
+          missingListEl.innerHTML = `<p class="py-8 text-center text-emerald-400 font-bold">✓ 所有餐廳都已設定正確的經緯度座標！</p>`;
         } else {
-          missingListEl.innerHTML = missingItems.slice(0, 50).map(({ item, idx }) => `
+          const sortedMissing = [...missingItems].sort((a, b) => (a.coordStatus === 'abnormal' ? -1 : 1) - (b.coordStatus === 'abnormal' ? -1 : 1));
+          missingListEl.innerHTML = sortedMissing.slice(0, 60).map(({ item, idx, coordStatus }) => `
             <div class="py-2 flex items-center justify-between gap-2">
               <div class="min-w-0">
-                <p class="font-bold text-white truncate">${escapeHtml(item.restaurant_name || '未命名')}</p>
+                <div class="flex items-center gap-1.5">
+                  <p class="font-bold text-white truncate">${escapeHtml(item.restaurant_name || '未命名')}</p>
+                  ${coordStatus === 'abnormal'
+                    ? `<span class="text-[10px] bg-red-500/20 text-red-400 border border-red-500/40 px-1.5 py-0.2 rounded font-bold shrink-0">座標異常 (${escapeHtml(item.lat)}, ${escapeHtml(item.lng)})</span>`
+                    : `<span class="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.2 rounded shrink-0">缺座標</span>`}
+                </div>
                 <p class="text-[11px] text-zinc-500 truncate">地區：${escapeHtml(item.district || '未填寫')}</p>
               </div>
               <button type="button" onclick="editItemFromAnalytics(${idx})" class="text-brand-yellow hover:underline font-bold shrink-0">
@@ -885,7 +933,7 @@
       }
 
       if (filterMissingCoords) {
-        filtered = filtered.filter(({ item }) => !(item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng))));
+        filtered = filtered.filter(({ item }) => getCoordStatus(item) !== 'ok');
       }
 
       if (query) {
@@ -905,11 +953,18 @@
 
       tbody.innerHTML = filtered.map(({ item, originalIndex }) => {
         const isPick = item.is_editor_pick === '1';
-        const hasCoords = Boolean(item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng)));
+        const coordStatus = getCoordStatus(item);
         const views = getItemClickCount(item, originalIndex);
         const safeName = escapeHtml(item.restaurant_name || '未命名');
         const safeDistrict = escapeHtml(item.district || '-');
         const safePrice = escapeHtml(item.price || '-');
+
+        let coordHtml = '<span class="text-zinc-500 font-mono">預設</span>';
+        if (coordStatus === 'ok') {
+          coordHtml = '<span class="text-emerald-400 font-mono">✓ 已定位</span>';
+        } else if (coordStatus === 'abnormal') {
+          coordHtml = `<span class="text-red-400 font-mono font-bold" title="現存座標 (${escapeHtml(item.lat)}, ${escapeHtml(item.lng)}) 與地區不符">⚠️ 座標異常</span>`;
+        }
 
         return `
           <tr class="hover:bg-zinc-900/60 transition ${isPick ? 'bg-brand-yellow/5' : ''}">
@@ -927,11 +982,7 @@
               </div>
             </td>
             <td class="py-2.5 px-2 text-zinc-300">${safeDistrict}</td>
-            <td class="py-2.5 px-2 text-[10px]">
-              ${hasCoords 
-                ? '<span class="text-emerald-400 font-mono">✓ 已定位</span>' 
-                : '<span class="text-zinc-500 font-mono">預設</span>'}
-            </td>
+            <td class="py-2.5 px-2 text-[10px]">${coordHtml}</td>
             <td class="py-2.5 px-2 text-zinc-400 font-mono text-[11px]">🔥 ${views}</td>
             <td class="py-2.5 px-2 text-brand-yellow font-medium">${safePrice}</td>
             <td class="py-2.5 px-3 text-right space-x-2 whitespace-nowrap">
@@ -1051,11 +1102,20 @@
       return null;
     }
 
+    function isCoordinateValidForScope(lat, lng, expectedScope) {
+      if (isNaN(lat) || isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) {
+        return false;
+      }
+      const inHK = isInHongKong(lat, lng);
+      if (expectedScope === 'hk' && !inHK) return false;
+      if (expectedScope === 'overseas' && inHK) return false;
+      return true;
+    }
+
     async function geocodeRestaurantData({ name, dist, caption, aiAddress = '' }, cfg) {
       const captionAddr = aiAddress || extractAddressFromCaption(caption);
-      const overseasKeywords = ['台北', '台灣', '台中', '台南', '高雄', '澳門', '深圳', '廣州', '東京', '大阪', '京都', '首爾', '日本', '韓國', '曼谷', '新加坡'];
-      const isOverseas = overseasKeywords.some(kw => (dist || '').includes(kw) || (captionAddr || '').includes(kw));
-      const regionSuffix = isOverseas ? '' : ' 香港';
+      const expectedScope = getExpectedScope(dist, captionAddr);
+      const regionSuffix = expectedScope === 'overseas' ? '' : ' 香港';
 
       const queries = [];
       if (captionAddr) {
@@ -1066,37 +1126,45 @@
         queries.push(`${name} ${dist}${regionSuffix}`.trim());
       }
 
-      let foundPlace = null;
       for (const q of queries) {
         if (!q) continue;
         try {
-          foundPlace = await searchGooglePlaces(q, cfg.placesKey);
-          if (foundPlace && foundPlace.location) break;
+          const foundPlace = await searchGooglePlaces(q, cfg.placesKey);
+          if (foundPlace && foundPlace.location) {
+            const latNum = foundPlace.location.latitude;
+            const lngNum = foundPlace.location.longitude;
+            if (isCoordinateValidForScope(latNum, lngNum, expectedScope)) {
+              return {
+                lat: latNum.toFixed(6),
+                lng: lngNum.toFixed(6),
+                source: 'google',
+                matchedText: `${foundPlace.displayName?.text || ''} (${foundPlace.formattedAddress || ''})`
+              };
+            }
+          }
         } catch (err) {}
       }
 
-      if (foundPlace && foundPlace.location) {
-        return {
-          lat: foundPlace.location.latitude.toFixed(6),
-          lng: foundPlace.location.longitude.toFixed(6),
-          source: 'google',
-          matchedText: `${foundPlace.displayName?.text || ''} (${foundPlace.formattedAddress || ''})`
-        };
-      }
-
-      if (queries.length > 0) {
-        const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queries[0])}&limit=1`, {
-          headers: { 'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8' }
-        });
-        const osmData = await osmRes.json();
-        if (Array.isArray(osmData) && osmData.length > 0) {
-          return {
-            lat: parseFloat(osmData[0].lat).toFixed(6),
-            lng: parseFloat(osmData[0].lon).toFixed(6),
-            source: 'osm',
-            matchedText: osmData[0].display_name || ''
-          };
-        }
+      for (const q of queries) {
+        if (!q) continue;
+        try {
+          const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`, {
+            headers: { 'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8' }
+          });
+          const osmData = await osmRes.json();
+          if (Array.isArray(osmData) && osmData.length > 0) {
+            const latNum = parseFloat(osmData[0].lat);
+            const lngNum = parseFloat(osmData[0].lon);
+            if (isCoordinateValidForScope(latNum, lngNum, expectedScope)) {
+              return {
+                lat: latNum.toFixed(6),
+                lng: lngNum.toFixed(6),
+                source: 'osm',
+                matchedText: osmData[0].display_name || ''
+              };
+            }
+          }
+        } catch (err) {}
       }
 
       return null;
@@ -1136,7 +1204,7 @@
             addrHint.classList.remove('hidden');
           }
         } else {
-          alert('未能直接找到精準大廈座標，建議手動填寫或由系統依地區自動對應。');
+          alert('未能直接找到符合該地區範圍的精準座標（已自動攔截跨區錯誤結果），建議手動填寫或由系統依地區自動對應。');
         }
       } catch (e) {
         alert('定位服務連線逾時，請稍後重試。');
@@ -1155,16 +1223,16 @@
         return;
       }
 
-      const missingIndices = adminList
+      const targetIndices = adminList
         .map((item, idx) => ({ item, idx }))
-        .filter(({ item }) => !(item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng))));
+        .filter(({ item }) => getCoordStatus(item) !== 'ok');
 
-      if (missingIndices.length === 0) {
-        alert('目前沒有缺少座標的餐廳！');
+      if (targetIndices.length === 0) {
+        alert('目前沒有缺少或異常座標的餐廳！');
         return;
       }
 
-      if (!confirm(`即將為 ${missingIndices.length} 間缺少座標的餐廳自動抓取 Google 定位座標，完成後請記得按「🚀 一鍵自動同步到網站」。是否開始？`)) {
+      if (!confirm(`即將為 ${targetIndices.length} 間缺少或座標異常的餐廳自動重新抓取 Google 定位座標，完成後請記得按「🚀 一鍵自動同步到網站」。是否開始？`)) {
         return;
       }
 
@@ -1181,12 +1249,12 @@
       let successCount = 0;
       let failCount = 0;
 
-      for (let i = 0; i < missingIndices.length; i++) {
+      for (let i = 0; i < targetIndices.length; i++) {
         if (batchGeocodeStopRequested) break;
 
-        const { item, idx } = missingIndices[i];
+        const { item, idx } = targetIndices[i];
         if (statusEl) {
-          statusEl.innerText = `⏳ 正在定位 (${i + 1}/${missingIndices.length})：${item.restaurant_name || '未命名'}...`;
+          statusEl.innerText = `⏳ 正在定位 (${i + 1}/${targetIndices.length})：${item.restaurant_name || '未命名'}...`;
         }
 
         try {
@@ -1202,6 +1270,12 @@
             successCount++;
             markUnsaved(true);
           } else {
+            // 若原本為異常座標且找不到更準確地址，清空讓前台依地區精準定位，不再飛去其他洲
+            if (getCoordStatus(adminList[idx]) === 'abnormal') {
+              adminList[idx].lat = '';
+              adminList[idx].lng = '';
+              markUnsaved(true);
+            }
             failCount++;
           }
         } catch (err) {
@@ -1220,8 +1294,8 @@
 
       if (statusEl) {
         statusEl.innerText = batchGeocodeStopRequested
-          ? `⏹️ 已手動停止：成功定位 ${successCount} 間，略過/失敗 ${failCount} 間。`
-          : `✅ 批量定位完成：成功 ${successCount} 間，未能找到 ${failCount} 間。`;
+          ? `⏹️ 已手動停止：成功定位 ${successCount} 間，略過/清空異常 ${failCount} 間。`
+          : `✅ 批量定位完成：成功 ${successCount} 間，未能找到精準門牌 ${failCount} 間（異常座標已自動清空改由地區定位）。`;
       }
 
       renderTable();
@@ -1268,7 +1342,7 @@
 {
   "title": "精選貼文中最吸引人的吸睛大標題/爆款金句 (保留Emoji，去除Hashtag與地區分類，控制在15字以內)",
   "restaurant_name": "餐廳名稱 (去除多餘形容詞或店鋪代號)",
-  "district": "地區 (例如：中環、跑馬地、尖沙咀、旺角、太古、台北，若未明確說明請推斷)",
+  "district": "地區 (例如：中環、跑馬地、尖沙咀、旺角、太古、澳門、台北，若未明確說明請推斷)",
   "address": "詳細地址或商場名稱 (例如：太古城中心二期中庭、尖沙咀海港城，若內文沒有則留空字串)",
   "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋)",
   "price": "人均價格預算 (格式如：100-200 或 400-600，只填數字範圍)",
@@ -1516,7 +1590,6 @@ ${textToAnalyze}`;
           const fileData = await getRes.json();
           fileSha = fileData.sha;
 
-          // 檢查遠端是否已有較新變更，避免無意間覆蓋 GitHub Actions 或其他人新增的資料
           if (fileData.content && loadedRemoteRowCount > 0) {
             try {
               const remoteCsv = decodeGitHubBase64(fileData.content);

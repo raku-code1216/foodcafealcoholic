@@ -841,10 +841,37 @@
       }
     }
 
+    function hideBrokenCardsById(restId) {
+      const safeStr = String(restId);
+      document.querySelectorAll('.card-zoom[data-rest-id]').forEach(el => {
+        if (el.getAttribute('data-rest-id') === safeStr) {
+          el.style.display = 'none';
+          el.classList.remove('flex');
+          el.classList.add('hidden');
+        }
+      });
+
+      const isFiltering = Boolean(
+        filters.search ||
+        filters.region !== 'all' ||
+        filters.district !== 'all' ||
+        filters.occasion !== 'all' ||
+        filters.price !== 'all' ||
+        filters.cuisine !== 'all'
+      );
+      const validRestaurants = restaurants.filter(r => !r._brokenImage);
+      const visibleFiltered = validRestaurants.filter(item => matchRestaurantByFilters(item, filters));
+      const totalEl = document.getElementById('totalCount');
+      if (totalEl) totalEl.innerText = isFiltering ? visibleFiltered.length : validRestaurants.length;
+      const filteredMatchCount = document.getElementById('filteredMatchCount');
+      if (filteredMatchCount && isFiltering) filteredMatchCount.innerText = `${visibleFiltered.length} 間`;
+    }
+
     function onImageError(img) {
       if (!img) return;
       const fallbackOnly = img.getAttribute('data-fallback-only') === '1';
-      const restId = img.getAttribute('data-rest-id') || (img.closest('[data-rest-id]') && img.closest('[data-rest-id]').getAttribute('data-rest-id'));
+      const cardEl = img.closest('.card-zoom');
+      const restId = img.getAttribute('data-rest-id') || (cardEl && cardEl.getAttribute('data-rest-id'));
       const item = restId ? restaurants.find(r => String(r.id) === String(restId)) : null;
 
       // 1. 若尚未嘗試過本地 images/{shortCode}.jpg，優先補救嘗試本地封面圖
@@ -863,21 +890,27 @@
 
       img.onerror = null;
 
-      // 2. 預覽背景圖或地圖釘僅套用替代圖
+      // 2. 預覽背景圖或地圖釘僅套用替代圖（同時若屬壞圖也上報後台）
       if (fallbackOnly || img.dataset.pinImg === '1') {
+        if (item && img.dataset.pinImg === '1') {
+          reportBrokenImageToManager(item, img.getAttribute('src') || '');
+        }
         img.src = item ? getCuisineImage(item.cuisine) : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
         return;
       }
 
-      // 3. 主卡片圖片真壞圖：在前台自動隱藏並上報 Firebase 通報後台管理員
+      // 3. 主卡片圖片真壞圖：在前台徹底隱藏整張卡片並上報 Firebase 通報後台管理員
       const failedSrc = img.getAttribute('src') || '';
       if (item) {
         item._brokenImage = true;
         reportBrokenImageToManager(item, failedSrc);
       }
-      const card = img.closest('[data-rest-id]');
-      if (card) {
-        card.classList.add('hidden');
+      if (restId) {
+        hideBrokenCardsById(restId);
+      } else if (cardEl) {
+        cardEl.style.display = 'none';
+        cardEl.classList.remove('flex');
+        cardEl.classList.add('hidden');
       }
     }
     window.onImageError = onImageError;
@@ -1278,7 +1311,6 @@
           
           <div class="relative w-full aspect-[4/5] bg-zinc-950 overflow-hidden">
             <img src="${escapeHtml(img)}" alt="${safeName}" 
-                 data-rest-id="${safeId}"
                  loading="lazy" decoding="async"
                  onerror="onImageError(this)" 
                  class="food-card-img w-full h-full object-cover object-center transition-transform duration-500 ease-out" />

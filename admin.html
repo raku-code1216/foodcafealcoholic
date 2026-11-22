@@ -235,34 +235,35 @@
 
     <!-- 右側：資料庫列表 -->
     <section class="lg:col-span-7 bg-brand-card border border-brand-border rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-3 mb-4">
-        <div>
-          <h2 class="text-base font-extrabold text-white flex items-center gap-2">
-            <span>📚</span> 餐廳資料庫列表 (<span id="totalItemsCount" class="text-brand-yellow">0</span> 間)
+      <div class="flex flex-col gap-3 border-b border-zinc-800 pb-3.5 mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="text-base font-extrabold text-white flex items-center gap-2 whitespace-nowrap">
+            <span>📚</span>
+            <span>餐廳資料庫列表 <span class="text-zinc-300 font-bold">(<span id="totalItemsCount" class="text-brand-yellow font-black">0</span> 間)</span></span>
           </h2>
-          <div class="flex items-center gap-2 mt-1">
-            <span class="text-[11px] text-zinc-400">本週嚴選:</span>
-            <span id="editorPicksCount" class="bg-brand-yellow text-black font-black text-[10px] px-2 py-0.2 rounded-full">0 間</span>
-            <span class="text-[11px] text-zinc-500 ml-1">顯示中: <strong id="filteredTableCount" class="text-zinc-300">0</strong></span>
+          <div class="flex items-center gap-2 text-[11px] shrink-0">
+            <span class="text-zinc-400">本週嚴選:</span>
+            <span id="editorPicksCount" class="bg-brand-yellow text-black font-black text-[10px] px-2 py-0.5 rounded-full">0 間</span>
+            <span class="text-zinc-500 ml-1">顯示中: <strong id="filteredTableCount" class="text-zinc-300">0</strong></span>
           </div>
         </div>
         
-        <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex flex-wrap items-center gap-2">
           <button type="button" onclick="reloadCsvFromServer()" title="重新讀取最新 CSV"
-                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-white text-xs px-2.5 py-1.5 rounded-full transition">
+                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-white text-xs px-2.5 py-1.5 rounded-full transition shrink-0">
             🔄
           </button>
           <button type="button" id="filterPicksBtn" onclick="toggleOnlyPicksFilter()" 
-                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-brand-yellow text-xs px-2.5 py-1.5 rounded-full transition">
+                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-brand-yellow text-xs px-3 py-1.5 rounded-full transition shrink-0">
             ★ 只看嚴選
           </button>
           <button type="button" id="filterMissingCoordsBtn" onclick="toggleMissingCoordsFilter()" 
-                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-amber-400 text-xs px-2.5 py-1.5 rounded-full transition">
+                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-amber-400 text-xs px-3 py-1.5 rounded-full transition shrink-0">
             ⚠️ 缺/異常座標
           </button>
-          <div class="relative">
+          <div class="relative flex-1 min-w-[160px]">
             <input type="text" id="adminSearchInput" oninput="renderTable()" placeholder="搜尋餐廳、地區..."
-                   class="bg-zinc-900 border border-zinc-700 text-xs text-white rounded-full pl-7 pr-3 py-1.5 focus:outline-none focus:border-brand-yellow w-36 sm:w-44" />
+                   class="w-full bg-zinc-900 border border-zinc-700 text-xs text-white rounded-full pl-7 pr-3 py-1.5 focus:outline-none focus:border-brand-yellow" />
             <span class="absolute left-2.5 top-2 text-zinc-500 text-xs">🔍</span>
           </div>
         </div>
@@ -1270,7 +1271,6 @@
             successCount++;
             markUnsaved(true);
           } else {
-            // 若原本為異常座標且找不到更準確地址，清空讓前台依地區精準定位，不再飛去其他洲
             if (getCoordStatus(adminList[idx]) === 'abnormal') {
               adminList[idx].lat = '';
               adminList[idx].lng = '';

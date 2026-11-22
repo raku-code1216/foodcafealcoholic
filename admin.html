@@ -2,6 +2,7 @@
 <html lang="zh-HK">
 <head>
   <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FCA 後台管理系統 | Foodcafealcoholic Admin</title>
@@ -46,7 +47,7 @@
     <div class="flex items-center gap-3 flex-wrap">
       <div class="flex items-center gap-2.5">
         <span class="text-xl font-black text-brand-yellow tracking-wider">FCA ADMIN</span>
-        <span class="hidden md:inline text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • Google 精準定位 • 自動抓圖同步</span>
+        <span class="hidden md:inline text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • Google 精準定位 • 壞圖監測補傳</span>
       </div>
 
       <!-- 視圖切換頁籤 -->
@@ -82,8 +83,29 @@
   </header>
 
   <!-- 主要工作區：資料庫管理 -->
-  <main id="manageView" class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+  <main id="manageView" class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
     
+    <!-- 壞圖自動通報橫幅 -->
+    <div id="brokenImageAlertBanner" class="hidden lg:col-span-12 bg-red-950/60 border border-red-500/60 rounded-2xl p-4 shadow-xl space-y-2.5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-lg animate-bounce">🚨</span>
+          <h3 class="text-sm font-black text-red-300">
+            偵測到 <span id="brokenBannerCount" class="text-white underline">0</span> 間餐廳封面圖片失效（目前前台已自動隱藏）
+          </h3>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap text-xs">
+          <button type="button" onclick="resetBrokenDisplayUrls()" class="bg-brand-yellow hover:bg-brand-yellowHover text-black font-black px-3 py-1.5 rounded-lg transition">
+            🤖 重設路徑並準備觸發抓圖
+          </button>
+          <button type="button" onclick="clearBrokenImageAlerts()" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 px-3 py-1.5 rounded-lg transition">
+            ✖ 清除通知
+          </button>
+        </div>
+      </div>
+      <div id="brokenAlertPills" class="flex flex-wrap gap-1.5 text-xs"></div>
+    </div>
+
     <!-- 左側：發布 / 編輯表單 -->
     <section class="lg:col-span-5 bg-brand-card border border-brand-border rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
       <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
@@ -131,15 +153,24 @@
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
         </div>
 
-        <!-- 封面圖片即時預覽 -->
-        <div id="imagePreviewBox" class="hidden p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center gap-3">
-          <img id="imagePreviewThumb" src="" alt="封面預覽"
-               onerror="handlePreviewError(this)"
-               onload="handlePreviewSuccess()"
-               class="w-12 h-12 object-cover rounded-lg border border-zinc-700 bg-zinc-800 shrink-0" />
-          <div class="text-[11px] text-zinc-400 overflow-hidden">
-            <p id="imagePreviewStatus" class="text-brand-yellow font-bold">🖼️ 封面圖片已載入</p>
-            <p class="truncate text-zinc-500 max-w-[220px]" id="imagePreviewUrlText"></p>
+        <!-- 封面圖片即時預覽 + 直接上傳補圖 -->
+        <div id="imagePreviewBox" class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2">
+          <div class="flex items-center gap-3">
+            <img id="imagePreviewThumb" src="logo.jpg" alt="封面預覽"
+                 onerror="handlePreviewError(this)"
+                 onload="handlePreviewSuccess()"
+                 class="w-12 h-12 object-cover rounded-lg border border-zinc-700 bg-zinc-800 shrink-0" />
+            <div class="text-[11px] text-zinc-400 overflow-hidden flex-grow">
+              <p id="imagePreviewStatus" class="text-zinc-400 font-bold">🖼️ 封面圖片預覽</p>
+              <p class="truncate text-zinc-500 max-w-[220px]" id="imagePreviewUrlText">尚未設定圖片路徑</p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between gap-2 pt-1.5 border-t border-zinc-800/80">
+            <input type="file" id="coverFileInput" accept="image/*" class="hidden" onchange="handleDirectCoverUpload(event)" />
+            <button type="button" id="btnDirectCoverUpload" onclick="document.getElementById('coverFileInput').click()"
+                    class="w-full bg-zinc-800 hover:bg-brand-yellow text-zinc-200 hover:text-black border border-zinc-700 hover:border-brand-yellow font-bold py-1.5 px-3 rounded-lg text-[11px] transition flex items-center justify-center gap-1.5">
+              <span>📷</span> <span>補傳 / 更換本地圖片（直接上傳至 GitHub）</span>
+            </button>
           </div>
         </div>
 
@@ -181,7 +212,7 @@
           </div>
         </div>
 
-        <!-- 精準門牌經緯度欄位 (升級為 Google Places API) -->
+        <!-- 精準門牌經緯度欄位 (Google Places API) -->
         <div class="p-2.5 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-1.5">
           <div class="flex items-center justify-between">
             <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準座標 (Google Places 引擎)</label>
@@ -206,7 +237,7 @@
           </div>
           <div>
             <label class="block text-zinc-400 font-bold mb-1">適合場景</label>
-            <input type="text" id="occasion" placeholder="例：拍拖約會"
+            <input type="text" id="occasion" placeholder="例：拍拖約會 • 朋友聚會"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
         </div>
@@ -254,15 +285,27 @@
             🔄
           </button>
           <button type="button" id="filterPicksBtn" onclick="toggleOnlyPicksFilter()" 
-                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-brand-yellow text-xs px-3 py-1.5 rounded-full transition shrink-0">
+                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-brand-yellow text-xs px-2.5 py-1.5 rounded-full transition shrink-0">
             ★ 只看嚴選
           </button>
           <button type="button" id="filterMissingCoordsBtn" onclick="toggleMissingCoordsFilter()" 
-                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-amber-400 text-xs px-3 py-1.5 rounded-full transition shrink-0">
+                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-amber-400 text-xs px-2.5 py-1.5 rounded-full transition shrink-0">
             ⚠️ 缺/異常座標
           </button>
-          <div class="relative flex-1 min-w-[160px]">
-            <input type="text" id="adminSearchInput" oninput="renderTable()" placeholder="搜尋餐廳、地區..."
+          <button type="button" id="filterBrokenImgBtn" onclick="toggleBrokenImagesFilter()" 
+                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-red-400 text-xs px-2.5 py-1.5 rounded-full transition shrink-0">
+            🖼️ 壞圖 (<span id="brokenTableBadge">0</span>)
+          </button>
+          <button type="button" id="btnScanImages" onclick="scanAllImages()" 
+                  class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-emerald-400 text-xs px-2.5 py-1.5 rounded-full transition shrink-0">
+            🔍 掃描壞圖
+          </button>
+          <button type="button" onclick="batchAssignOccasions()" 
+                  class="bg-zinc-900 hover:bg-brand-yellow border border-brand-yellow/50 text-brand-yellow hover:text-black font-bold text-xs px-2.5 py-1.5 rounded-full transition shrink-0">
+            🎉 一鍵分配場景
+          </button>
+          <div class="relative flex-1 min-w-[150px]">
+            <input type="text" id="adminSearchInput" oninput="renderTable()" placeholder="搜尋餐廳、地區、場景..."
                    class="w-full bg-zinc-900 border border-zinc-700 text-xs text-white rounded-full pl-7 pr-3 py-1.5 focus:outline-none focus:border-brand-yellow" />
             <span class="absolute left-2.5 top-2 text-zinc-500 text-xs">🔍</span>
           </div>
@@ -274,12 +317,12 @@
         <table class="w-full text-left text-xs">
           <thead class="bg-zinc-900/90 sticky top-0 text-zinc-400 border-b border-zinc-800 z-10">
             <tr>
-              <th class="py-2.5 px-2 text-center w-12">嚴選</th>
+              <th class="py-2.5 px-2 text-center w-10">嚴選</th>
               <th class="py-2.5 px-3">餐廳名稱</th>
               <th class="py-2.5 px-2">地區</th>
+              <th class="py-2.5 px-2">場景</th>
               <th class="py-2.5 px-2">座標</th>
               <th class="py-2.5 px-2">點擊</th>
-              <th class="py-2.5 px-2">預算</th>
               <th class="py-2.5 px-3 text-right">操作</th>
             </tr>
           </thead>
@@ -436,7 +479,10 @@
     let adminList = [];
     let filterOnlyPicks = false;
     let filterMissingCoords = false;
+    let filterBrokenImages = false;
     let globalClicksMap = {};
+    let brokenImagesMap = {};
+    let brokenIdSet = new Set();
     let lastExtractedAddress = '';
     let lastInjectedTitle = '';
     let hasUnsavedChanges = false;
@@ -562,6 +608,364 @@
       return null;
     }
 
+    function getItemSafeId(item, index = 0) {
+      const code = item.shortCode || extractShortcode(item.url) || '';
+      const postUrl = item.url || (code ? `https://www.instagram.com/reel/${code}/` : 'https://instagram.com/foodcafealcoholic');
+      const rawIdBase = String(item.id || code || postUrl || `rest_${index}`);
+      return rawIdBase.replace(/[^a-zA-Z0-9]/g, '') || `item_${index}`;
+    }
+
+    function autoInferOccasions(item) {
+      const rawOcc = String(item.occasion || '').trim();
+      const text = `${item.restaurant_name || ''} ${item.cuisine || ''} ${item.must_try || ''} ${item.caption || ''} ${rawOcc}`.toLowerCase();
+      const tags = new Set();
+
+      if (rawOcc.includes('拍拖') || rawOcc.includes('約會')) tags.add('拍拖約會');
+      if (rawOcc.includes('聚會')) tags.add('朋友聚會');
+      if (rawOcc.includes('打卡')) tags.add('打卡必到');
+      if (rawOcc.includes('深夜') || rawOcc.includes('宵夜')) tags.add('深夜食堂');
+      if (rawOcc.includes('寵物')) tags.add('寵物友善');
+
+      const priceNums = String(item.price || '').replace(/,/g, '').match(/\d+/g);
+      const avgPrice = priceNums && priceNums.length
+        ? priceNums.map(n => parseInt(n, 10)).filter(n => n > 15 && n < 50000).reduce((a, b, _, arr) => a + b / arr.length, 0)
+        : 0;
+
+      if (/omakase|廚師發辦|fine dining|bistro|牛扒|steak|法式|法國|意粉|pasta|海景|維港|情調|浪漫|燭光|生日|紀念日|約會|拍拖|西餐廳|staycation|jacuzzi/.test(text) || avgPrice >= 450) {
+        tags.add('拍拖約會');
+      }
+      if (/火鍋|打邊爐|放題|雞煲|燒肉|串燒|居酒屋|中菜|小炒|大牌檔|大排檔|pizza|薄餅|海鮮|蒸鍋|泰菜|泰國|越南|韓燒|自助餐|buffet|聚會|聚餐|多人|分享/.test(text)) {
+        tags.add('朋友聚會');
+      }
+      if (/cafe|咖啡|coffee|brunch|早午餐|甜品|蛋糕|烘焙|bakery|cake|croissant|牛角包|蛋撻|班戟|pancake|waffle|tea set|下午茶|打卡|網紅|露台|海景|裝修|格調/.test(text)) {
+        tags.add('打卡必到');
+      }
+      if (/深夜|宵夜|凌晨|酒吧|bar|cocktail|調酒|pub|lounge|speakeasy|串燒|居酒屋|清酒|糖水|拉麵|24小時|通宵/.test(text)) {
+        tags.add('深夜食堂');
+      }
+      if (/寵物友善|pet friendly|pet-friendly|帶狗|毛孩|狗狗|貓咪/.test(text)) {
+        tags.add('寵物友善');
+      }
+
+      if (tags.size === 0) {
+        tags.add('朋友聚會');
+      }
+      return Array.from(tags).slice(0, 3).join(' • ');
+    }
+
+    function batchAssignOccasions() {
+      if (adminList.length === 0) return;
+      if (!confirm(`即將根據菜式、預算與食評內文，為全部 ${adminList.length} 間餐廳自動分析並分配「🎉 場景」標籤（保留原有標籤並補齊漏網餐廳）。確定要執行嗎？`)) {
+        return;
+      }
+
+      let updatedCount = 0;
+      adminList.forEach(item => {
+        const nextOccasion = autoInferOccasions(item);
+        if (nextOccasion !== item.occasion) {
+          item.occasion = nextOccasion;
+          updatedCount++;
+        }
+      });
+
+      if (updatedCount > 0) markUnsaved(true);
+      renderTable();
+      alert(`🎉 場景分配完成！共更新了 ${updatedCount} 間餐廳的場景分類。\n\n記得按右上角「🚀 一鍵自動同步到網站」將結果存回 CSV！`);
+    }
+
+    function syncBrokenIdsFromFirebase() {
+      brokenIdSet.clear();
+      if (!brokenImagesMap || typeof brokenImagesMap !== 'object') {
+        renderBrokenAlertBanner();
+        return;
+      }
+      Object.values(brokenImagesMap).forEach(entry => {
+        if (!entry) return;
+        const safeId = String(entry.id || '').replace(/[^a-zA-Z0-9]/g, '');
+        if (safeId) brokenIdSet.add(safeId);
+      });
+      renderBrokenAlertBanner();
+      renderTable();
+    }
+
+    function renderBrokenAlertBanner() {
+      const banner = document.getElementById('brokenImageAlertBanner');
+      const countEl = document.getElementById('brokenBannerCount');
+      const pillsEl = document.getElementById('brokenAlertPills');
+      const badgeEl = document.getElementById('brokenTableBadge');
+
+      const brokenRows = adminList
+        .map((item, idx) => ({ item, idx, safeId: getItemSafeId(item, idx) }))
+        .filter(({ safeId }) => brokenIdSet.has(safeId));
+
+      if (badgeEl) badgeEl.innerText = brokenRows.length;
+
+      if (!banner || !countEl || !pillsEl) return;
+      if (brokenRows.length === 0) {
+        banner.classList.add('hidden');
+        pillsEl.innerHTML = '';
+        return;
+      }
+
+      countEl.innerText = brokenRows.length;
+      banner.classList.remove('hidden');
+      pillsEl.innerHTML = brokenRows.slice(0, 25).map(({ item, idx }) => `
+        <button type="button" onclick="editItem(${idx})"
+                class="bg-red-900/60 hover:bg-brand-yellow text-red-100 hover:text-black border border-red-400/50 hover:border-brand-yellow px-2.5 py-1 rounded-full font-bold transition">
+          📷 ${escapeHtml(item.restaurant_name || '未命名')} (點此補圖)
+        </button>
+      `).join('') + (brokenRows.length > 25 ? `<span class="text-zinc-400 self-center ml-1">⋯ 還有 ${brokenRows.length - 25} 間</span>` : '');
+    }
+
+    function testImageUrl(url) {
+      return new Promise(resolve => {
+        if (!url) { resolve(false); return; }
+        const img = new Image();
+        let done = false;
+        const finish = (ok) => {
+          if (done) return;
+          done = true;
+          resolve(ok);
+        };
+        const timer = setTimeout(() => finish(false), 6500);
+        img.onload = () => { clearTimeout(timer); finish(true); };
+        img.onerror = () => { clearTimeout(timer); finish(false); };
+        img.referrerPolicy = 'no-referrer';
+        img.src = url;
+      });
+    }
+
+    async function scanAllImages() {
+      if (adminList.length === 0) return;
+      const btn = document.getElementById('btnScanImages');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = '⏳ 掃描中 0%';
+      }
+
+      let repairedCount = 0;
+      let brokenCount = 0;
+      const batchSize = 15;
+
+      for (let i = 0; i < adminList.length; i += batchSize) {
+        const batch = adminList.slice(i, i + batchSize);
+        await Promise.all(batch.map(async (item, offset) => {
+          const idx = i + offset;
+          const safeId = getItemSafeId(item, idx);
+          const code = item.shortCode || extractShortcode(item.url);
+          const localPath = code ? `images/${code}.jpg` : '';
+          const curUrl = item.displayUrl || localPath;
+
+          let ok = await testImageUrl(curUrl);
+          if (!ok && localPath && curUrl !== localPath) {
+            const localOk = await testImageUrl(localPath);
+            if (localOk) {
+              adminList[idx].displayUrl = localPath;
+              repairedCount++;
+              markUnsaved(true);
+              ok = true;
+            }
+          }
+
+          if (ok) {
+            brokenIdSet.delete(safeId);
+          } else {
+            brokenIdSet.add(safeId);
+            brokenCount++;
+          }
+        }));
+
+        if (btn) {
+          const pct = Math.min(100, Math.round(((i + batch.length) / adminList.length) * 100));
+          btn.innerText = `⏳ 掃描中 ${pct}%`;
+        }
+      }
+
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = '🔍 掃描壞圖';
+      }
+
+      renderBrokenAlertBanner();
+      renderTable();
+
+      alert(`🖼️ 全站圖片掃描完成！\n\n✅ 自動修復本地路徑：${repairedCount} 間\n🚨 確認圖片失效：${brokenCount} 間\n\n${brokenCount > 0 ? '失效項目已列於上方紅色橫幅，你可以點擊餐廳名直接補傳圖片，或按「🤖 重設路徑並準備觸發抓圖」！' : '全部餐廳封面都正常顯示！'}`);
+    }
+
+    function resetBrokenDisplayUrls() {
+      if (brokenIdSet.size === 0) return;
+      let count = 0;
+      adminList.forEach((item, idx) => {
+        const safeId = getItemSafeId(item, idx);
+        if (brokenIdSet.has(safeId)) {
+          const code = item.shortCode || extractShortcode(item.url);
+          if (code) {
+            item.displayUrl = `images/${code}.jpg`;
+            count++;
+          }
+        }
+      });
+      if (count > 0) markUnsaved(true);
+      renderTable();
+      alert(`已將 ${count} 間壞圖餐廳的封面路徑重設為 images/{shortCode}.jpg。\n\n現在請按右上角「🚀 一鍵自動同步到網站」，即可觸發 GitHub 自動抓圖機器人重新抓取！`);
+    }
+
+    function clearBrokenImageAlerts() {
+      if (!confirm('確定要清除目前全部壞圖警報紀錄嗎？（若圖片仍失效，前台瀏覽時仍會自動隱藏並再次上報）')) return;
+      brokenIdSet.clear();
+      brokenImagesMap = {};
+      if (rtdb) {
+        rtdb.ref('broken_images').remove().catch(() => {});
+      }
+      renderBrokenAlertBanner();
+      renderTable();
+    }
+
+    function toggleBrokenImagesFilter() {
+      filterBrokenImages = !filterBrokenImages;
+      const btn = document.getElementById('filterBrokenImgBtn');
+      if (filterBrokenImages) {
+        btn.classList.add('bg-red-500', 'text-white', 'border-red-500', 'font-bold');
+        btn.classList.remove('bg-zinc-900', 'text-zinc-300');
+      } else {
+        btn.classList.remove('bg-red-500', 'text-white', 'border-red-500', 'font-bold');
+        btn.classList.add('bg-zinc-900', 'text-zinc-300');
+      }
+      renderTable();
+    }
+
+    function compressImageToJpegBase64(file, maxWidth = 900, quality = 0.86) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('讀取圖片失敗'));
+        reader.onload = (evt) => {
+          const img = new Image();
+          img.onerror = () => reject(new Error('不支援的圖片格式'));
+          img.onload = () => {
+            let w = img.width;
+            let h = img.height;
+            if (w > maxWidth) {
+              h = Math.round((h * maxWidth) / w);
+              w = maxWidth;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            const base64 = dataUrl.split(',')[1];
+            resolve({ dataUrl, base64 });
+          };
+          img.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleDirectCoverUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+
+      const cfg = loadConfig();
+      if (!cfg.owner || !cfg.repo || !cfg.token) {
+        alert('請先點擊右上角「⚙️ 系統與 API 設定」填寫 GitHub 帳號、Repo 與 Token，才能直接上傳封面圖！');
+        openConfigModal();
+        return;
+      }
+
+      let code = document.getElementById('shortCode').value.trim() || extractShortcode(document.getElementById('url').value.trim());
+      if (!code) {
+        code = prompt('目前沒有 IG ShortCode，請輸入圖片檔名代號（例如餐廳英文代號）：');
+        if (!code || !code.trim()) return;
+        code = code.trim().replace(/[^a-zA-Z0-9_-]/g, '');
+        document.getElementById('shortCode').value = code;
+      }
+
+      const btn = document.getElementById('btnDirectCoverUpload');
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerText = '⏳ 正在壓縮並上傳圖片至 GitHub...';
+
+      try {
+        const { dataUrl, base64 } = await compressImageToJpegBase64(file);
+        const targetPath = `images/${code}.jpg`;
+        const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${targetPath}`;
+
+        const getRes = await fetch(`${apiUrl}?ref=${cfg.branch}`, {
+          headers: {
+            'Authorization': `Bearer ${cfg.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        let sha = null;
+        if (getRes.ok) {
+          const existing = await getRes.json();
+          sha = existing.sha;
+        } else if (getRes.status !== 404) {
+          const errInfo = await getRes.json().catch(() => ({}));
+          throw new Error(errInfo.message || `檢查遠端圖片失敗 (HTTP ${getRes.status})`);
+        }
+
+        const payload = {
+          message: `Upload cover ${targetPath} via FCA Admin`,
+          content: base64,
+          branch: cfg.branch
+        };
+        if (sha) payload.sha = sha;
+
+        const putRes = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${cfg.token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!putRes.ok) {
+          const errData = await putRes.json().catch(() => ({}));
+          throw new Error(errData.message || `上傳圖片失敗 (HTTP ${putRes.status})`);
+        }
+
+        document.getElementById('displayUrl').value = targetPath;
+        const thumb = document.getElementById('imagePreviewThumb');
+        const status = document.getElementById('imagePreviewStatus');
+        const urlText = document.getElementById('imagePreviewUrlText');
+        if (thumb) {
+          delete thumb.dataset.isFallback;
+          thumb.src = dataUrl;
+        }
+        if (status) {
+          status.innerText = '✅ 已成功上傳至 GitHub（約 1 分鐘後前台生效）';
+          status.className = 'text-emerald-400 font-bold';
+        }
+        if (urlText) urlText.innerText = targetPath;
+
+        const editIdx = parseInt(document.getElementById('editIndex').value, 10);
+        if (editIdx >= 0 && adminList[editIdx]) {
+          adminList[editIdx].displayUrl = targetPath;
+          adminList[editIdx].shortCode = code;
+          const safeId = getItemSafeId(adminList[editIdx], editIdx);
+          brokenIdSet.delete(safeId);
+          if (rtdb) rtdb.ref('broken_images/' + safeId).remove().catch(() => {});
+          markUnsaved(true);
+          renderBrokenAlertBanner();
+          renderTable();
+        }
+
+        alert(`🎉 圖片已成功上傳為 ${targetPath}！\n若此餐廳原本的 CSV 欄位為舊 CDN 網址，請順手按「儲存修改」＋「🚀 一鍵自動同步到網站」。`);
+      } catch (err) {
+        alert('❌ 補傳圖片失敗: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    }
+
     function switchAdminView(viewName) {
       const manageEl = document.getElementById('manageView');
       const analyticsEl = document.getElementById('analyticsView');
@@ -598,10 +1002,7 @@
     }
 
     function getItemClickCount(item, index) {
-      const code = item.shortCode || extractShortcode(item.url) || '';
-      const postUrl = item.url || (code ? `https://www.instagram.com/reel/${code}/` : 'https://instagram.com/foodcafealcoholic');
-      const rawIdBase = String(item.id || code || postUrl || `rest_${index}`);
-      const safeId = rawIdBase.replace(/[^a-zA-Z0-9]/g, '') || `item_${index}`;
+      const safeId = getItemSafeId(item, index);
       return Number(globalClicksMap[safeId]) || 0;
     }
 
@@ -655,7 +1056,6 @@
         batchBtn.classList.toggle('hidden', missingItems.length === 0);
       }
 
-      // TOP 10 點擊排行
       const topListEl = document.getElementById('analyticsTopList');
       if (topListEl) {
         const top10 = [...enriched].sort((a, b) => b.clicks - a.clicks).slice(0, 10);
@@ -679,7 +1079,6 @@
         }
       }
 
-      // 地區分佈
       const distListEl = document.getElementById('analyticsDistrictList');
       if (distListEl) {
         const sortedDist = Object.entries(districtStats)
@@ -705,7 +1104,6 @@
             }).join('');
       }
 
-      // 菜式分佈
       const cuisListEl = document.getElementById('analyticsCuisineList');
       if (cuisListEl) {
         const sortedCuis = Object.entries(cuisineStats)
@@ -731,7 +1129,6 @@
             }).join('');
       }
 
-      // 缺漏 / 異常座標清單（異常座標排在最前）
       const missingListEl = document.getElementById('analyticsMissingCoordsList');
       if (missingListEl) {
         if (missingItems.length === 0) {
@@ -832,6 +1229,11 @@
             renderAnalytics();
           }
         }).catch(() => {});
+
+        rtdb.ref('broken_images').on('value', snapshot => {
+          brokenImagesMap = snapshot.val() || {};
+          syncBrokenIdsFromFirebase();
+        });
       }
 
       fetch(`${CSV_FILENAME}?t=` + Date.now())
@@ -865,6 +1267,7 @@
               csvLoadedSuccessfully = true;
               loadedRemoteRowCount = adminList.length;
               markUnsaved(false);
+              renderBrokenAlertBanner();
               renderTable();
               if (!document.getElementById('analyticsView').classList.contains('hidden')) {
                 renderAnalytics();
@@ -927,7 +1330,11 @@
       const totalPicks = adminList.filter(item => item.is_editor_pick === '1').length;
       if (picksCountEl) picksCountEl.innerText = `${totalPicks} 間`;
 
-      let filtered = adminList.map((item, originalIndex) => ({ item, originalIndex }));
+      let filtered = adminList.map((item, originalIndex) => ({
+        item,
+        originalIndex,
+        safeId: getItemSafeId(item, originalIndex)
+      }));
       
       if (filterOnlyPicks) {
         filtered = filtered.filter(({ item }) => item.is_editor_pick === '1');
@@ -937,11 +1344,16 @@
         filtered = filtered.filter(({ item }) => getCoordStatus(item) !== 'ok');
       }
 
+      if (filterBrokenImages) {
+        filtered = filtered.filter(({ safeId }) => brokenIdSet.has(safeId));
+      }
+
       if (query) {
         filtered = filtered.filter(({ item }) => {
           return (item.restaurant_name || '').toLowerCase().includes(query) ||
                  (item.district || '').toLowerCase().includes(query) ||
-                 (item.cuisine || '').toLowerCase().includes(query);
+                 (item.cuisine || '').toLowerCase().includes(query) ||
+                 (item.occasion || '').toLowerCase().includes(query);
         });
       }
 
@@ -952,23 +1364,24 @@
         return;
       }
 
-      tbody.innerHTML = filtered.map(({ item, originalIndex }) => {
+      tbody.innerHTML = filtered.map(({ item, originalIndex, safeId }) => {
         const isPick = item.is_editor_pick === '1';
+        const isBrokenImg = brokenIdSet.has(safeId);
         const coordStatus = getCoordStatus(item);
         const views = getItemClickCount(item, originalIndex);
         const safeName = escapeHtml(item.restaurant_name || '未命名');
         const safeDistrict = escapeHtml(item.district || '-');
-        const safePrice = escapeHtml(item.price || '-');
+        const safeOccasion = escapeHtml(item.occasion || '-');
 
         let coordHtml = '<span class="text-zinc-500 font-mono">預設</span>';
         if (coordStatus === 'ok') {
           coordHtml = '<span class="text-emerald-400 font-mono">✓ 已定位</span>';
         } else if (coordStatus === 'abnormal') {
-          coordHtml = `<span class="text-red-400 font-mono font-bold" title="現存座標 (${escapeHtml(item.lat)}, ${escapeHtml(item.lng)}) 與地區不符">⚠️ 座標異常</span>`;
+          coordHtml = `<span class="text-red-400 font-mono font-bold" title="現存座標 (${escapeHtml(item.lat)}, ${escapeHtml(item.lng)}) 與地區不符">⚠️ 異常</span>`;
         }
 
         return `
-          <tr class="hover:bg-zinc-900/60 transition ${isPick ? 'bg-brand-yellow/5' : ''}">
+          <tr class="hover:bg-zinc-900/60 transition ${isBrokenImg ? 'bg-red-950/30' : (isPick ? 'bg-brand-yellow/5' : '')}">
             <td class="py-2.5 px-2 text-center">
               <button type="button" onclick="toggleEditorPickInTable(${originalIndex})" title="點擊切換嚴選狀態" class="text-base transition transform hover:scale-125 focus:outline-none">
                 <span class="${isPick ? 'text-brand-yellow drop-shadow font-bold' : 'text-zinc-600 hover:text-zinc-400'}">
@@ -976,16 +1389,17 @@
                 </span>
               </button>
             </td>
-            <td class="py-2.5 px-3 font-bold text-white max-w-[160px] truncate" title="${safeName}">
+            <td class="py-2.5 px-3 font-bold text-white max-w-[155px] truncate" title="${safeName}">
               <div class="flex items-center gap-1.5">
                 <span class="truncate">${safeName}</span>
+                ${isBrokenImg ? '<span class="text-[9px] bg-red-500/20 text-red-400 border border-red-500/40 px-1 py-0.2 rounded font-bold shrink-0">壞圖</span>' : ''}
                 ${isPick ? '<span class="text-[9px] bg-brand-yellow text-black px-1.5 py-0.2 rounded font-black shrink-0">嚴選</span>' : ''}
               </div>
             </td>
-            <td class="py-2.5 px-2 text-zinc-300">${safeDistrict}</td>
-            <td class="py-2.5 px-2 text-[10px]">${coordHtml}</td>
-            <td class="py-2.5 px-2 text-zinc-400 font-mono text-[11px]">🔥 ${views}</td>
-            <td class="py-2.5 px-2 text-brand-yellow font-medium">${safePrice}</td>
+            <td class="py-2.5 px-2 text-zinc-300 max-w-[85px] truncate">${safeDistrict}</td>
+            <td class="py-2.5 px-2 text-zinc-400 max-w-[115px] truncate" title="${safeOccasion}">${safeOccasion}</td>
+            <td class="py-2.5 px-2 text-[10px] whitespace-nowrap">${coordHtml}</td>
+            <td class="py-2.5 px-2 text-zinc-400 font-mono text-[11px] whitespace-nowrap">🔥 ${views}</td>
             <td class="py-2.5 px-3 text-right space-x-2 whitespace-nowrap">
               <button onclick="editItem(${originalIndex})" class="text-brand-yellow hover:underline font-bold">編輯</button>
               <button onclick="deleteItem(${originalIndex})" class="text-red-400 hover:underline">刪除</button>
@@ -1010,8 +1424,8 @@
       img.dataset.isFallback = '1';
       const status = document.getElementById('imagePreviewStatus');
       if (status) {
-        status.innerText = '🤖 新貼文：同步後將由 GitHub 機器人自動抓取封面';
-        status.className = 'text-emerald-400 font-bold';
+        status.innerText = '⚠️ 圖片載入失敗（同步將由機器人抓取，或點擊下方直接補傳）';
+        status.className = 'text-amber-400 font-bold';
       }
       if (!img.src.endsWith('logo.jpg')) {
         img.src = 'logo.jpg';
@@ -1019,16 +1433,21 @@
     }
 
     function updateImagePreview(url) {
-      const box = document.getElementById('imagePreviewBox');
       const thumb = document.getElementById('imagePreviewThumb');
       const text = document.getElementById('imagePreviewUrlText');
-      if (url && (url.startsWith('http') || url.startsWith('images/'))) {
+      const status = document.getElementById('imagePreviewStatus');
+      if (url && (url.startsWith('http') || url.startsWith('images/') || url.startsWith('data:'))) {
         delete thumb.dataset.isFallback;
         thumb.src = url;
-        text.innerText = url;
-        box.classList.remove('hidden');
+        text.innerText = url.startsWith('data:') ? '本地已上傳圖片' : url;
       } else {
-        box.classList.add('hidden');
+        thumb.dataset.isFallback = '1';
+        thumb.src = 'logo.jpg';
+        if (status) {
+          status.innerText = '🖼️ 封面圖片預覽';
+          status.className = 'text-zinc-400 font-bold';
+        }
+        text.innerText = '尚未設定圖片路徑';
       }
     }
 
@@ -1346,7 +1765,7 @@
   "address": "詳細地址或商場名稱 (例如：太古城中心二期中庭、尖沙咀海港城，若內文沒有則留空字串)",
   "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋)",
   "price": "人均價格預算 (格式如：100-200 或 400-600，只填數字範圍)",
-  "occasion": "適合場景 (例如：拍拖約會、朋友聚會、深夜食堂、打卡必到)",
+  "occasion": "請嚴格從這5個詞中選出1至3個最適合的場景，用「 • 」分隔：拍拖約會、朋友聚會、打卡必到、深夜食堂、寵物友善",
   "must_try": "招牌菜式或必食推介 (精選 1-3 個重點菜名，用頓號、分開)"
 }
 
@@ -1468,6 +1887,10 @@ ${textToAnalyze}`;
         lng: document.getElementById('lng').value.trim()
       };
 
+      if (!itemData.occasion) {
+        itemData.occasion = autoInferOccasions(itemData);
+      }
+
       if (editIdx >= 0 && editIdx < adminList.length) {
         adminList[editIdx] = { ...adminList[editIdx], ...itemData };
         markUnsaved(true);
@@ -1524,6 +1947,7 @@ ${textToAnalyze}`;
       if (confirm(`確定要刪除《${item.restaurant_name}》嗎？`)) {
         adminList.splice(index, 1);
         markUnsaved(true);
+        renderBrokenAlertBanner();
         renderTable();
       }
     }
@@ -1537,7 +1961,7 @@ ${textToAnalyze}`;
       document.getElementById('formTitle').innerHTML = `<span class="text-brand-yellow">✨</span> 新增餐廳食評`;
       document.getElementById('submitBtn').innerText = '暫存至列表';
       document.getElementById('cancelEditBtn').classList.add('hidden');
-      document.getElementById('imagePreviewBox').classList.add('hidden');
+      updateImagePreview('');
       document.getElementById('geocodeMatchedAddress').classList.add('hidden');
       document.getElementById('duplicatePostNotice')?.classList.add('hidden');
       const previewEl = document.getElementById('captionTitlePreview');

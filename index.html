@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
@@ -55,15 +54,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
-  
-  <script>
-    function onImageError(img) {
-      if (!img) return;
-      img.onerror = null;
-      img.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
-    }
-    window.onImageError = onImageError;
-  </script>
 
   <!-- Google Firebase Realtime Database SDK (相容模式) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -376,7 +366,7 @@
         <button onclick="setFilter('occasion', 'all', this)" class="filter-pill occasion-pill pill-active shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-bold text-zinc-200 hover:border-brand-yellow transition shadow-sm">全部</button>
         <button onclick="setFilter('occasion', '拍拖約會', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">💑 拍拖約會</button>
         <button onclick="setFilter('occasion', '聚會', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🍻 大班聚會</button>
-        <button onclick="setFilter('occasion', '打卡Cafe', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">📸 打卡必到</button>
+        <button onclick="setFilter('occasion', '打卡必到', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">📸 打卡必到</button>
         <button onclick="setFilter('occasion', '深夜食堂', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🌙 深夜食堂</button>
         <button onclick="setFilter('occasion', '寵物友善', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🐾 寵物友善</button>
       </div>
@@ -569,8 +559,7 @@
         <div class="lg:col-span-5 bg-black/60 border-b lg:border-b-0 lg:border-r border-brand-border p-4 flex flex-col justify-between">
           <div class="space-y-3">
             <div class="reel-container border border-zinc-800 flex items-center justify-center bg-zinc-950 relative">
-              <!-- 底層封面背景圖（IG Embed 載入中或被擋時提供美觀視覺預覽） -->
-              <img id="modalReelPoster" src="" alt="" onerror="onImageError(this)" class="absolute inset-0 w-full h-full object-cover opacity-30 blur-[1px] pointer-events-none" />
+              <img id="modalReelPoster" src="" alt="" data-fallback-only="1" onerror="onImageError(this)" class="absolute inset-0 w-full h-full object-cover opacity-30 blur-[1px] pointer-events-none" />
               <div id="modalReelLoadingHint" class="absolute inset-0 flex flex-col items-center justify-center text-center p-4 pointer-events-none z-0">
                 <span class="w-12 h-12 rounded-full bg-brand-yellow/90 text-black flex items-center justify-center font-black text-lg shadow-xl mb-2">▶</span>
                 <span class="text-xs text-zinc-200 font-bold bg-black/70 px-3 py-1 rounded-full">正在載入 IG 短片⋯</span>
@@ -716,7 +705,7 @@
           <option value="all">🎉 所有場景</option>
           <option value="拍拖約會">💑 拍拖約會</option>
           <option value="聚會">🍻 大班聚會</option>
-          <option value="打卡Cafe">📸 打卡必到</option>
+          <option value="打卡必到">📸 打卡必到</option>
           <option value="深夜食堂">🌙 深夜食堂</option>
           <option value="寵物友善">🐾 寵物友善</option>
         </select>
@@ -825,6 +814,7 @@
     let showAllNewArrivals = false;
     let lastRandomPickedId = null;
     let toastTimer = null;
+    const reportedBrokenIds = new Set();
 
     function escapeHtml(str) {
       return String(str ?? '')
@@ -834,6 +824,63 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
     }
+
+    function reportBrokenImageToManager(item, failedSrc) {
+      if (!item || !item.id || reportedBrokenIds.has(item.id)) return;
+      reportedBrokenIds.add(item.id);
+      if (rtdb) {
+        rtdb.ref('broken_images/' + item.id).set({
+          id: String(item.id),
+          shortCode: item.shortCode || '',
+          restaurant_name: item.restaurant_name || '',
+          district: item.district || '',
+          url: item.url || '',
+          failed_src: failedSrc || '',
+          reported_at: Date.now()
+        }).catch(() => {});
+      }
+    }
+
+    function onImageError(img) {
+      if (!img) return;
+      const fallbackOnly = img.getAttribute('data-fallback-only') === '1';
+      const restId = img.getAttribute('data-rest-id') || (img.closest('[data-rest-id]') && img.closest('[data-rest-id]').getAttribute('data-rest-id'));
+      const item = restId ? restaurants.find(r => String(r.id) === String(restId)) : null;
+
+      // 1. 若尚未嘗試過本地 images/{shortCode}.jpg，優先補救嘗試本地封面圖
+      if (item && img.dataset.triedLocal !== '1') {
+        const code = item.shortCode || extractShortcode(item.url);
+        if (code) {
+          const localPath = `images/${code}.jpg`;
+          const curSrc = img.getAttribute('src') || '';
+          if (!curSrc.includes(localPath)) {
+            img.dataset.triedLocal = '1';
+            img.src = localPath;
+            return;
+          }
+        }
+      }
+
+      img.onerror = null;
+
+      // 2. 預覽背景圖或地圖釘僅套用替代圖
+      if (fallbackOnly || img.dataset.pinImg === '1') {
+        img.src = item ? getCuisineImage(item.cuisine) : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&q=80';
+        return;
+      }
+
+      // 3. 主卡片圖片真壞圖：在前台自動隱藏並上報 Firebase 通報後台管理員
+      const failedSrc = img.getAttribute('src') || '';
+      if (item) {
+        item._brokenImage = true;
+        reportBrokenImageToManager(item, failedSrc);
+      }
+      const card = img.closest('[data-rest-id]');
+      if (card) {
+        card.classList.add('hidden');
+      }
+    }
+    window.onImageError = onImageError;
 
     function showToast(message, duration = 2400) {
       const toast = document.getElementById('fcaToast');
@@ -1077,6 +1124,44 @@
       '快餐': ['快餐', '街頭小食', '小食', '漢堡', 'burger', '車仔麵', '茶餐廳', '冰室', '米線', '魚蛋', '燒賣', '三文治', '熱狗', '炸雞']
     };
 
+    function autoInferOccasions(item) {
+      const rawOcc = String(item.occasion || '').trim();
+      const text = `${item.restaurant_name || ''} ${item.cuisine || ''} ${item.must_try || ''} ${item.caption || ''} ${rawOcc}`.toLowerCase();
+      const tags = new Set();
+
+      if (rawOcc.includes('拍拖') || rawOcc.includes('約會')) tags.add('拍拖約會');
+      if (rawOcc.includes('聚會')) tags.add('朋友聚會');
+      if (rawOcc.includes('打卡')) tags.add('打卡必到');
+      if (rawOcc.includes('深夜') || rawOcc.includes('宵夜')) tags.add('深夜食堂');
+      if (rawOcc.includes('寵物')) tags.add('寵物友善');
+
+      const priceNums = String(item.price || '').replace(/,/g, '').match(/\d+/g);
+      const avgPrice = priceNums && priceNums.length
+        ? priceNums.map(n => parseInt(n, 10)).filter(n => n > 15 && n < 50000).reduce((a, b, _, arr) => a + b / arr.length, 0)
+        : 0;
+
+      if (/omakase|廚師發辦|fine dining|bistro|牛扒|steak|法式|法國|意粉|pasta|海景|維港|情調|浪漫|燭光|生日|紀念日|約會|拍拖|西餐廳|staycation|jacuzzi/.test(text) || avgPrice >= 450) {
+        tags.add('拍拖約會');
+      }
+      if (/火鍋|打邊爐|放題|雞煲|燒肉|串燒|居酒屋|中菜|小炒|大牌檔|大排檔|pizza|薄餅|海鮮|蒸鍋|泰菜|泰國|越南|韓燒|自助餐|buffet|聚會|聚餐|多人|分享/.test(text)) {
+        tags.add('朋友聚會');
+      }
+      if (/cafe|咖啡|coffee|brunch|早午餐|甜品|蛋糕|烘焙|bakery|cake|croissant|牛角包|蛋撻|班戟|pancake|waffle|tea set|下午茶|打卡|網紅|露台|海景|裝修|格調/.test(text)) {
+        tags.add('打卡必到');
+      }
+      if (/深夜|宵夜|凌晨|酒吧|bar|cocktail|調酒|pub|lounge|speakeasy|串燒|居酒屋|清酒|糖水|拉麵|24小時|通宵/.test(text)) {
+        tags.add('深夜食堂');
+      }
+      if (/寵物友善|pet friendly|pet-friendly|帶狗|毛孩|狗狗|貓咪/.test(text)) {
+        tags.add('寵物友善');
+      }
+
+      if (tags.size === 0) {
+        tags.add('朋友聚會');
+      }
+      return Array.from(tags).slice(0, 3).join(' • ');
+    }
+
     function getDistrictExpectedScope(districtStr) {
       const d = String(districtStr || '').trim().toLowerCase();
       if (!d || d === '香港' || d === 'hong kong' || d === '未知') return 'unknown';
@@ -1193,6 +1278,7 @@
           
           <div class="relative w-full aspect-[4/5] bg-zinc-950 overflow-hidden">
             <img src="${escapeHtml(img)}" alt="${safeName}" 
+                 data-rest-id="${safeId}"
                  loading="lazy" decoding="async"
                  onerror="onImageError(this)" 
                  class="food-card-img w-full h-full object-cover object-center transition-transform duration-500 ease-out" />
@@ -1240,11 +1326,11 @@
 
           <div class="p-3.5 flex flex-col justify-between flex-grow space-y-2 bg-brand-surface">
             <div>
-              <div class="flex items-center justify-between mb-1">
-                <h4 class="font-extrabold text-sm text-zinc-200 group-hover:text-brand-yellow transition truncate max-w-[150px]">
+              <div class="flex items-center justify-between gap-1.5 mb-1">
+                <h4 class="font-extrabold text-sm text-zinc-200 group-hover:text-brand-yellow transition truncate">
                   ${safeName}
                 </h4>
-                ${safeOccasion ? `<span class="text-[10px] text-zinc-400 bg-zinc-800 border border-zinc-700/60 px-1.5 py-0.5 rounded shrink-0">${safeOccasion}</span>` : ''}
+                ${safeOccasion ? `<span class="text-[10px] text-zinc-400 bg-zinc-800 border border-zinc-700/60 px-1.5 py-0.5 rounded shrink-0 max-w-[110px] truncate" title="${safeOccasion}">${safeOccasion}</span>` : ''}
               </div>
             </div>
 
@@ -1312,7 +1398,11 @@
 
       const posterEl = document.getElementById('modalReelPoster');
       const loadingHintEl = document.getElementById('modalReelLoadingHint');
-      if (posterEl) posterEl.src = getReelThumbnail(item);
+      if (posterEl) {
+        posterEl.setAttribute('data-rest-id', safeId);
+        delete posterEl.dataset.triedLocal;
+        posterEl.src = getReelThumbnail(item);
+      }
       if (loadingHintEl) loadingHintEl.classList.remove('hidden');
 
       const directVideo = document.getElementById('modalDirectVideo');
@@ -1385,7 +1475,7 @@
     }
 
     function pickRandomRestaurant() {
-      const pool = restaurants.filter(item => matchRestaurantByFilters(item, filters));
+      const pool = restaurants.filter(item => !item._brokenImage && matchRestaurantByFilters(item, filters));
       if (pool.length === 0) {
         showToast('⚠️ 目前篩選條件沒有餐廳，試下重設篩選！');
         return;
@@ -1516,6 +1606,8 @@
     ];
 
     function matchRestaurantByFilters(item, fObj) {
+      if (item._brokenImage) return false;
+
       if (fObj.search) {
         const s = fObj.search.toLowerCase().trim();
         const cleanItemDist = String(item.district || '').toLowerCase();
@@ -1556,7 +1648,12 @@
 
       if (fObj.occasion && fObj.occasion !== 'all') {
         const occTerm = fObj.occasion;
-        const matchOcc = (item.occasion || '').includes(occTerm) || (item.caption || '').includes(occTerm);
+        const occText = String(item.occasion || '');
+        const capText = String(item.caption || '');
+        let occKeywords = [occTerm];
+        if (occTerm === '打卡必到' || occTerm === '打卡Cafe') occKeywords = ['打卡必到', '打卡Cafe', '打卡'];
+        else if (occTerm === '聚會') occKeywords = ['聚會', '朋友聚會', '大班聚會'];
+        const matchOcc = occKeywords.some(k => occText.includes(k) || capText.includes(k));
         if (!matchOcc) return false;
       }
 
@@ -1589,6 +1686,8 @@
       updateFavBadge();
       updateMobileFilterBadge();
 
+      const validRestaurants = restaurants.filter(r => !r._brokenImage);
+
       const isFiltering = Boolean(
         filters.search || 
         filters.region !== 'all' || 
@@ -1601,10 +1700,10 @@
       const notice = document.getElementById('activeFilterNotice');
       if (notice) notice.classList.toggle('hidden', !isFiltering);
 
-      const filtered = restaurants.filter(item => matchRestaurantByFilters(item, filters));
+      const filtered = validRestaurants.filter(item => matchRestaurantByFilters(item, filters));
 
       const totalEl = document.getElementById('totalCount');
-      if (totalEl) totalEl.innerText = isFiltering ? filtered.length : restaurants.length;
+      if (totalEl) totalEl.innerText = isFiltering ? filtered.length : validRestaurants.length;
 
       const filteredSec = document.getElementById('filtered-section');
       const filteredGrid = document.getElementById('filteredGrid');
@@ -1639,27 +1738,27 @@
         if (editorSec) editorSec.classList.remove('hidden');
         if (newSec) newSec.classList.remove('hidden');
 
-        const top10 = [...restaurants].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
+        const top10 = [...validRestaurants].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
         const railLeader = document.getElementById('railLeaderboard');
         if (railLeader) railLeader.innerHTML = top10.map((item, idx) => createCard(item, idx, `#${idx + 1}`)).join('');
 
-        const editorPicks = restaurants.filter(r => r.isEditorPick);
+        const editorPicks = validRestaurants.filter(r => r.isEditorPick);
         const railEditor = document.getElementById('railEditor');
         if (railEditor) railEditor.innerHTML = editorPicks.map((item, idx) => createCard(item, idx)).join('');
 
         const railNew = document.getElementById('railNew');
         if (railNew) {
           const initialLimit = 40;
-          const visibleItems = showAllNewArrivals ? restaurants : restaurants.slice(0, initialLimit);
+          const visibleItems = showAllNewArrivals ? validRestaurants : validRestaurants.slice(0, initialLimit);
           let newHtml = visibleItems.map((item, idx) => createCard(item, idx)).join('');
-          if (!showAllNewArrivals && restaurants.length > initialLimit) {
+          if (!showAllNewArrivals && validRestaurants.length > initialLimit) {
             newHtml += `
               <div onclick="expandAllNewArrivals()"
                    class="flex-none w-52 sm:w-56 bg-zinc-900/90 hover:bg-zinc-800 border-2 border-dashed border-brand-yellow/60 hover:border-brand-yellow rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition group space-y-3">
                 <span class="w-12 h-12 rounded-full bg-brand-yellow text-black font-black text-xl flex items-center justify-center group-hover:scale-110 transition shadow-lg">＋</span>
                 <div>
                   <p class="text-white font-black text-sm">查看全部食評</p>
-                  <p class="text-brand-yellow font-bold text-xs mt-1">還有 ${restaurants.length - initialLimit} 間餐廳 →</p>
+                  <p class="text-brand-yellow font-bold text-xs mt-1">還有 ${validRestaurants.length - initialLimit} 間餐廳 →</p>
                 </div>
               </div>`;
           }
@@ -1811,12 +1910,16 @@
             restaurant_name: r.restaurant_name,
             district: distStr,
             cuisine: cuisineStr,
+            price: r.price || '',
+            occasion: r.occasion || '',
+            must_try: r.must_try || r.signature_dishes || '招牌菜式',
             caption: captionStr,
             lat: r.lat || '',
             lng: r.lng || ''
           };
 
           const inferredRegion = inferRegionFromItem(tempItem);
+          const enrichedOccasion = autoInferOccasions(tempItem);
 
           return {
             id: uniqueId,
@@ -1827,8 +1930,8 @@
             price: r.price || '',
             priceInfo: priceInfo,
             priceCategory: priceInfo.tier || 'all',
-            occasion: r.occasion || '聚會',
-            must_try: r.must_try || r.signature_dishes || '招牌菜式',
+            occasion: enrichedOccasion,
+            must_try: tempItem.must_try,
             isEditorPick: String(r.is_editor_pick).trim() === '1' || String(r.is_editor_pick).toLowerCase() === 'true',
             views: globalClicksMap[uniqueId] !== undefined ? globalClicksMap[uniqueId] : 0,
             caption: captionStr,
@@ -1838,7 +1941,8 @@
             displayUrl: rawImg,
             image: rawImg,
             lat: r.lat || '',
-            lng: r.lng || ''
+            lng: r.lng || '',
+            _brokenImage: false
           };
         });
 
@@ -1930,17 +2034,16 @@
     let fcaMap = null;
     let currentTileLayers = [];
     let currentMapStyle = 'blackgold';
-    let currentMapScope = 'hk'; // 'hk' (香港鎖定) 或 'overseas' (海外旅遊)
+    let currentMapScope = 'hk';
     let mapMarkersLayer = null;
     let mapMarkersById = {};
     let userMarker = null;
     let userLocation = null;
     let currentMapRadius = 'all';
 
-    // 香港地圖邊界鎖定（避免滑出香港或看到重複世界地圖）
     const HK_MAP_BOUNDS = [
-      [22.13, 113.80], // 西南角（大嶼山 / 南丫島）
-      [22.58, 114.45]  // 東北角（新界北 / 西貢）
+      [22.13, 113.80],
+      [22.58, 114.45]
     ];
 
     const WORLD_MAP_BOUNDS = [
@@ -2417,7 +2520,7 @@
 
         const photoPinIcon = L.divIcon({
           html: `<div class="food-photo-pin" title="${safeName}">
-                   <img src="${safeThumb}" alt="${safeName}" loading="lazy" decoding="async" onerror="onImageError(this)" />
+                   <img src="${safeThumb}" alt="${safeName}" data-rest-id="${safeId}" data-pin-img="1" loading="lazy" decoding="async" onerror="onImageError(this)" />
                  </div>`,
           className: '',
           iconSize: [48, 54],
@@ -2432,7 +2535,7 @@
         const popupHtml = `
           <div class="w-56 font-sans overflow-hidden">
             <div class="relative w-full h-28 rounded-lg overflow-hidden mb-2 bg-zinc-900">
-              <img src="${safeThumb}" alt="${safeName}" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-full h-full object-cover" />
+              <img src="${safeThumb}" alt="${safeName}" data-rest-id="${safeId}" data-pin-img="1" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-full h-full object-cover" />
               <div class="absolute bottom-1.5 left-1.5 flex items-center gap-1">
                 <span class="bg-black/85 text-white text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-700">📍 ${safeDistrict}</span>
                 ${distLabel}
@@ -2475,7 +2578,7 @@
           rail.innerHTML = enriched.slice(0, 30).map(item => `
             <div data-rest-id="${escapeHtml(item.id)}" onclick="focusPinAndPopup(this.getAttribute('data-rest-id'), ${item.coords.lat}, ${item.coords.lng})" 
                  class="flex-none w-52 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
-              <img src="${escapeHtml(getReelThumbnail(item))}" alt="${escapeHtml(item.restaurant_name)}" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
+              <img src="${escapeHtml(getReelThumbnail(item))}" alt="${escapeHtml(item.restaurant_name)}" data-rest-id="${escapeHtml(item.id)}" data-pin-img="1" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
               <div class="overflow-hidden">
                 <div class="flex items-center gap-1">
                   ${item.distKm !== null ? `<span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>` : ''}

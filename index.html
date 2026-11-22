@@ -632,7 +632,7 @@
         <div class="relative flex-1 min-w-[150px] sm:max-w-[220px]">
           <span class="absolute inset-y-0 left-2.5 flex items-center text-brand-yellow text-xs pointer-events-none">🔍</span>
           <input type="text" id="mapSearchInput" oninput="onMapFilterChange(true)"
-                 placeholder="搜尋店名 / 地區 (如跑馬地、台北)..."
+                 placeholder="搜尋店名 / 地區 (如跑馬地、澳門)..."
                  class="w-full bg-zinc-900 border border-zinc-700 focus:border-brand-yellow text-white placeholder-zinc-500 rounded-lg pl-7 pr-6 py-1.5 text-xs focus:outline-none" />
           <button type="button" onclick="clearMapSearch()" class="absolute inset-y-0 right-2 flex items-center text-zinc-500 hover:text-white text-[10px]">✕</button>
         </div>
@@ -733,12 +733,8 @@
   </footer>
 
   <script>
-    // ========================================================
-    // ⭐️ 1. MAPBOX API KEY (貼在這裡即可啟用原廠奢華黑金圖磚)
-    // ========================================================
     const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicmFrdXNoaW4xMjE2IiwiYSI6ImNtd2pneXJuZjAzOWoyeXEzeXVtOHZzdDUifQ.OLeTe5xwwWroEIrj0A5DLA';
 
-    // 專屬 Firebase 即時資料庫連線設定
     const firebaseConfig = {
       apiKey: "AIzaSyDpBXu84kqQKtsmICc5UQopqh7nJiZ7EQw",
       authDomain: "foodcafealcoholic.firebaseapp.com",
@@ -759,6 +755,7 @@
     } catch (e) {
       console.warn("Firebase 初始化提示:", e);
     }
+
     let restaurants = [];
     const FAVORITES_STORAGE_KEY = 'foodcafe_user_favorites_v2';
     const HISTORY_STORAGE_KEY = 'foodcafe_search_history_v1';
@@ -769,11 +766,11 @@
 
     function escapeHtml(str) {
       return String(str ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"')
+        .replace(/'/g, ''');
     }
 
     function loadSearchHistory() {
@@ -919,13 +916,25 @@
       return cuisineFallbacks['default'];
     }
 
-    // 判斷座標是否在香港境內
+    // 香港本土與離島座標範圍（不含澳門）
     function isInHongKong(lat, lng) {
-      return lat >= 22.13 && lat <= 22.58 && lng >= 113.80 && lng <= 114.45;
+      const nLat = Number(lat);
+      const nLng = Number(lng);
+      if (!Number.isFinite(nLat) || !Number.isFinite(nLng)) return true;
+      return nLat >= 22.13 && nLat <= 22.58 && nLng >= 113.80 && nLng <= 114.45;
     }
 
+    const OVERSEAS_KEYWORDS = [
+      '海外', '澳門', '氹仔', '路氹', '新馬路', '官也街', '威尼斯人', '永利', '美高梅', '銀河', 'macau',
+      '台北', '台灣', '台中', '台南', '高雄', 'taipei', 'taiwan',
+      '深圳', '廣州', '珠海', 'shenzhen',
+      '東京', '大阪', '京都', '橫濱', '福岡', '北海道', '沖繩', '日本', 'tokyo', 'osaka', 'kyoto', 'japan',
+      '首爾', '釜山', '韓國', 'seoul', 'korea',
+      '曼谷', '泰國', 'bangkok', 'thailand', '新加坡', 'singapore', '倫敦', '巴黎', '歐洲', 'overseas'
+    ];
+
     const REGION_MAP = {
-      '海外': ['海外', '台北', '台灣', '台中', '台南', '高雄', '澳門', '深圳', '廣州', '珠海', '東京', '大阪', '京都', '橫濱', '福岡', '北海道', '沖繩', '日本', '首爾', '釜山', '韓國', '曼谷', '泰國', '新加坡', '倫敦', '巴黎', '歐洲', 'overseas', 'taipei', 'taiwan', 'macau', 'shenzhen', 'tokyo', 'osaka', 'kyoto', 'japan', 'seoul', 'korea', 'bangkok', 'thailand', 'singapore'],
+      '海外': OVERSEAS_KEYWORDS,
       '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '大坑', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '石塘咀', '黃竹坑', '金鐘', '香港仔', '鴨脷洲', '海怡', '赤柱', '淺水灣', '薄扶林', '數碼港', '柴灣', '筲箕灣', '西灣河', '杏花邨', '山頂', '半山', '蘭桂坊', '蘇豪', 'soho', '大館', 'pmq', 'central', 'sheung wan', 'wan chai', 'causeway bay', 'happy valley', 'tin hau', 'fortress hill', 'north point', 'quarry bay', 'tai koo', 'sai wan', 'sai ying pun', 'kennedy town', 'wong chuk hang', 'admiralty', 'aberdeen', 'stanley', 'repulse bay', 'hong kong island'],
       '九龍': ['九龍', '尖沙咀', '尖東', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣', '牛頭角', '藍田', '油塘', '何文田', '土瓜灣', '九龍塘', '黃大仙', '鑽石山', '新蒲崗', '慈雲山', '彩虹', '樂富', '荔枝角', '美孚', '石硤尾', '南昌', '奧運', '西九龍', '柯士甸', '圓方', '海港城', '朗豪坊', '又一城', 'airside', 'k11', 'apm', 'megabox', 'd2 place', 'kowloon', 'tsim sha tsui', 'tst', 'jordan', 'yau ma tei', 'mong kok', 'prince edward', 'sham shui po', 'cheung sha wan', 'lai chi kok', 'tai kok tsui', 'olympic', 'hung hom', 'whampoa', 'kowloon city', 'kai tak', 'kwun tong', 'kowloon bay', 'ho man tin', 'to kwa wan', 'kowloon tong'],
       '新界': ['新界', '荃灣', '葵芳', '葵興', '葵涌', '青衣', '深井', '沙田', '大圍', '火炭', '馬鞍山', '烏溪沙', '元朗', '天水圍', '錦田', '屯門', '大埔', '太和', '粉嶺', '上水', '將軍澳', '坑口', '寶琳', '調景嶺', '康城', '西貢', '清水灣', '東涌', '機場', '大嶼山', '離島', '愉景灣', '長洲', '南丫島', '坪洲', '大澳', '馬灣', '南豐紗廠', '愉景新城', '新城市廣場', '圍方', 'yoho', 'new territories', 'tsuen wan', 'kwai fong', 'tsing yi', 'sha tin', 'tai wai', 'ma on shan', 'yuen long', 'tin shui wai', 'tuen mun', 'tai po', 'fanling', 'sheung shui', 'tseung kwan o', 'tko', 'sai kung', 'tung chung', 'lantau', 'discovery bay', 'cheung chau', 'lamma']
@@ -971,28 +980,36 @@
       '快餐': ['快餐', '街頭小食', '小食', '漢堡', 'burger', '車仔麵', '茶餐廳', '冰室', '米線', '魚蛋', '燒賣', '三文治', '熱狗', '炸雞']
     };
 
+    function hasOverseasKeyword(item) {
+      const text = `${item.district || ''} ${item.restaurant_name || ''}`.toLowerCase();
+      return OVERSEAS_KEYWORDS.some(kw => text.includes(kw.toLowerCase()));
+    }
+
     function inferRegionFromItem(item) {
       if (!item) return '其他';
-      // 1. 若有明確經緯度且在香港境外，直接歸類為海外
-      if (item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng))) {
-        if (!isInHongKong(parseFloat(item.lat), parseFloat(item.lng))) {
-          return '海外';
-        }
+      if (hasOverseasKeyword(item)) return '海外';
+
+      const lat = parseFloat(item.lat);
+      const lng = parseFloat(item.lng);
+      if (Number.isFinite(lat) && Number.isFinite(lng) && !isInHongKong(lat, lng)) {
+        return '海外';
       }
-      // 2. 依地區文字判斷
+
       const cleanDistrict = String(item.district || '').trim().toLowerCase();
       if (cleanDistrict && cleanDistrict !== '香港' && cleanDistrict !== 'hong kong' && cleanDistrict !== '未知') {
         for (const [region, keywords] of Object.entries(REGION_MAP)) {
+          if (region === '海外') continue;
           for (const kw of keywords) {
-            if (cleanDistrict.includes(kw)) return region;
+            if (cleanDistrict.includes(kw.toLowerCase())) return region;
           }
         }
       }
-      // 3. 若地區欄位過於籠統，嘗試從店名輔助判斷
+
       const cleanName = String(item.restaurant_name || '').toLowerCase();
       for (const [region, keywords] of Object.entries(REGION_MAP)) {
+        if (region === '海外') continue;
         for (const kw of keywords) {
-          if (cleanName.includes(kw)) return region;
+          if (cleanName.includes(kw.toLowerCase())) return region;
         }
       }
       return '其他';
@@ -1703,22 +1720,23 @@
     let fcaMap = null;
     let currentTileLayers = [];
     let currentMapStyle = 'blackgold';
-    let currentMapScope = 'hk'; // 'hk' (香港鎖定) 或 'overseas' (海外旅遊)
+    let currentMapScope = 'hk';
     let mapMarkersLayer = null;
     let mapMarkersById = {};
     let userMarker = null;
     let userLocation = null;
     let currentMapRadius = 'all';
 
-    // 香港地圖邊界鎖定（避免滑出香港或看到重複世界地圖）
+    // 香港本土與離島邊界鎖定
     const HK_MAP_BOUNDS = [
-      [22.13, 113.80], // 西南角（大嶼山 / 南丫島）
-      [22.58, 114.45]  // 東北角（新界北 / 西貢）
+      [22.13, 113.80],
+      [22.58, 114.45]
     ];
 
-    const WORLD_MAP_BOUNDS = [
-      [-85, -180],
-      [85, 180]
+    // 海外熱門旅遊區域合理邊界（避免縮小到整顆世界地圖與非洲/美洲重複）
+    const OVERSEAS_MAP_BOUNDS = [
+      [1.0, 99.0],
+      [45.0, 146.0]
     ];
 
     let mapFilters = {
@@ -1728,7 +1746,6 @@
       occasion: 'all'
     };
 
-    // 涵蓋全港超過 120+ 個微商圈、地鐵站、街區與代表性地標之精準座標表
     const DISTRICT_COORDS = {
       // 港島商圈
       '中環': [22.2819, 114.1581], '蘭桂坊': [22.2810, 114.1557], '蘇豪': [22.2825, 114.1525], 'soho': [22.2825, 114.1525], '大館': [22.2815, 114.1539],
@@ -1774,8 +1791,9 @@
       '東涌': [22.2892, 113.9412], '東薈城': [22.2898, 113.9415], '機場': [22.3155, 113.9365],
       '愉景灣': [22.2965, 114.0155], '長洲': [22.2085, 114.0305], '南丫島': [22.2262, 114.1115], '坪洲': [22.2852, 114.0415], '大澳': [22.2542, 113.8622],
 
-      // 境外熱門
-      '台北': [25.0330, 121.5654], '台灣': [25.0330, 121.5654], '澳門': [22.1987, 113.5439], '深圳': [22.5431, 114.0579],
+      // 境外熱門（包含澳門各區）
+      '澳門': [22.1987, 113.5439], '氹仔': [22.1556, 113.5625], '路氹': [22.1489, 113.5698], '新馬路': [22.1935, 113.5416], '官也街': [22.1558, 113.5594],
+      '台北': [25.0330, 121.5654], '台灣': [25.0330, 121.5654], '深圳': [22.5431, 114.0579],
       '東京': [35.6762, 139.6503], '京都': [35.0116, 135.7681], '大阪': [34.6937, 135.5023], '橫濱': [35.4437, 139.6380],
       '首爾': [37.5665, 126.9780], '曼谷': [13.7563, 100.5018], '新加坡': [1.3521, 103.8198]
     };
@@ -1790,19 +1808,29 @@
       }
       const normLat = (((hash & 0xffff) / 0xffff) - 0.5);
       const normLng = ((((hash >> 8) & 0xffff) / 0xffff) - 0.5);
-      return [normLat * 0.0024, normLng * 0.0024];
+      return [normLat * 0.0020, normLng * 0.0020];
     }
 
     function getItemCoordinates(item) {
-      if (item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng))) {
-        return { lat: parseFloat(item.lat), lng: parseFloat(item.lng), isExact: true };
+      const parsedLat = parseFloat(item.lat);
+      const parsedLng = parseFloat(item.lng);
+      const overseasFlag = hasOverseasKeyword(item);
+
+      // 只有當經緯度合理且不與海外關鍵字衝突時才直接使用
+      if (Number.isFinite(parsedLat) && Number.isFinite(parsedLng) && Math.abs(parsedLat) <= 85 && Math.abs(parsedLng) <= 180) {
+        if (!(overseasFlag && isInHongKong(parsedLat, parsedLng))) {
+          return { lat: parsedLat, lng: parsedLng, isExact: true, isOverseas: overseasFlag || !isInHongKong(parsedLat, parsedLng) };
+        }
       }
 
       const dist = String(item.district || '').toLowerCase();
       let matchedBase = null;
+      let matchedKey = '';
+
       for (const key of SORTED_DISTRICT_KEYS) {
-        if (dist.includes(key)) {
+        if (dist.includes(key.toLowerCase())) {
           matchedBase = DISTRICT_COORDS[key];
+          matchedKey = key;
           break;
         }
       }
@@ -1810,16 +1838,18 @@
       if (!matchedBase) {
         const fullContent = `${item.restaurant_name || ''} ${item.caption || ''}`.toLowerCase();
         for (const key of SORTED_DISTRICT_KEYS) {
-          if (fullContent.includes(key)) {
+          if (fullContent.includes(key.toLowerCase())) {
             matchedBase = DISTRICT_COORDS[key];
+            matchedKey = key;
             break;
           }
         }
       }
 
-      const base = matchedBase || [22.2900, 114.1700];
+      const isOverseas = overseasFlag || (matchedKey && OVERSEAS_KEYWORDS.some(kw => kw.toLowerCase() === matchedKey.toLowerCase()));
+      const base = matchedBase || (isOverseas ? [22.1987, 113.5439] : [22.2900, 114.1700]);
       const [dLat, dLng] = getDeterministicOffset(String(item.id || item.restaurant_name));
-      return { lat: base[0] + dLat, lng: base[1] + dLng, isExact: false };
+      return { lat: base[0] + dLat, lng: base[1] + dLng, isExact: false, isOverseas };
     }
 
     function calcDistanceKm(lat1, lon1, lat2, lon2) {
@@ -1924,9 +1954,8 @@
         if (statusEl && !userLocation) statusEl.innerText = '已鎖定香港範圍 • 點擊相片圖釘睇短片';
         renderMapPins(false);
       } else {
-        fcaMap.setMaxBounds(WORLD_MAP_BOUNDS);
-        fcaMap.setMinZoom(3);
-        // 若目前底圖為香港地政總署圖層，切海外時自動改回奢華黑金以免空白
+        fcaMap.setMaxBounds(OVERSEAS_MAP_BOUNDS);
+        fcaMap.setMinZoom(4);
         if (currentMapStyle === 'hk') {
           switchMapStyle('blackgold', document.getElementById('btnStyleBlackgold'));
         }
@@ -2064,7 +2093,6 @@
           statusEl.innerText = '✅ 已定位！以下按距離由近至遠排列';
           btn.disabled = false;
 
-          // 若使用者目前人在海外，自動切換至海外模式以免被香港邊界擋住
           if (!isInHongKong(userLocation.lat, userLocation.lng) && currentMapScope === 'hk') {
             const overseasBtn = document.querySelectorAll('.map-scope-pill')[1];
             switchMapScope('overseas', overseasBtn);
@@ -2126,8 +2154,7 @@
           return { ...item, coords, distKm };
         })
         .filter(item => {
-          const inHK = isInHongKong(item.coords.lat, item.coords.lng);
-          return currentMapScope === 'hk' ? inHK : !inHK;
+          return currentMapScope === 'hk' ? !item.coords.isOverseas : item.coords.isOverseas;
         });
 
       if (userLocation) {
@@ -2144,7 +2171,7 @@
         const thumbUrl = getReelThumbnail(item);
         const safeId = escapeHtml(item.id);
         const safeName = escapeHtml(item.restaurant_name);
-        const safeDistrict = escapeHtml(item.district || '香港');
+        const safeDistrict = escapeHtml(item.district || (currentMapScope === 'overseas' ? '海外' : '香港'));
         const safeCuisine = escapeHtml(item.cuisine || '美食');
         const safeMustTry = escapeHtml(item.must_try || '招牌推介');
         const safeThumb = escapeHtml(thumbUrl);
@@ -2194,9 +2221,9 @@
 
       if (autoZoom && boundsPoints.length > 0 && !userLocation) {
         if (boundsPoints.length === 1) {
-          fcaMap.setView(boundsPoints[0], 15);
+          fcaMap.setView(boundsPoints[0], 14);
         } else {
-          fcaMap.fitBounds(boundsPoints, { padding: [50, 50], maxZoom: 15 });
+          fcaMap.fitBounds(boundsPoints, { padding: [50, 50], maxZoom: 13 });
         }
       }
 
@@ -2236,7 +2263,7 @@
           marker.openPopup();
         });
       } else if (fcaMap) {
-        fcaMap.setView([lat, lng], 16);
+        fcaMap.setView([lat, lng], 15);
       }
     }
 

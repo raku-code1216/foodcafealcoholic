@@ -1,0 +1,22 @@
+{
+  "name": "Foodcafealcoholic | 香港美食搜尋引擎",
+  "short_name": "FCA 搵食",
+  "description": "@foodcafealcoholic 嚴選香港及旅遊高質餐廳指南與黑金互動美食地圖",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0A0A0A",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

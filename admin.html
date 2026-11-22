@@ -212,21 +212,37 @@
           </div>
         </div>
 
-        <!-- 精準門牌經緯度欄位 (Google Places API) -->
-        <div class="p-2.5 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-1.5">
-          <div class="flex items-center justify-between">
-            <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準座標 (Google Places 引擎)</label>
-            <button type="button" id="btnGeocode" onclick="autoGeocodeRestaurant()" class="text-brand-yellow hover:underline text-[11px] font-bold">
-              📍 自動定位抓取
+        <!-- 精準門牌經緯度欄位 (支援輸入地址自動轉換 + 直接填寫座標) -->
+        <div class="p-2.5 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準座標 (輸入地址自動填寫 / 手動座標)</label>
+            <button type="button" id="btnGeocode" onclick="autoGeocodeRestaurant()" class="text-brand-yellow hover:underline text-[11px] font-bold shrink-0">
+              📍 依店名自動定位
             </button>
           </div>
+
+          <!-- 新增：直接輸入詳細地址換算座標 -->
+          <div class="flex items-center gap-1.5">
+            <input type="text" id="manualAddress"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault(); autoGeocodeByAddress();}"
+                   placeholder="輸入詳細地址 / 商場（例：銅鑼灣登龍街28號、澳門官也街）..."
+                   class="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-brand-yellow" />
+            <button type="button" id="btnGeocodeAddress" onclick="autoGeocodeByAddress()"
+                    class="bg-zinc-800 hover:bg-brand-yellow text-brand-yellow hover:text-black border border-brand-yellow/50 font-bold px-2.5 py-1.5 rounded-lg text-[11px] transition shrink-0">
+              🔍 地址轉座標
+            </button>
+          </div>
+
           <div class="grid grid-cols-2 gap-2">
             <input type="text" id="lat" placeholder="緯度 Lat (例: 22.2693)"
                    class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-[11px] focus:outline-none focus:border-brand-yellow" />
             <input type="text" id="lng" placeholder="經度 Lng (例: 114.1835)"
                    class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-[11px] focus:outline-none focus:border-brand-yellow" />
           </div>
-          <p id="geocodeMatchedAddress" class="hidden text-[10px] text-emerald-400 truncate"></p>
+          <div id="geocodeMatchedRow" class="hidden flex items-center justify-between gap-2 text-[10px]">
+            <p id="geocodeMatchedAddress" class="text-emerald-400 truncate"></p>
+            <a id="geocodeVerifyMapLink" href="#" target="_blank" rel="noopener noreferrer" class="text-brand-yellow hover:underline shrink-0 font-bold">↗ 在地圖核對</a>
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -552,7 +568,7 @@
       const dist = String(district || '').trim().toLowerCase();
       const addr = String(captionAddr || '').trim().toLowerCase();
       if (OVERSEAS_KEYWORDS.some(kw => dist.includes(kw) || addr.includes(kw))) return 'overseas';
-      if (HK_KEYWORDS.some(kw => dist.includes(kw))) return 'hk';
+      if (HK_KEYWORDS.some(kw => dist.includes(kw) || addr.includes(kw))) return 'hk';
       return 'unknown';
     }
 
@@ -1532,22 +1548,30 @@
       return true;
     }
 
-    async function geocodeRestaurantData({ name, dist, caption, aiAddress = '' }, cfg) {
+    async function geocodeRestaurantData({ name, dist, caption, aiAddress = '', prioritizeAddressOnly = false }, cfg) {
       const captionAddr = aiAddress || extractAddressFromCaption(caption);
       const expectedScope = getExpectedScope(dist, captionAddr);
-      const regionSuffix = expectedScope === 'overseas' ? '' : ' 香港';
+      const regionSuffix = expectedScope === 'overseas' ? '' : (expectedScope === 'hk' ? ' 香港' : '');
 
       const queries = [];
       if (captionAddr) {
-        queries.push(`${name} ${captionAddr}${regionSuffix}`.trim());
-        queries.push(`${captionAddr}${regionSuffix}`.trim());
+        if (prioritizeAddressOnly) {
+          queries.push(`${captionAddr}${regionSuffix}`.trim());
+          if (name) queries.push(`${name} ${captionAddr}${regionSuffix}`.trim());
+          if (regionSuffix === '') queries.push(`${captionAddr} 香港`.trim());
+        } else {
+          queries.push(`${name} ${captionAddr}${regionSuffix}`.trim());
+          queries.push(`${captionAddr}${regionSuffix}`.trim());
+        }
       }
       if (name || dist) {
-        queries.push(`${name} ${dist}${regionSuffix}`.trim());
+        const suffix = expectedScope === 'overseas' ? '' : ' 香港';
+        queries.push(`${name} ${dist}${suffix}`.trim());
       }
 
-      for (const q of queries) {
-        if (!q) continue;
+      const uniqueQueries = Array.from(new Set(queries.filter(Boolean)));
+
+      for (const q of uniqueQueries) {
         try {
           const foundPlace = await searchGooglePlaces(q, cfg.placesKey);
           if (foundPlace && foundPlace.location) {
@@ -1565,8 +1589,7 @@
         } catch (err) {}
       }
 
-      for (const q of queries) {
-        if (!q) continue;
+      for (const q of uniqueQueries) {
         try {
           const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`, {
             headers: { 'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8' }
@@ -1590,46 +1613,97 @@
       return null;
     }
 
+    function showMatchedGeocodeResult(result) {
+      const rowEl = document.getElementById('geocodeMatchedRow');
+      const addrHint = document.getElementById('geocodeMatchedAddress');
+      const mapVerifyLink = document.getElementById('geocodeVerifyMapLink');
+      if (!rowEl || !addrHint || !mapVerifyLink) return;
+
+      addrHint.innerText = result.source === 'google'
+        ? `✓ 已對應：${result.matchedText}`
+        : `✓ 備援定位：${result.matchedText}`;
+      addrHint.className = 'text-emerald-400 truncate';
+      mapVerifyLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(result.lat + ',' + result.lng)}`;
+      rowEl.classList.remove('hidden');
+    }
+
+    async function autoGeocodeByAddress() {
+      const manualAddr = document.getElementById('manualAddress').value.trim();
+      const name = document.getElementById('restaurant_name').value.trim();
+      const dist = document.getElementById('district').value.trim();
+      const cfg = loadConfig();
+
+      if (!manualAddr) {
+        alert('請先在輸入框填入詳細地址或商場名稱！');
+        document.getElementById('manualAddress').focus();
+        return;
+      }
+
+      const btn = document.getElementById('btnGeocodeAddress');
+      const rowEl = document.getElementById('geocodeMatchedRow');
+      if (btn) btn.innerText = '⏳ 換算中...';
+      if (rowEl) rowEl.classList.add('hidden');
+
+      try {
+        const result = await geocodeRestaurantData({
+          name,
+          dist,
+          caption: '',
+          aiAddress: manualAddr,
+          prioritizeAddressOnly: true
+        }, cfg);
+
+        if (result) {
+          document.getElementById('lat').value = result.lat;
+          document.getElementById('lng').value = result.lng;
+          showMatchedGeocodeResult(result);
+        } else {
+          alert('找不到該地址的座標，請嘗試補上地區名稱（例如「銅鑼灣」或「澳門」）後重試，或直接輸入 Lat / Lng。');
+        }
+      } catch (e) {
+        alert('地址轉換服務連線逾時，請稍後重試。');
+      } finally {
+        if (btn) btn.innerText = '🔍 地址轉座標';
+      }
+    }
+
     async function autoGeocodeRestaurant(aiAddress = '') {
       const name = document.getElementById('restaurant_name').value.trim();
       const dist = document.getElementById('district').value.trim();
       const caption = document.getElementById('caption').value.trim();
+      const manualAddr = document.getElementById('manualAddress')?.value.trim() || '';
       const cfg = loadConfig();
 
-      if (!name && !dist && !aiAddress) {
-        alert('請先填寫餐廳名稱或地區！');
+      const targetAddr = aiAddress || manualAddr || lastExtractedAddress;
+      if (!name && !dist && !targetAddr) {
+        alert('請先填寫餐廳名稱、地區或地址！');
         return;
       }
 
       const btn = document.getElementById('btnGeocode');
-      const addrHint = document.getElementById('geocodeMatchedAddress');
+      const rowEl = document.getElementById('geocodeMatchedRow');
       if (btn) btn.innerText = '⏳ 定位中...';
-      if (addrHint) addrHint.classList.add('hidden');
+      if (rowEl) rowEl.classList.add('hidden');
 
       try {
         const result = await geocodeRestaurantData({
           name,
           dist,
           caption,
-          aiAddress: aiAddress || lastExtractedAddress
+          aiAddress: targetAddr
         }, cfg);
 
         if (result) {
           document.getElementById('lat').value = result.lat;
           document.getElementById('lng').value = result.lng;
-          if (addrHint) {
-            addrHint.innerText = result.source === 'google'
-              ? `✓ 已對應：${result.matchedText}`
-              : `✓ 已透過備援定位：${result.matchedText}`;
-            addrHint.classList.remove('hidden');
-          }
+          showMatchedGeocodeResult(result);
         } else {
-          alert('未能直接找到符合該地區範圍的精準座標（已自動攔截跨區錯誤結果），建議手動填寫或由系統依地區自動對應。');
+          alert('未能直接找到符合該地區範圍的精準座標（已自動攔截跨區錯誤結果），建議在地址欄輸入更完整地址或手動填寫座標。');
         }
       } catch (e) {
         alert('定位服務連線逾時，請稍後重試。');
       } finally {
-        if (btn) btn.innerText = '📍 自動定位抓取';
+        if (btn) btn.innerText = '📍 依店名自動定位';
       }
     }
 
@@ -1822,7 +1896,8 @@ ${textToAnalyze}`;
         if (extracted.price) document.getElementById('price').value = extracted.price;
         if (extracted.occasion) document.getElementById('occasion').value = extracted.occasion;
         if (extracted.must_try) document.getElementById('must_try').value = extracted.must_try;
-        lastExtractedAddress = extracted.address || '';
+        lastExtractedAddress = extracted.address || extractAddressFromCaption(textToAnalyze) || '';
+        document.getElementById('manualAddress').value = lastExtractedAddress;
 
         if (extracted.title) {
           const previewEl = document.getElementById('captionTitlePreview');
@@ -1922,8 +1997,23 @@ ${textToAnalyze}`;
       document.getElementById('shortCode').value = item.shortCode || '';
       document.getElementById('lat').value = item.lat || '';
       document.getElementById('lng').value = item.lng || '';
-      document.getElementById('geocodeMatchedAddress').classList.add('hidden');
+      document.getElementById('manualAddress').value = extractAddressFromCaption(item.caption || '');
       document.getElementById('duplicatePostNotice')?.classList.add('hidden');
+
+      const rowEl = document.getElementById('geocodeMatchedRow');
+      const addrHint = document.getElementById('geocodeMatchedAddress');
+      const mapVerifyLink = document.getElementById('geocodeVerifyMapLink');
+      if (item.lat && item.lng && rowEl && addrHint && mapVerifyLink) {
+        const isAbnormal = getCoordStatus(item) === 'abnormal';
+        addrHint.innerText = isAbnormal
+          ? `⚠️ 現存座標異常：${item.lat}, ${item.lng}（建議輸入地址重新定位）`
+          : `現存座標：${item.lat}, ${item.lng}`;
+        addrHint.className = isAbnormal ? 'text-red-400 truncate font-bold' : 'text-zinc-400 truncate';
+        mapVerifyLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.lat + ',' + item.lng)}`;
+        rowEl.classList.remove('hidden');
+      } else if (rowEl) {
+        rowEl.classList.add('hidden');
+      }
       
       const img = item.displayUrl || item.imageUrl || (item.shortCode ? `images/${item.shortCode}.jpg` : '');
       document.getElementById('displayUrl').value = img;
@@ -1962,7 +2052,7 @@ ${textToAnalyze}`;
       document.getElementById('submitBtn').innerText = '暫存至列表';
       document.getElementById('cancelEditBtn').classList.add('hidden');
       updateImagePreview('');
-      document.getElementById('geocodeMatchedAddress').classList.add('hidden');
+      document.getElementById('geocodeMatchedRow').classList.add('hidden');
       document.getElementById('duplicatePostNotice')?.classList.add('hidden');
       const previewEl = document.getElementById('captionTitlePreview');
       if (previewEl) previewEl.classList.add('hidden');

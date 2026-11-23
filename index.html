@@ -395,7 +395,6 @@
         <button onclick="setFilter('occasion', '聚會', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🍻 大班聚會</button>
         <button onclick="setFilter('occasion', '打卡必到', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">📸 打卡必到</button>
         <button onclick="setFilter('occasion', '深夜食堂', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🌙 深夜食堂</button>
-        <button onclick="setFilter('occasion', '寵物友善', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🐾 寵物友善</button>
       </div>
 
       <!-- 手機端快速操作列：展開細分篩選 + 隨機揀 -->
@@ -949,7 +948,6 @@
           <option value="聚會">🍻 大班聚會</option>
           <option value="打卡必到">📸 打卡必到</option>
           <option value="深夜食堂">🌙 深夜食堂</option>
-          <option value="寵物友善">🐾 寵物友善</option>
         </select>
 
         <button onclick="resetMapFilters()" class="text-brand-yellow hover:underline text-xs font-bold ml-auto shrink-0 px-1">
@@ -1560,7 +1558,6 @@
       if (rawOcc.includes('聚會')) tags.add('朋友聚會');
       if (rawOcc.includes('打卡')) tags.add('打卡必到');
       if (rawOcc.includes('深夜') || rawOcc.includes('宵夜')) tags.add('深夜食堂');
-      if (rawOcc.includes('寵物')) tags.add('寵物友善');
 
       const priceNums = String(item.price || '').replace(/,/g, '').match(/\d+/g);
       const avgPrice = priceNums && priceNums.length
@@ -1578,9 +1575,6 @@
       }
       if (/深夜|宵夜|凌晨|酒吧|bar|cocktail|調酒|pub|lounge|speakeasy|串燒|居酒屋|清酒|糖水|拉麵|24小時|通宵/.test(text)) {
         tags.add('深夜食堂');
-      }
-      if (/寵物友善|pet friendly|pet-friendly|帶狗|毛孩|狗狗|貓咪/.test(text)) {
-        tags.add('寵物友善');
       }
 
       if (tags.size === 0) {
@@ -3226,7 +3220,8 @@
     renderApp();
     autoFetchCsv();
     enableHorizontalWheelScroll();
-      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+
+    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch((err) => {
           console.log('SW 註冊提示:', err);

@@ -771,7 +771,6 @@
       if (rawOcc.includes('聚會')) tags.add('朋友聚會');
       if (rawOcc.includes('打卡')) tags.add('打卡必到');
       if (rawOcc.includes('深夜') || rawOcc.includes('宵夜')) tags.add('深夜食堂');
-      if (rawOcc.includes('寵物')) tags.add('寵物友善');
 
       const priceNums = String(item.price || '').replace(/,/g, '').match(/\d+/g);
       const avgPrice = priceNums && priceNums.length
@@ -790,9 +789,6 @@
       if (/深夜|宵夜|凌晨|酒吧|bar|cocktail|調酒|pub|lounge|speakeasy|串燒|居酒屋|清酒|糖水|拉麵|24小時|通宵/.test(text)) {
         tags.add('深夜食堂');
       }
-      if (/寵物友善|pet friendly|pet-friendly|帶狗|毛孩|狗狗|貓咪/.test(text)) {
-        tags.add('寵物友善');
-      }
 
       if (tags.size === 0) {
         tags.add('朋友聚會');
@@ -802,7 +798,7 @@
 
     function batchAssignOccasions() {
       if (adminList.length === 0) return;
-      if (!confirm(`即將根據菜式、預算與食評內文，為全部 ${adminList.length} 間餐廳自動分析並分配「🎉 場景」標籤（保留原有標籤並補齊漏網餐廳）。確定要執行嗎？`)) {
+      if (!confirm(`即將根據菜式、預算與食評內文，為全部 ${adminList.length} 間餐廳自動分析並分配「🎉 場景」標籤（拍拖約會 / 朋友聚會 / 打卡必到 / 深夜食堂）。確定要執行嗎？`)) {
         return;
       }
 
@@ -1193,7 +1189,6 @@
       const totals = [];
       const deltas = [];
 
-      // 多取前一天作計算第 1 天增減幅的基準
       const rawTotals = [];
       for (let offset = -analyticsChartDays; offset <= 0; offset++) {
         const dateKey = getHkDateString(offset);
@@ -1205,7 +1200,7 @@
       for (let i = 1; i < rawTotals.length; i++) {
         const { dateKey, count } = rawTotals[i];
         const prevCount = rawTotals[i - 1].count;
-        labels.push(dateKey.slice(5)); // MM-DD
+        labels.push(dateKey.slice(5));
         totals.push(count);
         deltas.push(count - prevCount);
       }
@@ -1582,12 +1577,10 @@
         batchBtn.classList.toggle('hidden', missingItems.length === 0);
       }
 
-      // 圖表渲染
       renderDailyFlowChart();
       renderDistrictEfficiencyChart(districtStats);
       renderCuisineShareChart(cuisineStats);
 
-      // 今日即時熱門 TOP 5
       const todayDateLabel = document.getElementById('todayDateLabel');
       if (todayDateLabel) todayDateLabel.innerText = todayKey;
       const todayTopEl = document.getElementById('todayTopList');
@@ -1620,7 +1613,6 @@
         }
       }
 
-      // 潛力黑馬餐廳（未設嚴選但點擊最高 Top 8）
       const risingEl = document.getElementById('analyticsRisingStarsList');
       if (risingEl) {
         const rising = enriched
@@ -1646,7 +1638,6 @@
         }
       }
 
-      // 資料庫完整度體檢
       const healthListEl = document.getElementById('analyticsHealthList');
       const healthScoreBadge = document.getElementById('dataHealthScoreBadge');
       if (healthListEl) {
@@ -1688,7 +1679,6 @@
         }).join('');
       }
 
-      // 全站 TOP 10
       const topListEl = document.getElementById('analyticsTopList');
       if (topListEl) {
         const top10 = [...enriched].sort((a, b) => b.clicks - a.clicks).slice(0, 10);
@@ -1712,7 +1702,6 @@
         }
       }
 
-      // 地區分佈 Top 10
       const distListEl = document.getElementById('analyticsDistrictList');
       if (distListEl) {
         const sortedDist = Object.entries(districtStats)
@@ -1738,7 +1727,6 @@
             }).join('');
       }
 
-      // 菜式分佈 Top 10
       const cuisListEl = document.getElementById('analyticsCuisineList');
       if (cuisListEl) {
         const sortedCuis = Object.entries(cuisineStats)
@@ -1764,7 +1752,6 @@
             }).join('');
       }
 
-      // 缺漏或異常座標清單
       const missingListEl = document.getElementById('analyticsMissingCoordsList');
       if (missingListEl) {
         if (missingItems.length === 0) {
@@ -2544,7 +2531,7 @@
   "address": "詳細地址或商場名稱 (例如：太古城中心二期中庭、尖沙咀海港城，若內文沒有則留空字串)",
   "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋)",
   "price": "人均價格預算 (格式如：100-200 或 400-600，只填數字範圍)",
-  "occasion": "請嚴格從這5個詞中選出1至3個最適合的場景，用「 • 」分隔：拍拖約會、朋友聚會、打卡必到、深夜食堂、寵物友善",
+  "occasion": "請嚴格從這4個詞中選出1至3個最適合的場景，用「 • 」分隔：拍拖約會、朋友聚會、打卡必到、深夜食堂",
   "must_try": "招牌菜式或必食推介 (精選 1-3 個重點菜名，用頓號、分開)"
 }
 
@@ -2893,3 +2880,4 @@ ${textToAnalyze}`;
   </script>
 </body>
 </html>
+

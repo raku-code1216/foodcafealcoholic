@@ -333,7 +333,7 @@
 
   <!-- 置頂搜尋引擎 Sector -->
   <section class="w-full max-w-5xl mx-auto px-4 pt-20 sm:pt-24 pb-3 sm:pb-4 text-center relative z-10">
-    <!-- 友善加到手機主畫面引導條（非 Standalone 模式且未關閉時顯示） -->
+    <!-- 友善加到手機主畫面引導條 -->
     <div id="pwaTopBanner" class="hidden max-w-3xl mx-auto mb-3 bg-gradient-to-r from-zinc-900 via-zinc-900 to-brand-yellow/10 border border-brand-yellow/45 rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-2 text-left shadow-lg">
       <div class="flex items-center gap-2.5 min-w-0">
         <img src="logo.jpg" alt="" class="w-8 h-8 rounded-lg object-contain border border-brand-yellow/50 shrink-0" />
@@ -361,7 +361,7 @@
       <input type="text" id="mainSearchInput" 
              oninput="handleSearch(this.value)"
              onkeydown="handleSearchKeyDown(event)"
-             placeholder="輸入餐廳名稱、地鐵站、地區（例如：中環、7-Eleven、台北、燒肉）..." 
+             placeholder="輸入餐廳名稱、地鐵站、地區（例如：中環、7-Eleven、麥當勞、燒肉）..." 
              class="w-full bg-zinc-900/95 text-white placeholder-zinc-400 text-base sm:text-2xl font-bold pl-12 sm:pl-20 pr-12 sm:pr-14 py-3.5 sm:py-5 rounded-3xl border-2 border-brand-yellow focus:border-brand-yellowLight focus:outline-none focus:ring-4 focus:ring-brand-yellow/30 transition-all shadow-inner" />
       <button type="button" onclick="clearSearch()" 
               class="absolute inset-y-0 right-4 sm:right-6 flex items-center text-zinc-400 hover:text-white text-lg sm:text-2xl font-bold">
@@ -381,7 +381,7 @@
     </div>
   </section>
 
-  <!-- 篩選系統（手機端預設收合下拉選單，桌面端維持 sticky） -->
+  <!-- 篩選系統 -->
   <section class="sm:sticky sm:top-14 z-40 bg-[#0A0A0A]/95 backdrop-blur-md border-y border-brand-border px-4 sm:px-8 lg:px-12 py-3 sm:py-4 shadow-2xl">
     <div class="max-w-7xl mx-auto space-y-2.5 sm:space-y-3">
       
@@ -397,7 +397,7 @@
         <button onclick="setFilter('occasion', '深夜食堂', this)" class="filter-pill occasion-pill shrink-0 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-zinc-700 text-xs sm:text-sm font-semibold text-zinc-200 hover:border-brand-yellow transition shadow-sm">🌙 深夜食堂</button>
       </div>
 
-      <!-- 手機端快速操作列：展開細分篩選 + 隨機揀 -->
+      <!-- 手機端快速操作列 -->
       <div class="flex sm:hidden items-center justify-between gap-2 pt-0.5">
         <button type="button" id="mobileFilterToggleBtn" onclick="toggleMobileFilters()"
                 class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-700 text-zinc-200 text-xs font-bold px-3.5 py-2 rounded-xl transition active:scale-95">
@@ -413,7 +413,7 @@
         </button>
       </div>
 
-      <!-- 細分選單（手機可收合，桌面常駐） -->
+      <!-- 細分選單 -->
       <div id="advancedFilterRow" class="hidden sm:flex flex-wrap items-center gap-3 pt-1">
         
         <!-- 地區篩選 -->
@@ -569,7 +569,7 @@
     <span class="text-brand-yellow group-hover:text-black font-black">→</span>
   </button>
 
-  <!-- 🎲 幫我揀餐廳（地區限定與隨機抽籤 Modal） -->
+  <!-- 🎲 幫我揀餐廳 Modal -->
   <div id="randomPickerModal" onclick="if(event.target === this) closeRandomPickerModal()" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-brand-card border border-brand-yellow/40 rounded-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto no-scrollbar shadow-2xl relative flex flex-col">
       <div class="p-4 sm:p-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 sticky top-0 z-10">
@@ -609,7 +609,7 @@
           </select>
         </div>
 
-        <!-- 3. 菜式與預算（可選） -->
+        <!-- 3. 菜式與預算 -->
         <div class="grid grid-cols-2 gap-2.5">
           <div>
             <label class="text-[11px] font-bold text-zinc-400 block mb-1">🍜 菜式限制</label>
@@ -677,7 +677,7 @@
     </div>
   </div>
 
-  <!-- 📲 加到手機主畫面友善教學 Modal (PWA Guide) -->
+  <!-- 📲 加到手機主畫面教學 Modal -->
   <div id="pwaInstallModal" onclick="if(event.target === this) closePwaInstallModal()" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-brand-card border border-brand-yellow/40 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl relative">
       <div class="p-4 sm:p-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 sticky top-0 z-10">
@@ -692,7 +692,6 @@
       </div>
 
       <div class="p-4 sm:p-5 space-y-4 text-xs sm:text-sm">
-        <!-- IG / FB 內置瀏覽器特別提示 -->
         <div id="pwaInAppWarning" class="hidden bg-amber-500/15 border border-amber-400/60 rounded-xl p-3.5 space-y-1.5">
           <p class="text-amber-300 font-black text-xs flex items-center gap-1.5">
             <span>⚠️</span> <span>偵測到你正在使用 IG / Facebook 內置瀏覽器</span>
@@ -702,7 +701,6 @@
           </p>
         </div>
 
-        <!-- 已支援原生一鍵安裝按鈕 (Android / Desktop Chrome) -->
         <div id="pwaNativeInstallBox" class="hidden bg-brand-yellow/10 border border-brand-yellow/50 rounded-xl p-3.5 text-center space-y-2">
           <p class="text-xs text-zinc-200 font-bold">你的裝置支援一鍵快速安裝！</p>
           <button type="button" onclick="triggerNativePwaInstall()"
@@ -711,7 +709,6 @@
           </button>
         </div>
 
-        <!-- 分頁切換：iPhone / Android -->
         <div class="flex items-center gap-1.5 bg-zinc-900 p-1 rounded-xl border border-zinc-800">
           <button type="button" id="pwaTabIos" onclick="switchPwaGuideTab('ios')"
                   class="flex-1 py-2 rounded-lg text-xs font-black transition bg-brand-yellow text-black">
@@ -723,7 +720,6 @@
           </button>
         </div>
 
-        <!-- iOS Safari 教學步驟 -->
         <div id="pwaGuideIos" class="space-y-2.5">
           <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 flex items-start gap-3">
             <span class="w-6 h-6 rounded-full bg-brand-yellow text-black font-black text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
@@ -750,13 +746,12 @@
           </div>
         </div>
 
-        <!-- Android Chrome 教學步驟 -->
         <div id="pwaGuideAndroid" class="hidden space-y-2.5">
           <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 flex items-start gap-3">
             <span class="w-6 h-6 rounded-full bg-brand-yellow text-black font-black text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
             <div class="space-y-0.5">
               <p class="font-black text-white text-xs sm:text-sm">點擊 Chrome 右上角「⋮」選單</p>
-              <p class="text-zinc-400 text-xs">確保你正在使用 <strong class="text-white">Google Chrome</strong> 或系統瀏覽器開啟網站。</p>
+              <p class="text-zinc-400 text-xs">確保你正在使用 <strong class="text-white">Google Chrome</strong> 開啟網站。</p>
             </div>
           </div>
 
@@ -960,13 +955,11 @@
       <!-- 地區切換、距離與底圖切換列 -->
       <div class="px-3 sm:px-4 py-1.5 bg-zinc-950/95 border-b border-zinc-800/80 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar text-[11px] shrink-0">
         <div class="flex items-center gap-2 shrink-0">
-          <!-- 香港 / 海外 切換鍵 -->
           <div class="flex items-center gap-1 pr-2 border-r border-zinc-800 shrink-0">
             <button onclick="switchMapScope('hk', this)" class="map-scope-pill pill-active px-2.5 py-1 rounded-md border border-zinc-700 font-bold">🇭🇰 香港</button>
             <button onclick="switchMapScope('overseas', this)" class="map-scope-pill px-2.5 py-1 rounded-md border border-zinc-700 text-zinc-300">✈️ 海外</button>
           </div>
 
-          <!-- 距離篩選 -->
           <div class="flex items-center gap-1 shrink-0">
             <button onclick="setMapRadius('all', this)" class="map-radius-pill pill-active px-2 py-1 rounded-md border border-zinc-700 font-bold">全部</button>
             <button onclick="setMapRadius(0.5, this)" class="map-radius-pill px-2 py-1 rounded-md border border-zinc-700 text-zinc-300">500m</button>
@@ -1025,7 +1018,7 @@
 
   <script>
     // ========================================================
-    // ⭐️ 1. MAPBOX API KEY (貼在這裡即可啟用原廠奢華黑金圖磚)
+    // ⭐️ 1. MAPBOX API KEY
     // ========================================================
     const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoicmFrdXNoaW4xMjE2IiwiYSI6ImNtd2pneXJuZjAzOWoyeXEzeXVtOHZzdDUifQ.OLeTe5xwwWroEIrj0A5DLA';
 
@@ -1069,7 +1062,20 @@
     let deferredInstallPrompt = null;
     let randomPickerRegion = 'all';
 
-    const CHAIN_DISTRICT_KEYWORDS = ['全港連鎖', '全港分店', '全線分店', '全港通用', '連鎖分店', '網購', '網店', '超市百貨'];
+    // 知名大連鎖品牌關鍵字（自動識別，即使地區空白或寫「-」亦能歸類為連鎖）
+    const CHAIN_BRAND_KEYWORDS = [
+      '麥當勞', 'mcdonald', '7-eleven', '7-11', 'circle k', 'ok便利店', 'ikea',
+      'don don donki', 'donki', '優品360', 'city\'super', 'citysuper',
+      '一田', '惠康', '百佳', 'hktvmall', 'hktv', '美心西餅', '東海堂', '聖安娜',
+      '星巴克', 'starbucks', 'pacific coffee'
+    ];
+
+    // 全港通用／網購／分店有售關鍵字
+    const CHAIN_DIST_KEYWORDS = [
+      '全港連鎖', '全港分店', '全線分店', '全港通用', '連鎖分店', '分店有售',
+      '各大分店', '全港各區', '各區分店', '各大超市', '便利店有售', '便利店',
+      '網購', '網店', '超市百貨', '網上訂購', '全線', '全港'
+    ];
 
     function isChainNoMap(item) {
       if (!item) return false;
@@ -1078,14 +1084,39 @@
       if (latStr === 'chain' || lngStr === 'chain' || latStr === 'none' || lngStr === 'none') {
         return true;
       }
+
       const distStr = String(item.district || '').trim().toLowerCase();
-      return CHAIN_DISTRICT_KEYWORDS.some(kw => distStr.includes(kw));
+      if (distStr && CHAIN_DIST_KEYWORDS.some(kw => distStr.includes(kw))) {
+        return true;
+      }
+
+      const nameStr = String(item.restaurant_name || '').trim().toLowerCase();
+      const capStr = String(item.caption || '').trim().toLowerCase();
+
+      // 檢查內文或地址是否標明全線分店有售
+      const hasChainText = CHAIN_DIST_KEYWORDS.some(kw => capStr.includes(kw));
+
+      // 檢查是否屬知名大連鎖品牌
+      const isChainBrand = CHAIN_BRAND_KEYWORDS.some(kw => nameStr.includes(kw));
+
+      if (isChainBrand) {
+        const isGenericDistrict = !distStr || distStr === '-' || distStr === '香港' || distStr === 'hong kong' || distStr === '未知' || distStr === 'none' || distStr === 'null';
+        if (isGenericDistrict || hasChainText) {
+          return true;
+        }
+      }
+
+      if (hasChainText && (!distStr || distStr === '-' || distStr === '香港')) {
+        return true;
+      }
+
+      return false;
     }
 
     function isOnlineStoreItem(item) {
       if (!item) return false;
-      const distStr = String(item.district || '').trim().toLowerCase();
-      return distStr.includes('網購') || distStr.includes('網店');
+      const text = `${item.district || ''} ${item.restaurant_name || ''} ${item.caption || ''}`.toLowerCase();
+      return text.includes('網購') || text.includes('網店') || text.includes('網上訂購') || text.includes('hktv');
     }
 
     function getHkDateString(offsetDays = 0) {
@@ -1520,7 +1551,7 @@
     }
 
     const REGION_MAP = {
-      '連鎖網購': ['全港連鎖', '全港分店', '全線分店', '全港通用', '連鎖分店', '網購', '網店', '超市百貨'],
+      '連鎖網購': ['全港連鎖', '全港分店', '全線分店', '全港通用', '連鎖分店', '網購', '網店', '超市百貨', '分店有售'],
       '海外': ['海外', '澳門', '氹仔', '路氹', '路環', '官也街', '大三巴', '新馬路', '威尼斯人', '銀河', '倫敦人', '巴黎人', '台北', '台灣', '台中', '台南', '高雄', '深圳', '廣州', '珠海', '東京', '大阪', '京都', '橫濱', '福岡', '北海道', '沖繩', '日本', '首爾', '釜山', '韓國', '曼谷', '泰國', '新加坡', '倫敦', '巴黎', '歐洲', 'overseas', 'macau', 'macao', 'taipa', 'cotai', 'coloane', 'taipei', 'taiwan', 'shenzhen', 'tokyo', 'osaka', 'kyoto', 'japan', 'seoul', 'korea', 'bangkok', 'thailand', 'singapore'],
       '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '大坑', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '石塘咀', '黃竹坑', '金鐘', '香港仔', '鴨脷洲', '海怡', '赤柱', '淺水灣', '薄扶林', '數碼港', '柴灣', '筲箕灣', '西灣河', '杏花邨', '山頂', '半山', '蘭桂坊', '蘇豪', 'soho', '大館', 'pmq', 'central', 'sheung wan', 'wan chai', 'causeway bay', 'happy valley', 'tin hau', 'fortress hill', 'north point', 'quarry bay', 'tai koo', 'sai wan', 'sai ying pun', 'kennedy town', 'wong chuk hang', 'admiralty', 'aberdeen', 'stanley', 'repulse bay', 'hong kong island'],
       '九龍': ['九龍', '尖沙咀', '尖東', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣', '牛頭角', '藍田', '油塘', '何文田', '土瓜灣', '九龍塘', '黃大仙', '鑽石山', '新蒲崗', '慈雲山', '彩虹', '樂富', '荔枝角', '美孚', '石硤尾', '南昌', '奧運', '西九龍', '柯士甸', '圓方', '海港城', '朗豪坊', '又一城', 'airside', 'k11', 'apm', 'megabox', 'd2 place', 'kowloon', 'tsim sha tsui', 'tst', 'jordan', 'yau ma tei', 'mong kok', 'prince edward', 'sham shui po', 'cheung sha wan', 'lai chi kok', 'tai kok tsui', 'olympic', 'hung hom', 'whampoa', 'kowloon city', 'kai tak', 'kwun tong', 'kowloon bay', 'ho man tin', 'to kwa wan', 'kowloon tong'],
@@ -1713,7 +1744,7 @@
       const isChain = isChainNoMap(item);
       const safeId = escapeHtml(item.id);
       const safeName = escapeHtml(item.restaurant_name || '人氣餐廳');
-      const safeDistrict = escapeHtml(item.district || '香港');
+      const safeDistrict = escapeHtml(item.district || (isChain ? '全港分店' : '香港'));
       const safeCuisine = escapeHtml(item.cuisine || '美食');
       const safeTitle = escapeHtml(mainTitle);
       const safeOccasion = escapeHtml(item.occasion || '');
@@ -2091,7 +2122,7 @@
         delete imgEl.dataset.triedLocal;
         imgEl.src = getReelThumbnail(chosen);
       }
-      if (distEl) distEl.innerText = `${isChainNoMap(chosen) ? '🏪' : '📍'} ${chosen.district || '香港'}`;
+      if (distEl) distEl.innerText = `${isChainNoMap(chosen) ? '🏪' : '📍'} ${chosen.district || '全港分店'}`;
       if (cuisEl) cuisEl.innerText = chosen.cuisine || '美食';
       if (nameEl) nameEl.innerText = chosen.restaurant_name || '精選餐廳';
       if (mustEl) mustEl.innerText = `⭐ 必食：${chosen.must_try || '人氣招牌菜'}`;
@@ -2184,7 +2215,7 @@
         <div class="flex items-center justify-between bg-zinc-900 border border-brand-border p-3.5 sm:p-4 rounded-xl hover:border-brand-yellow transition">
           <div class="space-y-0.5 cursor-pointer" data-rest-id="${escapeHtml(item.id)}" onclick="closeMyListAndOpen(this.getAttribute('data-rest-id'))">
             <h4 class="font-bold text-sm sm:text-base text-white hover:text-brand-yellow transition">${escapeHtml(item.restaurant_name)}</h4>
-            <p class="text-xs sm:text-sm text-zinc-400">${isChainNoMap(item) ? '🏪' : '📍'} ${escapeHtml(item.district || '香港')} • ${escapeHtml(item.cuisine || '美食')} • <span class="text-brand-yellow">${escapeHtml(item.price || '')}</span></p>
+            <p class="text-xs sm:text-sm text-zinc-400">${isChainNoMap(item) ? '🏪' : '📍'} ${escapeHtml(item.district || (isChainNoMap(item) ? '全港分店' : '香港'))} • ${escapeHtml(item.cuisine || '美食')} • <span class="text-brand-yellow">${escapeHtml(item.price || '')}</span></p>
           </div>
           <button type="button" data-fav-id="${escapeHtml(item.id)}" onclick="toggleFavorite(this.getAttribute('data-fav-id'))" class="text-xs sm:text-sm text-zinc-400 hover:text-white px-3 sm:px-4 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg transition">
             移除
@@ -2520,7 +2551,7 @@
           const rawImg = r.displayUrl || r.display_url || r.imageUrl || r.image_url || r.thumbnailUrl || (r.images ? r.images.split(',')[0] : '');
           const directVid = r.videoUrl || r.video_url || null;
           const cuisineStr = r.cuisine || '美食';
-          const distStr = (r.district && r.district !== 'None' && r.district !== 'null') ? String(r.district).trim() : '香港';
+          let distStr = (r.district && r.district !== 'None' && r.district !== 'null' && r.district !== '-') ? String(r.district).trim() : '';
           const captionStr = r.caption || '';
 
           const priceInfo = parseBudgetTier(r.price);
@@ -2539,6 +2570,16 @@
             lat: r.lat || '',
             lng: r.lng || ''
           };
+
+          // 自動連鎖識別：若是連鎖且地區原本為空白或「-」，自動美化為「全港分店」
+          const isChain = isChainNoMap(tempItem);
+          if (isChain && (!distStr || distStr === '香港' || distStr === '-')) {
+            distStr = '全港分店';
+            tempItem.district = distStr;
+          } else if (!distStr) {
+            distStr = '香港';
+            tempItem.district = distStr;
+          }
 
           const inferredRegion = inferRegionFromItem(tempItem);
           const enrichedOccasion = autoInferOccasions(tempItem);
@@ -2688,7 +2729,6 @@
     };
 
     const DISTRICT_COORDS = {
-      // 港島商圈
       '中環': [22.2819, 114.1581], '蘭桂坊': [22.2810, 114.1557], '蘇豪': [22.2825, 114.1525], 'soho': [22.2825, 114.1525], '大館': [22.2815, 114.1539],
       '上環': [22.2864, 114.1502], 'pmq': [22.2835, 114.1519], '西營盤': [22.2858, 114.1426], '石塘咀': [22.2862, 114.1355],
       '堅尼地城': [22.2812, 114.1283], '西環': [22.2835, 114.1360],
@@ -2702,7 +2742,6 @@
       '薄扶林': [22.2618, 114.1305], '數碼港': [22.2612, 114.1298], '淺水灣': [22.2365, 114.1972], '赤柱': [22.2185, 114.2125],
       '山頂': [22.2711, 114.1498], '半山': [22.2785, 114.1530],
 
-      // 九龍商圈
       '尖沙咀': [22.2988, 114.1722], '尖東': [22.2958, 114.1765], 'k11': [22.2975, 114.1738], '海港城': [22.2979, 114.1685],
       '西九龍': [22.3038, 114.1615], '圓方': [22.3048, 114.1610], '柯士甸': [22.3046, 114.1663],
       '佐敦': [22.3049, 114.1717], '油麻地': [22.3129, 114.1706],
@@ -2717,7 +2756,6 @@
       '九龍灣': [22.3232, 114.2141], 'megabox': [22.3198, 114.2082], '牛頭角': [22.3155, 114.2191], '觀塘': [22.3122, 114.2255], 'apm': [22.3123, 114.2251],
       '藍田': [22.3068, 114.2335], '油塘': [22.2978, 114.2372],
 
-      // 新界及離島
       '荃灣': [22.3713, 114.1141], '南豐紗廠': [22.3745, 114.1118], '愉景新城': [22.3762, 114.1112],
       '葵芳': [22.3568, 114.1279], '新都會': [22.3575, 114.1265], '葵興': [22.3632, 114.1312], '葵涌': [22.3610, 114.1325],
       '青衣': [22.3585, 114.1072], '深井': [22.3672, 114.0615],
@@ -2732,7 +2770,6 @@
       '東涌': [22.2892, 113.9412], '東薈城': [22.2898, 113.9415], '機場': [22.3155, 113.9365],
       '愉景灣': [22.2965, 114.0155], '長洲': [22.2085, 114.0305], '南丫島': [22.2262, 114.1115], '坪洲': [22.2852, 114.0415], '大澳': [22.2542, 113.8622],
 
-      // 澳門各區及地標
       '澳門': [22.1987, 113.5439], 'macau': [22.1987, 113.5439], 'macao': [22.1987, 113.5439],
       '氹仔': [22.1558, 113.5588], 'taipa': [22.1558, 113.5588], '官也街': [22.1536, 113.5567],
       '路氹': [22.1446, 113.5625], 'cotai': [22.1446, 113.5625], '威尼斯人': [22.1476, 113.5596],
@@ -2740,7 +2777,6 @@
       '路環': [22.1167, 113.5586], 'coloane': [22.1167, 113.5586],
       '大三巴': [22.1976, 113.5408], '新馬路': [22.1937, 113.5396],
 
-      // 境外熱門
       '台北': [25.0330, 121.5654], '台灣': [25.0330, 121.5654], '深圳': [22.5431, 114.0579],
       '東京': [35.6762, 139.6503], '京都': [35.0116, 135.7681], '大阪': [34.6937, 135.5023], '橫濱': [35.4437, 139.6380],
       '首爾': [37.5665, 126.9780], '曼谷': [13.7563, 100.5018], '新加坡': [1.3521, 103.8198]

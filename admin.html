@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
-  <meta name="referrer" content="no-referrer">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="robots" content="noindex, nofollow">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -157,7 +157,7 @@
         <!-- 封面圖片即時預覽 + 直接上傳補圖 -->
         <div id="imagePreviewBox" class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2">
           <div class="flex items-center gap-3">
-            <img id="imagePreviewThumb" src="logo.jpg" alt="封面預覽"
+            <img id="imagePreviewThumb" src="logo.jpg" alt="封面預覽" referrerpolicy="no-referrer"
                  onerror="handlePreviewError(this)"
                  onload="handlePreviewSuccess()"
                  class="w-12 h-12 object-cover rounded-lg border border-zinc-700 bg-zinc-800 shrink-0" />

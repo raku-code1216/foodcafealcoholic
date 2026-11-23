@@ -3227,5 +3227,12 @@
     autoFetchCsv();
     enableHorizontalWheelScroll();
   </script>
+  if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch((err) => {
+          console.log('SW 註冊提示:', err);
+        });
+      });
+    }
 </body>
 </html>

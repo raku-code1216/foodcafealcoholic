@@ -361,7 +361,7 @@
       <input type="text" id="mainSearchInput" 
              oninput="handleSearch(this.value)"
              onkeydown="handleSearchKeyDown(event)"
-             placeholder="輸入餐廳名稱、地鐵站、地區（例如：中環、跑馬地、台北、燒肉）..." 
+             placeholder="輸入餐廳名稱、地鐵站、地區（例如：中環、7-Eleven、台北、燒肉）..." 
              class="w-full bg-zinc-900/95 text-white placeholder-zinc-400 text-base sm:text-2xl font-bold pl-12 sm:pl-20 pr-12 sm:pr-14 py-3.5 sm:py-5 rounded-3xl border-2 border-brand-yellow focus:border-brand-yellowLight focus:outline-none focus:ring-4 focus:ring-brand-yellow/30 transition-all shadow-inner" />
       <button type="button" onclick="clearSearch()" 
               class="absolute inset-y-0 right-4 sm:right-6 flex items-center text-zinc-400 hover:text-white text-lg sm:text-2xl font-bold">
@@ -426,6 +426,7 @@
               <option value="region:九龍" id="opt-reg-kln">🏮 九龍全區 (Kowloon)</option>
               <option value="region:新界" id="opt-reg-nt">🌳 新界全區 (New Territories)</option>
               <option value="region:海外" id="opt-reg-overseas">✈️ 海外 / 旅遊推介 (Overseas)</option>
+              <option value="region:連鎖網購" id="opt-reg-chain">🏪 全港連鎖 / 網購 (Chains &amp; Online)</option>
             </optgroup>
             <optgroup label="── 港島熱門商圈 ──">
               <option value="中環">中環 (Central / SOHO / 大館)</option>
@@ -595,6 +596,7 @@
             <button type="button" onclick="setRandomRegion('九龍', this)" class="rand-region-pill px-3 py-1.5 rounded-xl border border-zinc-700 text-xs font-bold text-zinc-200 hover:border-brand-yellow transition">🏮 九龍</button>
             <button type="button" onclick="setRandomRegion('新界', this)" class="rand-region-pill px-3 py-1.5 rounded-xl border border-zinc-700 text-xs font-bold text-zinc-200 hover:border-brand-yellow transition">🌳 新界</button>
             <button type="button" onclick="setRandomRegion('海外', this)" class="rand-region-pill px-3 py-1.5 rounded-xl border border-zinc-700 text-xs font-bold text-zinc-200 hover:border-brand-yellow transition">✈️ 海外</button>
+            <button type="button" onclick="setRandomRegion('連鎖網購', this)" class="rand-region-pill px-3 py-1.5 rounded-xl border border-zinc-700 text-xs font-bold text-zinc-200 hover:border-brand-yellow transition">🏪 連鎖/網購</button>
           </div>
         </div>
 
@@ -1067,6 +1069,25 @@
     let deferredInstallPrompt = null;
     let randomPickerRegion = 'all';
 
+    const CHAIN_DISTRICT_KEYWORDS = ['全港連鎖', '全港分店', '全線分店', '全港通用', '連鎖分店', '網購', '網店', '超市百貨'];
+
+    function isChainNoMap(item) {
+      if (!item) return false;
+      const latStr = String(item.lat || '').trim().toLowerCase();
+      const lngStr = String(item.lng || '').trim().toLowerCase();
+      if (latStr === 'chain' || lngStr === 'chain' || latStr === 'none' || lngStr === 'none') {
+        return true;
+      }
+      const distStr = String(item.district || '').trim().toLowerCase();
+      return CHAIN_DISTRICT_KEYWORDS.some(kw => distStr.includes(kw));
+    }
+
+    function isOnlineStoreItem(item) {
+      if (!item) return false;
+      const distStr = String(item.district || '').trim().toLowerCase();
+      return distStr.includes('網購') || distStr.includes('網店');
+    }
+
     function getHkDateString(offsetDays = 0) {
       const target = new Date(Date.now() + offsetDays * 86400000);
       const parts = new Intl.DateTimeFormat('en-CA', {
@@ -1499,6 +1520,7 @@
     }
 
     const REGION_MAP = {
+      '連鎖網購': ['全港連鎖', '全港分店', '全線分店', '全港通用', '連鎖分店', '網購', '網店', '超市百貨'],
       '海外': ['海外', '澳門', '氹仔', '路氹', '路環', '官也街', '大三巴', '新馬路', '威尼斯人', '銀河', '倫敦人', '巴黎人', '台北', '台灣', '台中', '台南', '高雄', '深圳', '廣州', '珠海', '東京', '大阪', '京都', '橫濱', '福岡', '北海道', '沖繩', '日本', '首爾', '釜山', '韓國', '曼谷', '泰國', '新加坡', '倫敦', '巴黎', '歐洲', 'overseas', 'macau', 'macao', 'taipa', 'cotai', 'coloane', 'taipei', 'taiwan', 'shenzhen', 'tokyo', 'osaka', 'kyoto', 'japan', 'seoul', 'korea', 'bangkok', 'thailand', 'singapore'],
       '港島': ['港島', '中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '大坑', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '石塘咀', '黃竹坑', '金鐘', '香港仔', '鴨脷洲', '海怡', '赤柱', '淺水灣', '薄扶林', '數碼港', '柴灣', '筲箕灣', '西灣河', '杏花邨', '山頂', '半山', '蘭桂坊', '蘇豪', 'soho', '大館', 'pmq', 'central', 'sheung wan', 'wan chai', 'causeway bay', 'happy valley', 'tin hau', 'fortress hill', 'north point', 'quarry bay', 'tai koo', 'sai wan', 'sai ying pun', 'kennedy town', 'wong chuk hang', 'admiralty', 'aberdeen', 'stanley', 'repulse bay', 'hong kong island'],
       '九龍': ['九龍', '尖沙咀', '尖東', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣', '牛頭角', '藍田', '油塘', '何文田', '土瓜灣', '九龍塘', '黃大仙', '鑽石山', '新蒲崗', '慈雲山', '彩虹', '樂富', '荔枝角', '美孚', '石硤尾', '南昌', '奧運', '西九龍', '柯士甸', '圓方', '海港城', '朗豪坊', '又一城', 'airside', 'k11', 'apm', 'megabox', 'd2 place', 'kowloon', 'tsim sha tsui', 'tst', 'jordan', 'yau ma tei', 'mong kok', 'prince edward', 'sham shui po', 'cheung sha wan', 'lai chi kok', 'tai kok tsui', 'olympic', 'hung hom', 'whampoa', 'kowloon city', 'kai tak', 'kwun tong', 'kowloon bay', 'ho man tin', 'to kwa wan', 'kowloon tong'],
@@ -1600,6 +1622,10 @@
     function inferRegionFromItem(item) {
       if (!item) return '其他';
 
+      if (isChainNoMap(item)) {
+        return '連鎖網購';
+      }
+
       const cleanDistrict = String(item.district || '').trim().toLowerCase();
       if (cleanDistrict && cleanDistrict !== '香港' && cleanDistrict !== 'hong kong' && cleanDistrict !== '未知') {
         for (const [region, keywords] of Object.entries(REGION_MAP)) {
@@ -1684,6 +1710,7 @@
       const widthClass = isGrid ? 'w-full' : 'flex-none w-60 sm:w-64';
       const mainTitle = getPostMainTitle(item);
       const viewsCount = (item.views !== undefined && item.views !== null) ? item.views : 0;
+      const isChain = isChainNoMap(item);
       const safeId = escapeHtml(item.id);
       const safeName = escapeHtml(item.restaurant_name || '人氣餐廳');
       const safeDistrict = escapeHtml(item.district || '香港');
@@ -1709,7 +1736,7 @@
               <div class="space-y-1">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="bg-black/90 text-[10px] px-2 py-0.5 rounded text-zinc-200 border border-zinc-700">
-                    📍 ${safeDistrict}
+                    ${isChain ? '🏪' : '📍'} ${safeDistrict}
                   </span>
                   <span class="text-[10px] font-extrabold text-brand-yellow uppercase tracking-wide bg-black/60 px-1.5 py-0.5 rounded">
                     ${safeCuisine}
@@ -1806,16 +1833,20 @@
           return (currentClicks || 0) + 1;
         }).catch(() => {});
 
-        // 同步記錄每日瀏覽流量（香港時區），供後台繪製走勢圖與日增減分析
         const todayKey = getHkDateString(0);
         rtdb.ref(`daily_clicks/${todayKey}/total`).transaction(c => (c || 0) + 1).catch(() => {});
         rtdb.ref(`daily_clicks/${todayKey}/by_id/${item.id}`).transaction(c => (c || 0) + 1).catch(() => {});
       }
 
+      const isChain = isChainNoMap(item);
+      const isOnline = isOnlineStoreItem(item);
+
       document.getElementById('modalTitle').innerText = item.restaurant_name;
       document.getElementById('modalMeta').innerText = `${item.district || '地區未註明'} • ${item.cuisine || '美食'}`;
       document.getElementById('modalOccasionTag').innerText = item.occasion || '必試推介';
-      document.getElementById('modalDistrict').innerText = `📍 ${item.district || '地區未註明'}`;
+      document.getElementById('modalDistrict').innerText = isChain
+        ? `🏪 ${item.district || '全港分店通用'}`
+        : `📍 ${item.district || '地區未註明'}`;
       document.getElementById('modalCuisine').innerText = `🍽 ${item.cuisine || '特色菜'}`;
       document.getElementById('modalPrice').innerText = `💰 預算: ${item.priceInfo ? item.priceInfo.text : (item.price || '依現場菜單')}`;
       document.getElementById('modalMustTry').innerText = item.must_try || '請參考下方食評詳細推介。';
@@ -1864,8 +1895,20 @@
         fallbackEl.classList.remove('hidden');
       }
 
-      const mapsQuery = encodeURIComponent(`${item.restaurant_name} ${item.district || '香港'}`);
-      document.getElementById('modalMapLink').href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+      const mapLinkEl = document.getElementById('modalMapLink');
+      if (isChain && !isOnline) {
+        const nearestQuery = encodeURIComponent(`${item.restaurant_name} 附近`);
+        mapLinkEl.href = `https://www.google.com/maps/search/?api=1&query=${nearestQuery}`;
+        mapLinkEl.innerText = '🗺️ 搵最近分店';
+      } else if (isOnline) {
+        const searchQuery = encodeURIComponent(`${item.restaurant_name} 香港`);
+        mapLinkEl.href = `https://www.google.com/search?q=${searchQuery}`;
+        mapLinkEl.innerText = '🛒 搜尋購買';
+      } else {
+        const mapsQuery = encodeURIComponent(`${item.restaurant_name} ${item.district || '香港'}`);
+        mapLinkEl.href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+        mapLinkEl.innerText = '🗺️ 地圖導航';
+      }
 
       const bookingQuery = encodeURIComponent(`${item.restaurant_name}`);
       document.getElementById('modalBookingLink').href = `https://www.google.com/search?q=${bookingQuery}+網上訂座+inline`;
@@ -1913,7 +1956,7 @@
       const currentVal = sel.value || 'all';
       const regionsToShow = randomPickerRegion === 'all'
         ? ['港島', '九龍', '新界', '海外']
-        : [randomPickerRegion];
+        : (REGION_DISTRICT_GROUPS[randomPickerRegion] ? [randomPickerRegion] : []);
 
       let html = '<option value="all">不限具體商圈（包含所選大區全部）</option>';
       const validRestaurants = restaurants.filter(r => !r._brokenImage);
@@ -1996,7 +2039,7 @@
       if (!modal) return;
       const regionBtns = document.querySelectorAll('.rand-region-pill');
       const targetRegion = filters.region !== 'all' ? filters.region : 'all';
-      const idxMap = { 'all': 0, '港島': 1, '九龍': 2, '新界': 3, '海外': 4 };
+      const idxMap = { 'all': 0, '港島': 1, '九龍': 2, '新界': 3, '海外': 4, '連鎖網購': 5 };
       setRandomRegion(targetRegion, regionBtns[idxMap[targetRegion] ?? 0]);
 
       const distSel = document.getElementById('randomDistrictSelect');
@@ -2048,7 +2091,7 @@
         delete imgEl.dataset.triedLocal;
         imgEl.src = getReelThumbnail(chosen);
       }
-      if (distEl) distEl.innerText = `📍 ${chosen.district || '香港'}`;
+      if (distEl) distEl.innerText = `${isChainNoMap(chosen) ? '🏪' : '📍'} ${chosen.district || '香港'}`;
       if (cuisEl) cuisEl.innerText = chosen.cuisine || '美食';
       if (nameEl) nameEl.innerText = chosen.restaurant_name || '精選餐廳';
       if (mustEl) mustEl.innerText = `⭐ 必食：${chosen.must_try || '人氣招牌菜'}`;
@@ -2141,7 +2184,7 @@
         <div class="flex items-center justify-between bg-zinc-900 border border-brand-border p-3.5 sm:p-4 rounded-xl hover:border-brand-yellow transition">
           <div class="space-y-0.5 cursor-pointer" data-rest-id="${escapeHtml(item.id)}" onclick="closeMyListAndOpen(this.getAttribute('data-rest-id'))">
             <h4 class="font-bold text-sm sm:text-base text-white hover:text-brand-yellow transition">${escapeHtml(item.restaurant_name)}</h4>
-            <p class="text-xs sm:text-sm text-zinc-400">📍 ${escapeHtml(item.district || '香港')} • ${escapeHtml(item.cuisine || '美食')} • <span class="text-brand-yellow">${escapeHtml(item.price || '')}</span></p>
+            <p class="text-xs sm:text-sm text-zinc-400">${isChainNoMap(item) ? '🏪' : '📍'} ${escapeHtml(item.district || '香港')} • ${escapeHtml(item.cuisine || '美食')} • <span class="text-brand-yellow">${escapeHtml(item.price || '')}</span></p>
           </div>
           <button type="button" data-fav-id="${escapeHtml(item.id)}" onclick="toggleFavorite(this.getAttribute('data-fav-id'))" class="text-xs sm:text-sm text-zinc-400 hover:text-white px-3 sm:px-4 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg transition">
             移除
@@ -2156,7 +2199,7 @@
     }
 
     function updateDropdownCounts() {
-      const counts = { '港島': 0, '九龍': 0, '新界': 0, '海外': 0, '其他': 0 };
+      const counts = { '港島': 0, '九龍': 0, '新界': 0, '海外': 0, '連鎖網購': 0, '其他': 0 };
       restaurants.forEach(r => {
         const reg = r.region || inferRegionFromItem(r);
         if (counts[reg] !== undefined) counts[reg]++;
@@ -2168,12 +2211,14 @@
       const optKln = document.getElementById('opt-reg-kln');
       const optNt = document.getElementById('opt-reg-nt');
       const optOverseas = document.getElementById('opt-reg-overseas');
+      const optChain = document.getElementById('opt-reg-chain');
 
       if (optAll) optAll.innerText = `🗺️ 所有地區 (共 ${restaurants.length} 間)`;
       if (optHk) optHk.innerText = `🇭🇰 港島全區 (${counts['港島']} 間)`;
       if (optKln) optKln.innerText = `🏮 九龍全區 (${counts['九龍']} 間)`;
       if (optNt) optNt.innerText = `🌳 新界全區 (${counts['新界']} 間)`;
       if (optOverseas) optOverseas.innerText = `✈️ 海外 / 旅遊推介 (${counts['海外']} 間)`;
+      if (optChain) optChain.innerText = `🏪 全港連鎖 / 網購 (${counts['連鎖網購']} 間)`;
     }
 
     const HK_DISTRICTS = [
@@ -3063,8 +3108,11 @@
         mapFilters.occasion !== 'all'
       );
 
-      const allMatching = restaurants
-        .filter(item => matchRestaurantByFilters(item, mapFilters))
+      const matchedAll = restaurants.filter(item => matchRestaurantByFilters(item, mapFilters));
+      const chainMatches = matchedAll.filter(item => isChainNoMap(item));
+
+      const allMappable = matchedAll
+        .filter(item => !isChainNoMap(item))
         .map(item => {
           const coords = getItemCoordinates(item);
           const distKm = userLocation ? calcDistanceKm(userLocation.lat, userLocation.lng, coords.lat, coords.lng) : null;
@@ -3072,12 +3120,12 @@
         });
 
       const otherScope = currentMapScope === 'hk' ? 'overseas' : 'hk';
-      const otherScopeCount = allMatching.filter(item => {
+      const otherScopeCount = allMappable.filter(item => {
         const inHK = isInHongKong(item.coords.lat, item.coords.lng);
         return otherScope === 'hk' ? inHK : !inHK;
       }).length;
 
-      let enriched = allMatching.filter(item => {
+      let enriched = allMappable.filter(item => {
         const inHK = isInHongKong(item.coords.lat, item.coords.lng);
         return currentMapScope === 'hk' ? inHK : !inHK;
       });
@@ -3159,7 +3207,7 @@
       if (userLocation || isMapFiltering || currentMapScope === 'overseas') {
         rail.classList.remove('hidden');
         if (enriched.length > 0) {
-          rail.innerHTML = enriched.slice(0, 30).map(item => `
+          let railHtml = enriched.slice(0, 30).map(item => `
             <div data-rest-id="${escapeHtml(item.id)}" onclick="focusPinAndPopup(this.getAttribute('data-rest-id'), ${item.coords.lat}, ${item.coords.lng})" 
                  class="flex-none w-52 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
               <img src="${escapeHtml(getReelThumbnail(item))}" alt="${escapeHtml(item.restaurant_name)}" data-rest-id="${escapeHtml(item.id)}" data-pin-img="1" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
@@ -3170,6 +3218,33 @@
                 </div>
                 <h4 class="text-xs font-bold text-white truncate mt-0.5">${escapeHtml(item.restaurant_name)}</h4>
                 <p class="text-[10px] text-zinc-400 truncate">${escapeHtml(item.cuisine || '')}</p>
+              </div>
+            </div>
+          `).join('');
+
+          if (isMapFiltering && chainMatches.length > 0) {
+            railHtml += chainMatches.slice(0, 10).map(item => `
+              <div data-rest-id="${escapeHtml(item.id)}" onclick="openModalFromMap(this.getAttribute('data-rest-id'))" 
+                   class="flex-none w-52 bg-zinc-900 border border-brand-yellow/40 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
+                <img src="${escapeHtml(getReelThumbnail(item))}" alt="${escapeHtml(item.restaurant_name)}" data-rest-id="${escapeHtml(item.id)}" data-pin-img="1" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
+                <div class="overflow-hidden">
+                  <span class="text-[9px] bg-brand-yellow/20 text-brand-yellow font-black px-1.5 py-0.2 rounded">🏪 全港通用</span>
+                  <h4 class="text-xs font-bold text-white truncate mt-0.5">${escapeHtml(item.restaurant_name)}</h4>
+                  <p class="text-[10px] text-zinc-400 truncate">點擊直接睇短片 →</p>
+                </div>
+              </div>
+            `).join('');
+          }
+          rail.innerHTML = railHtml;
+        } else if (isMapFiltering && chainMatches.length > 0) {
+          rail.innerHTML = chainMatches.slice(0, 15).map(item => `
+            <div data-rest-id="${escapeHtml(item.id)}" onclick="openModalFromMap(this.getAttribute('data-rest-id'))" 
+                 class="flex-none w-56 bg-zinc-900 border border-brand-yellow/50 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
+              <img src="${escapeHtml(getReelThumbnail(item))}" alt="${escapeHtml(item.restaurant_name)}" data-rest-id="${escapeHtml(item.id)}" data-pin-img="1" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
+              <div class="overflow-hidden">
+                <span class="text-[9px] bg-brand-yellow text-black font-black px-1.5 py-0.2 rounded">🏪 全港分店 / 網購</span>
+                <h4 class="text-xs font-bold text-white truncate mt-0.5">${escapeHtml(item.restaurant_name)}</h4>
+                <p class="text-[10px] text-brand-yellow truncate">無固定單店 • 點擊睇短片 →</p>
               </div>
             </div>
           `).join('');

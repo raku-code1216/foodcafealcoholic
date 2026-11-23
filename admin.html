@@ -8,6 +8,7 @@
   <title>FCA 後台管理系統 | Foodcafealcoholic Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -47,7 +48,7 @@
     <div class="flex items-center gap-3 flex-wrap">
       <div class="flex items-center gap-2.5">
         <span class="text-xl font-black text-brand-yellow tracking-wider">FCA ADMIN</span>
-        <span class="hidden md:inline text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • Google + 政府官方精準定位 • 壞圖監測</span>
+        <span class="hidden md:inline text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • Google + 政府官方精準定位 • 流量分析儀表板</span>
       </div>
 
       <!-- 視圖切換頁籤 -->
@@ -354,43 +355,154 @@
 
   <!-- 數據分析儀表板視圖 -->
   <section id="analyticsView" class="hidden flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
       <div>
         <h2 class="text-lg font-black text-white flex items-center gap-2">
-          <span class="text-brand-yellow">📊</span> 食評內容與網站點擊分析
+          <span class="text-brand-yellow">📊</span> 食評內容與訪客流量分析儀表板
         </h2>
-        <p class="text-xs text-zinc-400 mt-0.5">即時彙整 Firebase 網站點擊數（<code class="text-zinc-300">restaurant_clicks</code>）與餐廳資料庫分佈</p>
+        <p class="text-xs text-zinc-400 mt-0.5">即時彙整 Firebase 累計點擊 (<code class="text-zinc-300">restaurant_clicks</code>) 與每日瀏覽流量 (<code class="text-zinc-300">daily_clicks</code>)</p>
       </div>
-      <button type="button" onclick="refreshAnalyticsData()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold px-3.5 py-2 rounded-lg border border-zinc-700 transition self-start sm:self-auto">
-        🔄 重新整理數據
-      </button>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button type="button" onclick="exportAnalyticsReportCsv()" class="bg-zinc-900 hover:bg-zinc-800 text-brand-yellow text-xs font-bold px-3.5 py-2 rounded-lg border border-brand-yellow/40 transition">
+          📥 匯出數據分析報表
+        </button>
+        <button type="button" onclick="refreshAnalyticsData()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold px-3.5 py-2 rounded-lg border border-zinc-700 transition">
+          🔄 重新整理數據
+        </button>
+      </div>
     </div>
 
     <!-- 1. 核心 KPI 卡片 -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
       <div class="bg-brand-card border border-brand-border rounded-2xl p-4">
         <p class="text-xs text-zinc-400">總收錄餐廳數</p>
         <p id="kpiTotalRestaurants" class="text-2xl font-black text-white mt-1">0</p>
         <p class="text-[11px] text-zinc-500 mt-1">CSV 資料庫現存筆數</p>
       </div>
       <div class="bg-brand-card border border-brand-border rounded-2xl p-4">
-        <p class="text-xs text-zinc-400">全站總點擊次數</p>
+        <p class="text-xs text-zinc-400">全站累計總點擊</p>
         <p id="kpiTotalClicks" class="text-2xl font-black text-brand-yellow mt-1">0</p>
-        <p class="text-[11px] text-zinc-500 mt-1">Firebase 即時累計查看</p>
+        <p id="kpiAvgClicksPerRest" class="text-[11px] text-zinc-500 mt-1">平均每店 0 次</p>
+      </div>
+      <div class="bg-brand-card border border-brand-border rounded-2xl p-4">
+        <p class="text-xs text-zinc-400">今日瀏覽次數</p>
+        <p id="kpiTodayClicks" class="text-2xl font-black text-sky-400 mt-1">0</p>
+        <p id="kpiTodayDelta" class="text-[11px] text-zinc-400 mt-1">較昨日：追蹤中</p>
       </div>
       <div class="bg-brand-card border border-brand-border rounded-2xl p-4">
         <p class="text-xs text-zinc-400">本週嚴選推介</p>
         <p id="kpiEditorPicks" class="text-2xl font-black text-emerald-400 mt-1">0</p>
         <p id="kpiEditorPicksRatio" class="text-[11px] text-zinc-500 mt-1">佔比 0%</p>
       </div>
-      <div class="bg-brand-card border border-brand-border rounded-2xl p-4">
+      <div class="bg-brand-card border border-brand-border rounded-2xl p-4 col-span-2 lg:col-span-1">
         <p class="text-xs text-zinc-400">待補 / 異常座標</p>
         <p id="kpiMissingCoords" class="text-2xl font-black text-amber-400 mt-1">0</p>
-        <p class="text-[11px] text-zinc-500 mt-1">空白或與地區不符</p>
+        <p id="kpiBrokenImgsCount" class="text-[11px] text-zinc-500 mt-1">壞圖通報：0 間</p>
       </div>
     </div>
 
-    <!-- 2. 熱門點擊 TOP 10 & 地區分佈 -->
+    <!-- 2. 每日瀏覽流量走勢與增減圖 + 今日即時熱門 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-8 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm font-black text-white flex items-center gap-2">
+              <span>📈</span> 訪客瀏覽流量走勢與日增減變化
+            </h3>
+            <p id="flowSummaryText" class="text-[11px] text-zinc-400 mt-0.5">顯示每日訪客點擊餐廳卡片總數，協助觀察曝光上升或回落趨勢</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+            <!-- 指標切換 -->
+            <div class="flex items-center bg-zinc-900 p-0.5 rounded-lg border border-zinc-700">
+              <button type="button" id="flowModeTotalBtn" onclick="setAnalyticsFlowMode('total')" class="px-2.5 py-1 rounded-md bg-brand-yellow text-black font-black transition">每日瀏覽量</button>
+              <button type="button" id="flowModeDeltaBtn" onclick="setAnalyticsFlowMode('delta')" class="px-2.5 py-1 rounded-md text-zinc-300 hover:text-white font-bold transition">日增減 (+/-)</button>
+            </div>
+            <!-- 天數切換 -->
+            <div class="flex items-center bg-zinc-900 p-0.5 rounded-lg border border-zinc-700">
+              <button type="button" id="flowDays7Btn" onclick="setAnalyticsChartDays(7)" class="px-2 py-1 rounded-md bg-zinc-700 text-white font-bold transition">7日</button>
+              <button type="button" id="flowDays14Btn" onclick="setAnalyticsChartDays(14)" class="px-2 py-1 rounded-md text-zinc-400 hover:text-white font-bold transition">14日</button>
+              <button type="button" id="flowDays30Btn" onclick="setAnalyticsChartDays(30)" class="px-2 py-1 rounded-md text-zinc-400 hover:text-white font-bold transition">30日</button>
+            </div>
+          </div>
+        </div>
+        <div class="relative h-64 w-full">
+          <canvas id="dailyFlowChart"></canvas>
+        </div>
+      </div>
+
+      <div class="lg:col-span-4 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-3 flex flex-col">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-black text-white flex items-center gap-2">
+            <span>📅</span> 今日即時熱門 TOP 5
+          </h3>
+          <span id="todayDateLabel" class="text-[10px] text-zinc-500 font-mono">-</span>
+        </div>
+        <div id="todayTopList" class="divide-y divide-zinc-800/70 text-xs flex-grow">
+          <p class="py-8 text-center text-zinc-500">暫無今日瀏覽紀錄</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 地區平均點擊效率圖 & 菜式佔比圖 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-7 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-3">
+        <div>
+          <h3 class="text-sm font-black text-white flex items-center gap-2">
+            <span>🧭</span> 地區供應量 vs 平均每店點擊效率（Top 8 商圈）
+          </h3>
+          <p class="text-[11px] text-zinc-400 mt-0.5">找出「平均點擊高但收錄店數仍少」的高潛力地區，方便安排優先探店</p>
+        </div>
+        <div class="relative h-64 w-full">
+          <canvas id="districtEfficiencyChart"></canvas>
+        </div>
+      </div>
+
+      <div class="lg:col-span-5 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-3">
+        <div>
+          <h3 class="text-sm font-black text-white flex items-center gap-2">
+            <span>🍽️</span> 各菜式總點擊分佈佔比
+          </h3>
+          <p class="text-[11px] text-zinc-400 mt-0.5">了解訪客最常點擊瀏覽邊類餐廳食評</p>
+        </div>
+        <div class="relative h-64 w-full">
+          <canvas id="cuisineShareChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 營運洞察：潛力黑馬榜 & 資料完整度體檢 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-6 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm font-black text-white flex items-center gap-2">
+              <span>🌟</span> 潛力黑馬餐廳（高點擊但未設嚴選）
+            </h3>
+            <p class="text-[11px] text-zinc-400 mt-0.5">點擊右方按鈕即可一鍵將人氣餐廳加入「本週嚴選推介」</p>
+          </div>
+        </div>
+        <div id="analyticsRisingStarsList" class="divide-y divide-zinc-800/70 text-xs max-h-72 overflow-y-auto no-scrollbar">
+          <p class="py-8 text-center text-zinc-500">載入中...</p>
+        </div>
+      </div>
+
+      <div class="lg:col-span-6 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm font-black text-white flex items-center gap-2">
+              <span>🩺</span> 資料庫完整度體檢 (Data Health)
+            </h3>
+            <p class="text-[11px] text-zinc-400 mt-0.5">確保前台篩選、地圖定位與食評卡片資訊齊全</p>
+          </div>
+          <span id="dataHealthScoreBadge" class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-black px-2.5 py-1 rounded-full">100%</span>
+        </div>
+        <div id="analyticsHealthList" class="space-y-2.5 text-xs">
+          <p class="py-8 text-center text-zinc-500">分析中...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. 熱門點擊 TOP 10 & 地區分佈 -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div class="lg:col-span-6 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-3">
         <h3 class="text-sm font-black text-white flex items-center gap-2">
@@ -411,7 +523,7 @@
       </div>
     </div>
 
-    <!-- 3. 菜式分佈 & 待補/異常座標清單 -->
+    <!-- 6. 菜式分佈 & 待補/異常座標清單 -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div class="lg:col-span-6 bg-brand-card border border-brand-border rounded-2xl p-5 space-y-3">
         <h3 class="text-sm font-black text-white flex items-center gap-2">
@@ -496,6 +608,7 @@
     let filterMissingCoords = false;
     let filterBrokenImages = false;
     let globalClicksMap = {};
+    let dailyClicksMap = {};
     let brokenImagesMap = {};
     let brokenIdSet = new Set();
     let lastExtractedAddress = '';
@@ -505,6 +618,13 @@
     let loadedRemoteRowCount = 0;
     let batchGeocodeRunning = false;
     let batchGeocodeStopRequested = false;
+
+    // Chart.js 實例與分析選項
+    let analyticsChartDays = 7;
+    let analyticsFlowMode = 'total'; // 'total' | 'delta'
+    let dailyFlowChartInstance = null;
+    let districtEfficiencyChartInstance = null;
+    let cuisineShareChartInstance = null;
 
     const CSV_FILENAME = 'cleaned_data_final.csv';
     const DEFAULT_PLACES_KEY = 'AIzaSyDpBXu84kqQKtsmICc5UQopqh7nJiZ7EQw';
@@ -542,6 +662,18 @@
       firebase.initializeApp(firebaseConfig);
       rtdb = firebase.database();
     } catch (e) {}
+
+    function getHkDateString(offsetDays = 0) {
+      const target = new Date(Date.now() + offsetDays * 86400000);
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Hong_Kong',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(target);
+      const map = Object.fromEntries(parts.map(p => [p.type, p.value]));
+      return `${map.year}-${map.month}-${map.day}`;
+    }
 
     const OVERSEAS_KEYWORDS = [
       '海外', '澳門', '氹仔', '路氹', '路環', '官也街', '大三巴', '新馬路', '威尼斯人', '銀河', '倫敦人', '巴黎人',
@@ -995,7 +1127,7 @@
         if (isAnalytics) {
           tabAnalytics.className = 'px-3 py-1 rounded-lg bg-brand-yellow text-black font-black transition';
           tabManage.className = 'px-3 py-1 rounded-lg text-zinc-300 hover:text-white font-bold transition';
-          renderAnalytics();
+          refreshAnalyticsData();
         } else {
           tabManage.className = 'px-3 py-1 rounded-lg bg-brand-yellow text-black font-black transition';
           tabAnalytics.className = 'px-3 py-1 rounded-lg text-zinc-300 hover:text-white font-bold transition';
@@ -1006,11 +1138,15 @@
 
     function refreshAnalyticsData() {
       if (rtdb) {
-        rtdb.ref('restaurant_clicks').once('value').then(snapshot => {
-          globalClicksMap = snapshot.val() || {};
+        Promise.all([
+          rtdb.ref('restaurant_clicks').once('value').then(s => s.val() || {}).catch(() => ({})),
+          rtdb.ref('daily_clicks').once('value').then(s => s.val() || {}).catch(() => ({}))
+        ]).then(([clicksVal, dailyVal]) => {
+          globalClicksMap = clicksVal;
+          dailyClicksMap = dailyVal;
           renderTable();
           renderAnalytics();
-        }).catch(() => renderAnalytics());
+        });
       } else {
         renderAnalytics();
       }
@@ -1021,26 +1157,375 @@
       return Number(globalClicksMap[safeId]) || 0;
     }
 
+    function setAnalyticsChartDays(days) {
+      analyticsChartDays = days;
+      [7, 14, 30].forEach(d => {
+        const btn = document.getElementById(`flowDays${d}Btn`);
+        if (!btn) return;
+        btn.className = d === days
+          ? 'px-2 py-1 rounded-md bg-zinc-700 text-white font-bold transition'
+          : 'px-2 py-1 rounded-md text-zinc-400 hover:text-white font-bold transition';
+      });
+      renderDailyFlowChart();
+    }
+
+    function setAnalyticsFlowMode(mode) {
+      analyticsFlowMode = mode;
+      const totalBtn = document.getElementById('flowModeTotalBtn');
+      const deltaBtn = document.getElementById('flowModeDeltaBtn');
+      if (totalBtn && deltaBtn) {
+        if (mode === 'total') {
+          totalBtn.className = 'px-2.5 py-1 rounded-md bg-brand-yellow text-black font-black transition';
+          deltaBtn.className = 'px-2.5 py-1 rounded-md text-zinc-300 hover:text-white font-bold transition';
+        } else {
+          deltaBtn.className = 'px-2.5 py-1 rounded-md bg-brand-yellow text-black font-black transition';
+          totalBtn.className = 'px-2.5 py-1 rounded-md text-zinc-300 hover:text-white font-bold transition';
+        }
+      }
+      renderDailyFlowChart();
+    }
+
+    function renderDailyFlowChart() {
+      const canvas = document.getElementById('dailyFlowChart');
+      if (!canvas || typeof Chart === 'undefined') return;
+
+      const labels = [];
+      const totals = [];
+      const deltas = [];
+
+      // 多取前一天作計算第 1 天增減幅的基準
+      const rawTotals = [];
+      for (let offset = -analyticsChartDays; offset <= 0; offset++) {
+        const dateKey = getHkDateString(offset);
+        const dayObj = dailyClicksMap[dateKey];
+        const count = dayObj && typeof dayObj === 'object' ? (Number(dayObj.total) || 0) : (Number(dayObj) || 0);
+        rawTotals.push({ dateKey, count });
+      }
+
+      for (let i = 1; i < rawTotals.length; i++) {
+        const { dateKey, count } = rawTotals[i];
+        const prevCount = rawTotals[i - 1].count;
+        labels.push(dateKey.slice(5)); // MM-DD
+        totals.push(count);
+        deltas.push(count - prevCount);
+      }
+
+      const periodSum = totals.reduce((a, b) => a + b, 0);
+      const summaryEl = document.getElementById('flowSummaryText');
+      if (summaryEl) {
+        const activeDays = totals.filter(v => v > 0).length;
+        const avgDaily = totals.length ? (periodSum / totals.length).toFixed(1) : '0.0';
+        summaryEl.innerText = activeDays === 0
+          ? `近 ${analyticsChartDays} 日累計 ${periodSum} 次（部署新版前台後將由今日起每日自動記錄走勢）`
+          : `近 ${analyticsChartDays} 日累計瀏覽 ${periodSum.toLocaleString()} 次 • 日均 ${avgDaily} 次`;
+      }
+
+      if (dailyFlowChartInstance) {
+        dailyFlowChartInstance.destroy();
+      }
+
+      const ctx = canvas.getContext('2d');
+
+      if (analyticsFlowMode === 'total') {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+        gradient.addColorStop(0, 'rgba(255, 196, 0, 0.42)');
+        gradient.addColorStop(1, 'rgba(255, 196, 0, 0.02)');
+
+        dailyFlowChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: '每日瀏覽點擊數',
+              data: totals,
+              borderColor: '#FFC400',
+              backgroundColor: gradient,
+              borderWidth: 2.5,
+              pointBackgroundColor: '#FFC400',
+              pointBorderColor: '#0A0A0A',
+              pointRadius: analyticsChartDays > 14 ? 2.5 : 4,
+              pointHoverRadius: 6,
+              fill: true,
+              tension: 0.35
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#18181b',
+                borderColor: '#FFC400',
+                borderWidth: 1,
+                titleColor: '#FFC400',
+                bodyColor: '#ffffff',
+                callbacks: {
+                  afterLabel: (ctxItem) => {
+                    const idx = ctxItem.dataIndex;
+                    const diff = deltas[idx];
+                    const sign = diff > 0 ? '+' : '';
+                    return `較前一日：${sign}${diff} 次`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: '#a1a1aa', font: { size: 10 } }
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255,255,255,0.06)' },
+                ticks: { color: '#a1a1aa', precision: 0, font: { size: 10 } }
+              }
+            }
+          }
+        });
+      } else {
+        dailyFlowChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: '較前一日增減 (+/-)',
+              data: deltas,
+              backgroundColor: deltas.map(v => v >= 0 ? 'rgba(52, 211, 153, 0.8)' : 'rgba(248, 113, 113, 0.8)'),
+              borderColor: deltas.map(v => v >= 0 ? '#34d399' : '#f87171'),
+              borderWidth: 1,
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#18181b',
+                borderColor: '#FFC400',
+                borderWidth: 1,
+                callbacks: {
+                  label: (ctxItem) => {
+                    const v = ctxItem.parsed.y;
+                    return `日變化：${v > 0 ? '+' : ''}${v} 次`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: '#a1a1aa', font: { size: 10 } }
+              },
+              y: {
+                grid: { color: 'rgba(255,255,255,0.06)' },
+                ticks: { color: '#a1a1aa', precision: 0, font: { size: 10 } }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    function renderDistrictEfficiencyChart(districtStats) {
+      const canvas = document.getElementById('districtEfficiencyChart');
+      if (!canvas || typeof Chart === 'undefined') return;
+
+      const sorted = Object.entries(districtStats)
+        .filter(([name]) => name && name !== '未分類')
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 8);
+
+      const labels = sorted.map(([name]) => name);
+      const counts = sorted.map(([, s]) => s.count);
+      const avgClicks = sorted.map(([, s]) => s.count > 0 ? Number((s.clicks / s.count).toFixed(1)) : 0);
+
+      if (districtEfficiencyChartInstance) {
+        districtEfficiencyChartInstance.destroy();
+      }
+
+      districtEfficiencyChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: '收錄餐廳數',
+              data: counts,
+              backgroundColor: 'rgba(161, 161, 170, 0.45)',
+              borderColor: '#a1a1aa',
+              borderWidth: 1,
+              borderRadius: 4,
+              yAxisID: 'y'
+            },
+            {
+              label: '平均每店點擊數',
+              data: avgClicks,
+              type: 'line',
+              borderColor: '#FFC400',
+              backgroundColor: '#FFC400',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              tension: 0.3,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#d4d4d8', font: { size: 11 } }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#d4d4d8', font: { size: 10 } }
+            },
+            y: {
+              position: 'left',
+              beginAtZero: true,
+              grid: { color: 'rgba(255,255,255,0.06)' },
+              ticks: { color: '#a1a1aa', precision: 0, font: { size: 10 } }
+            },
+            y1: {
+              position: 'right',
+              beginAtZero: true,
+              grid: { drawOnChartArea: false },
+              ticks: { color: '#FFC400', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    function renderCuisineShareChart(cuisineStats) {
+      const canvas = document.getElementById('cuisineShareChart');
+      if (!canvas || typeof Chart === 'undefined') return;
+
+      const sorted = Object.entries(cuisineStats)
+        .sort((a, b) => b[1].clicks - a[1].clicks);
+
+      const top6 = sorted.slice(0, 6);
+      const othersClicks = sorted.slice(6).reduce((sum, [, s]) => sum + s.clicks, 0);
+
+      const labels = top6.map(([name]) => name);
+      const data = top6.map(([, s]) => s.clicks);
+      if (othersClicks > 0) {
+        labels.push('其他菜式');
+        data.push(othersClicks);
+      }
+
+      if (cuisineShareChartInstance) {
+        cuisineShareChartInstance.destroy();
+      }
+
+      cuisineShareChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: [
+              '#FFC400',
+              '#34D399',
+              '#38BDF8',
+              '#FB7185',
+              '#A78BFA',
+              '#F97316',
+              '#52525B'
+            ],
+            borderColor: '#141414',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '62%',
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: '#d4d4d8', boxWidth: 12, font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    function promoteToEditorPick(index) {
+      if (!adminList[index]) return;
+      adminList[index].is_editor_pick = '1';
+      markUnsaved(true);
+      renderTable();
+      renderAnalytics();
+    }
+
+    function jumpToManageIssue(filterType) {
+      switchAdminView('manage');
+      if (filterType === 'coords' && !filterMissingCoords) toggleMissingCoordsFilter();
+      else if (filterType === 'broken' && !filterBrokenImages) toggleBrokenImagesFilter();
+    }
+
+    function exportAnalyticsReportCsv() {
+      const rows = adminList.map((item, idx) => ({
+        restaurant_name: item.restaurant_name || '',
+        district: item.district || '',
+        cuisine: item.cuisine || '',
+        price: item.price || '',
+        occasion: item.occasion || '',
+        is_editor_pick: item.is_editor_pick === '1' ? '是' : '否',
+        total_clicks: getItemClickCount(item, idx),
+        coord_status: getCoordStatus(item),
+        image_status: brokenIdSet.has(getItemSafeId(item, idx)) ? '壞圖' : '正常',
+        url: item.url || ''
+      })).sort((a, b) => b.total_clicks - a.total_clicks);
+
+      const csvText = Papa.unparse(rows);
+      const blob = new Blob(["\uFEFF" + csvText], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `fca_analytics_report_${getHkDateString(0)}.csv`;
+      link.click();
+    }
+
     function renderAnalytics() {
       const totalEl = document.getElementById('kpiTotalRestaurants');
       const clicksEl = document.getElementById('kpiTotalClicks');
+      const avgClicksEl = document.getElementById('kpiAvgClicksPerRest');
+      const todayClicksEl = document.getElementById('kpiTodayClicks');
+      const todayDeltaEl = document.getElementById('kpiTodayDelta');
       const picksEl = document.getElementById('kpiEditorPicks');
       const picksRatioEl = document.getElementById('kpiEditorPicksRatio');
       const missingEl = document.getElementById('kpiMissingCoords');
+      const brokenKpiEl = document.getElementById('kpiBrokenImgsCount');
       const missingBadgeEl = document.getElementById('missingCoordsBadge');
       const batchBtn = document.getElementById('btnBatchGeocode');
 
       const totalCount = adminList.length;
       let totalClicks = 0;
       let picksCount = 0;
+      let missingPriceCount = 0;
+      let missingMustTryCount = 0;
+      let missingOccasionCount = 0;
+      let brokenCount = 0;
       const missingItems = [];
       const districtStats = {};
       const cuisineStats = {};
 
       const enriched = adminList.map((item, idx) => {
         const clicks = getItemClickCount(item, idx);
+        const safeId = getItemSafeId(item, idx);
         totalClicks += clicks;
         if (item.is_editor_pick === '1') picksCount++;
+        if (!String(item.price || '').trim()) missingPriceCount++;
+        if (!String(item.must_try || '').trim()) missingMustTryCount++;
+        if (!String(item.occasion || '').trim()) missingOccasionCount++;
+        if (brokenIdSet.has(safeId)) brokenCount++;
 
         const coordStatus = getCoordStatus(item);
         if (coordStatus !== 'ok') missingItems.push({ item, idx, coordStatus });
@@ -1055,22 +1540,155 @@
         cuisineStats[cuisKey].count++;
         cuisineStats[cuisKey].clicks += clicks;
 
-        return { item, idx, clicks };
+        return { item, idx, clicks, safeId };
       });
+
+      const todayKey = getHkDateString(0);
+      const yesterdayKey = getHkDateString(-1);
+      const todayObj = dailyClicksMap[todayKey];
+      const yesterdayObj = dailyClicksMap[yesterdayKey];
+      const todayClicks = todayObj && typeof todayObj === 'object' ? (Number(todayObj.total) || 0) : (Number(todayObj) || 0);
+      const yesterdayClicks = yesterdayObj && typeof yesterdayObj === 'object' ? (Number(yesterdayObj.total) || 0) : (Number(yesterdayObj) || 0);
 
       if (totalEl) totalEl.innerText = totalCount;
       if (clicksEl) clicksEl.innerText = totalClicks.toLocaleString();
+      if (avgClicksEl) {
+        const avg = totalCount > 0 ? (totalClicks / totalCount).toFixed(1) : '0.0';
+        avgClicksEl.innerText = `平均每店 ${avg} 次`;
+      }
+      if (todayClicksEl) todayClicksEl.innerText = todayClicks.toLocaleString();
+      if (todayDeltaEl) {
+        if (yesterdayClicks === 0) {
+          todayDeltaEl.innerText = todayClicks > 0 ? '首日即時紀錄中' : '較昨日：尚無紀錄';
+          todayDeltaEl.className = 'text-[11px] text-zinc-400 mt-1';
+        } else {
+          const pct = (((todayClicks - yesterdayClicks) / yesterdayClicks) * 100).toFixed(1);
+          const diff = todayClicks - yesterdayClicks;
+          const isUp = diff >= 0;
+          todayDeltaEl.innerText = `較昨日 ${isUp ? '+' : ''}${diff} (${isUp ? '▲ +' : '▼ '}${pct}%)`;
+          todayDeltaEl.className = `text-[11px] font-bold mt-1 ${isUp ? 'text-emerald-400' : 'text-red-400'}`;
+        }
+      }
+
       if (picksEl) picksEl.innerText = picksCount;
       if (picksRatioEl) {
         const ratio = totalCount > 0 ? ((picksCount / totalCount) * 100).toFixed(1) : '0.0';
         picksRatioEl.innerText = `佔比 ${ratio}%`;
       }
       if (missingEl) missingEl.innerText = missingItems.length;
+      if (brokenKpiEl) brokenKpiEl.innerText = `壞圖通報：${brokenCount} 間`;
       if (missingBadgeEl) missingBadgeEl.innerText = `${missingItems.length} 間`;
       if (batchBtn && !batchGeocodeRunning) {
         batchBtn.classList.toggle('hidden', missingItems.length === 0);
       }
 
+      // 圖表渲染
+      renderDailyFlowChart();
+      renderDistrictEfficiencyChart(districtStats);
+      renderCuisineShareChart(cuisineStats);
+
+      // 今日即時熱門 TOP 5
+      const todayDateLabel = document.getElementById('todayDateLabel');
+      if (todayDateLabel) todayDateLabel.innerText = todayKey;
+      const todayTopEl = document.getElementById('todayTopList');
+      if (todayTopEl) {
+        const todayById = (todayObj && typeof todayObj === 'object' && todayObj.by_id) ? todayObj.by_id : {};
+        const todayEntries = Object.entries(todayById)
+          .map(([id, cnt]) => {
+            const found = enriched.find(e => e.safeId === id);
+            return { id, cnt: Number(cnt) || 0, item: found ? found.item : null };
+          })
+          .filter(x => x.cnt > 0)
+          .sort((a, b) => b.cnt - a.cnt)
+          .slice(0, 5);
+
+        if (todayEntries.length === 0) {
+          todayTopEl.innerHTML = `<p class="py-10 text-center text-zinc-500">今日暫未有訪客點擊紀錄</p>`;
+        } else {
+          todayTopEl.innerHTML = todayEntries.map((entry, r) => `
+            <div class="py-2.5 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-5 h-5 rounded bg-zinc-800 text-brand-yellow font-black flex items-center justify-center text-[10px] shrink-0">${r + 1}</span>
+                <div class="truncate">
+                  <p class="font-bold text-white truncate">${escapeHtml(entry.item ? entry.item.restaurant_name : entry.id)}</p>
+                  <p class="text-[10px] text-zinc-500 truncate">${escapeHtml(entry.item ? (entry.item.district || '-') : 'ID')}</p>
+                </div>
+              </div>
+              <span class="font-mono font-bold text-sky-400 shrink-0">+${entry.cnt}</span>
+            </div>
+          `).join('');
+        }
+      }
+
+      // 潛力黑馬餐廳（未設嚴選但點擊最高 Top 8）
+      const risingEl = document.getElementById('analyticsRisingStarsList');
+      if (risingEl) {
+        const rising = enriched
+          .filter(e => e.item.is_editor_pick !== '1' && e.clicks > 0)
+          .sort((a, b) => b.clicks - a.clicks)
+          .slice(0, 8);
+
+        if (rising.length === 0) {
+          risingEl.innerHTML = `<p class="py-8 text-center text-zinc-500">暫無待推薦的高點擊潛力餐廳</p>`;
+        } else {
+          risingEl.innerHTML = rising.map(entry => `
+            <div class="py-2.5 flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <p class="font-bold text-white truncate">${escapeHtml(entry.item.restaurant_name || '未命名')}</p>
+                <p class="text-[11px] text-zinc-500 truncate">${escapeHtml(entry.item.district || '-')} • ${escapeHtml(entry.item.cuisine || '-')} • 🔥 ${entry.clicks} 次</p>
+              </div>
+              <button type="button" onclick="promoteToEditorPick(${entry.idx})"
+                      class="bg-zinc-900 hover:bg-brand-yellow text-brand-yellow hover:text-black border border-brand-yellow/50 px-2.5 py-1 rounded-lg font-bold text-[11px] shrink-0 transition">
+                ★ 設為嚴選
+              </button>
+            </div>
+          `).join('');
+        }
+      }
+
+      // 資料庫完整度體檢
+      const healthListEl = document.getElementById('analyticsHealthList');
+      const healthScoreBadge = document.getElementById('dataHealthScoreBadge');
+      if (healthListEl) {
+        const checks = [
+          { label: '精準座標完整度', missing: missingItems.length, action: () => jumpToManageIssue('coords'), actionText: '去補座標' },
+          { label: '封面圖片正常率', missing: brokenCount, action: () => jumpToManageIssue('broken'), actionText: '去修壞圖' },
+          { label: '人均預算填寫', missing: missingPriceCount },
+          { label: '必食招牌菜推介', missing: missingMustTryCount },
+          { label: '適合場景標籤', missing: missingOccasionCount }
+        ];
+
+        const totalFields = Math.max(1, totalCount * checks.length);
+        const totalMissing = checks.reduce((s, c) => s + c.missing, 0);
+        const healthPct = totalCount === 0 ? 100 : Math.max(0, Math.round(((totalFields - totalMissing) / totalFields) * 100));
+        if (healthScoreBadge) {
+          healthScoreBadge.innerText = `${healthPct}% 健康度`;
+          healthScoreBadge.className = healthPct >= 85
+            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-black px-2.5 py-1 rounded-full'
+            : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-black px-2.5 py-1 rounded-full';
+        }
+
+        healthListEl.innerHTML = checks.map((c, idx) => {
+          const okCount = Math.max(0, totalCount - c.missing);
+          const pct = totalCount > 0 ? Math.round((okCount / totalCount) * 100) : 100;
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-zinc-200">${escapeHtml(c.label)}</span>
+                <div class="flex items-center gap-2">
+                  <span class="${c.missing > 0 ? 'text-amber-400' : 'text-emerald-400'} font-mono">${pct}% (缺 ${c.missing} 間)</span>
+                  ${c.missing > 0 && c.action ? `<button type="button" onclick="${idx === 0 ? "jumpToManageIssue('coords')" : "jumpToManageIssue('broken')"}" class="text-brand-yellow hover:underline font-bold">${c.actionText} →</button>` : ''}
+                </div>
+              </div>
+              <div class="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+                <div class="h-full ${pct >= 90 ? 'bg-emerald-400' : 'bg-amber-400'} rounded-full" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 全站 TOP 10
       const topListEl = document.getElementById('analyticsTopList');
       if (topListEl) {
         const top10 = [...enriched].sort((a, b) => b.clicks - a.clicks).slice(0, 10);
@@ -1094,6 +1712,7 @@
         }
       }
 
+      // 地區分佈 Top 10
       const distListEl = document.getElementById('analyticsDistrictList');
       if (distListEl) {
         const sortedDist = Object.entries(districtStats)
@@ -1119,6 +1738,7 @@
             }).join('');
       }
 
+      // 菜式分佈 Top 10
       const cuisListEl = document.getElementById('analyticsCuisineList');
       if (cuisListEl) {
         const sortedCuis = Object.entries(cuisineStats)
@@ -1144,6 +1764,7 @@
             }).join('');
       }
 
+      // 缺漏或異常座標清單
       const missingListEl = document.getElementById('analyticsMissingCoordsList');
       if (missingListEl) {
         if (missingItems.length === 0) {
@@ -1237,13 +1858,17 @@
 
     function initLoadData() {
       if (rtdb) {
-        rtdb.ref('restaurant_clicks').once('value').then(snapshot => {
-          globalClicksMap = snapshot.val() || {};
+        Promise.all([
+          rtdb.ref('restaurant_clicks').once('value').then(s => s.val() || {}).catch(() => ({})),
+          rtdb.ref('daily_clicks').once('value').then(s => s.val() || {}).catch(() => ({}))
+        ]).then(([clicksVal, dailyVal]) => {
+          globalClicksMap = clicksVal;
+          dailyClicksMap = dailyVal;
           renderTable();
           if (!document.getElementById('analyticsView').classList.contains('hidden')) {
             renderAnalytics();
           }
-        }).catch(() => {});
+        });
 
         rtdb.ref('broken_images').on('value', snapshot => {
           brokenImagesMap = snapshot.val() || {};
@@ -1523,7 +2148,6 @@
       if (!clean) return variants;
       variants.push(clean);
 
-      // 去除樓層與舖位編號（例如 B1樓B110B號舖、2樓201室、地下G5號舖、Shop B110B）
       const noFloorShop = clean
         .replace(/(?:地下|地庫|閣樓|天台|[A-Z]?\d+樓|\d+\s*\/\s*F|G\s*\/\s*F|LG\s*\/\s*F|UG\s*\/\s*F|M\s*\/\s*F|B\d+\s*樓?).*$/i, '')
         .replace(/(?:Shop|Unit|Flat|Rm|Room)\s*[A-Z0-9-]+.*$/i, '')
@@ -1531,13 +2155,11 @@
         .trim();
       if (noFloorShop && noFloorShop.length >= 3) variants.push(noFloorShop);
 
-      // 提取「路/街/道 + 門牌號」（如：勿地臣街1號）
       const streetMatch = clean.match(/([\u4e00-\u9fa5]{2,8}(?:街|道|路|里|巷|坊|徑|廣場)\s*\d+(?:[-–]\d+)?號)/);
       if (streetMatch && streetMatch[1]) {
         variants.push(streetMatch[1].replace(/\s+/g, ''));
       }
 
-      // 提取門牌後的商場／大廈名稱（如：時代廣場）
       if (noFloorShop.includes('號')) {
         const afterNo = noFloorShop.split('號').slice(1).join('').trim();
         if (afterNo && afterNo.length >= 2) {
@@ -1651,7 +2273,7 @@
         } catch (err) {}
       }
 
-      // 2. 香港政府官方 OGCIO 地址搜尋服務 (專治香港商場、樓層及門牌)
+      // 2. 香港政府官方 OGCIO 地址搜尋服務
       if (expectedScope !== 'overseas') {
         const alsCandidates = Array.from(new Set([...addrVariants, `${dist} ${name}`.trim(), name].filter(Boolean)));
         for (const q of alsCandidates) {
@@ -2271,4 +2893,3 @@ ${textToAnalyze}`;
   </script>
 </body>
 </html>
-

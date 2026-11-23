@@ -222,7 +222,7 @@
           </div>
         </div>
 
-        <!-- 精準門牌經緯度欄位 (支援全港連鎖不上地圖 + 地址自動轉換 + 直接座標) -->
+        <!-- 精準門牌經緯度欄位 -->
         <div class="p-2.5 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-2">
           <div class="flex items-center justify-between gap-2">
             <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準座標 (輸入地址自動填寫 / 手動座標)</label>
@@ -633,10 +633,8 @@
     let batchGeocodeRunning = false;
     let batchGeocodeStopRequested = false;
 
-    // 辨識目前預覽圖是否屬於新貼入的 Reel 網址
     let isCurrentlyNewPost = false;
 
-    // Chart.js 實例與分析選項
     let analyticsChartDays = 7;
     let analyticsFlowMode = 'total';
     let dailyFlowChartInstance = null;
@@ -680,7 +678,6 @@
       rtdb = firebase.database();
     } catch (e) {}
 
-    // 點擊 Logo 重新整理後台（支援 iPhone 桌面 App Reboost）
     function handleAdminLogoRefresh() {
       if (hasUnsavedChanges) {
         if (!confirm('⚠️ 你目前有尚未同步到網站的變更！\n重新整理後台會遺失未儲存的暫存修改。確定要重新載入嗎？')) {
@@ -2631,6 +2628,7 @@
       }
     }
 
+    // AI 智能提取：具備多重模型自動切換 + 高峰期 (503) 自動重試機制
     async function runAiExtraction() {
       const textToAnalyze = document.getElementById('caption').value.trim();
       const cfg = loadConfig();
@@ -2667,45 +2665,65 @@
 貼文內容如下：
 ${textToAnalyze}`;
 
+        // 梯隊模型陣列：涵蓋極低延遲高吞吐的 Flash-Lite 與主流 Flash，全面防止單一模型超載
         const candidateModels = [
-          'gemini-3.8-flash',
+          'gemini-2.5-flash-lite',
           'gemini-3.5-flash-lite',
-          'gemini-2.5-flash'
+          'gemini-3.8-flash',
+          'gemini-2.0-flash',
+          'gemini-1.5-flash',
+          'gemini-1.5-flash-8b'
         ];
         
         let aiData = null;
         let errorLogs = [];
 
         for (const model of candidateModels) {
-          try {
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-            const res = await fetch(apiUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': cfg.geminiKey
-              },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: promptText }] }],
-                generationConfig: {
-                  responseMimeType: 'application/json'
+          let retryCount = 0;
+          const maxRetries = 1; // 若遇 503 短暫塞車自動等 1.2 秒重試
+
+          while (retryCount <= maxRetries) {
+            try {
+              const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+              const res = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-goog-api-key': cfg.geminiKey
+                },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: promptText }] }],
+                  generationConfig: {
+                    responseMimeType: 'application/json'
+                  }
+                })
+              });
+              const data = await res.json();
+              if (res.ok && data.candidates && data.candidates.length > 0) {
+                aiData = data;
+                break;
+              } else if (data.error) {
+                const isOverloaded = res.status === 503 || (data.error.message && data.error.message.includes('high demand'));
+                if (isOverloaded && retryCount < maxRetries) {
+                  retryCount++;
+                  btn.innerText = `🤖 伺服器稍忙，重試中 (${model})...`;
+                  await new Promise(r => setTimeout(r, 1200));
+                  continue;
                 }
-              })
-            });
-            const data = await res.json();
-            if (res.ok && data.candidates && data.candidates.length > 0) {
-              aiData = data;
+                errorLogs.push(`${model}: ${data.error.message}`);
+                break;
+              }
+            } catch (err) {
+              errorLogs.push(`${model}: ${err.message}`);
               break;
-            } else if (data.error) {
-              errorLogs.push(`${model}: ${data.error.message}`);
             }
-          } catch (err) {
-            errorLogs.push(`${model}: ${err.message}`);
           }
+
+          if (aiData) break;
         }
 
         if (!aiData) {
-          throw new Error(errorLogs.join('\n') || '所有可用模型均呼叫失敗，請確認 API Key 是否有效。');
+          throw new Error(errorLogs.join('\n') || '所有可用模型均連線繁忙，請稍後數秒再試。');
         }
 
         const rawJson = aiData.candidates[0].content.parts[0].text;

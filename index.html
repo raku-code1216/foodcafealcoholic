@@ -300,9 +300,15 @@
       </div>
     </div>
 
-    <!-- 右側隨機揀、地圖與清單按鈕 -->
+    <!-- 右側按鈕群 -->
     <div class="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
-      <button onclick="pickRandomRestaurant()" title="隨機抽一間餐廳"
+      <button onclick="openPwaInstallModal()" title="加到手機主畫面 (App 教學)"
+              class="bg-zinc-900 hover:bg-brand-yellow text-zinc-200 hover:text-black border border-zinc-700 hover:border-brand-yellow text-xs sm:text-sm font-black px-2 sm:px-3 py-1.5 sm:py-2 rounded-full transition flex items-center gap-1 whitespace-nowrap shadow active:scale-95">
+        <span>📲</span>
+        <span class="hidden xl:inline">App 版</span>
+      </button>
+
+      <button onclick="openRandomPickerModal()" title="設定地區並隨機抽一間餐廳"
               class="bg-zinc-900 hover:bg-brand-yellow text-white hover:text-black border border-zinc-700 hover:border-brand-yellow text-xs sm:text-sm font-black px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full transition flex items-center gap-1 whitespace-nowrap shadow active:scale-95">
         <span>🎲</span>
         <span class="hidden md:inline">幫我揀</span>
@@ -327,6 +333,27 @@
 
   <!-- 置頂搜尋引擎 Sector -->
   <section class="w-full max-w-5xl mx-auto px-4 pt-20 sm:pt-24 pb-3 sm:pb-4 text-center relative z-10">
+    <!-- 友善加到手機主畫面引導條（非 Standalone 模式且未關閉時顯示） -->
+    <div id="pwaTopBanner" class="hidden max-w-3xl mx-auto mb-3 bg-gradient-to-r from-zinc-900 via-zinc-900 to-brand-yellow/10 border border-brand-yellow/45 rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-2 text-left shadow-lg">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <img src="logo.jpg" alt="" class="w-8 h-8 rounded-lg object-contain border border-brand-yellow/50 shrink-0" />
+        <div class="min-w-0">
+          <p class="text-xs sm:text-sm font-black text-white truncate">將 FCA 搵食加到手機主畫面</p>
+          <p class="text-[10px] sm:text-xs text-zinc-400 truncate">免費似 App 咁一按即開，隨時搵附近餐廳！</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button type="button" onclick="openPwaInstallModal()"
+                class="bg-brand-yellow hover:bg-brand-yellowHover text-black text-[11px] sm:text-xs font-black px-3 py-1.5 rounded-full transition shadow whitespace-nowrap active:scale-95">
+          📲 即睇點加
+        </button>
+        <button type="button" onclick="dismissPwaBanner()" aria-label="關閉提示"
+                class="w-7 h-7 rounded-full bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center text-xs transition">
+          ✕
+        </button>
+      </div>
+    </div>
+
     <div class="relative max-w-3xl mx-auto shadow-2xl">
       <span class="absolute inset-y-0 left-4 sm:left-6 flex items-center text-brand-yellow text-xl sm:text-3xl pointer-events-none">
         🔍
@@ -381,7 +408,7 @@
           <span id="mobileFilterArrow" class="text-[10px] text-zinc-400 ml-0.5">▼</span>
         </button>
 
-        <button type="button" onclick="pickRandomRestaurant()"
+        <button type="button" onclick="openRandomPickerModal()"
                 class="flex items-center gap-1 bg-brand-yellow/15 border border-brand-yellow/60 text-brand-yellow text-xs font-black px-3.5 py-2 rounded-xl transition active:scale-95">
           <span>🎲</span> <span>今日食咩好</span>
         </button>
@@ -541,6 +568,221 @@
     <span>探索附近美食地圖</span>
     <span class="text-brand-yellow group-hover:text-black font-black">→</span>
   </button>
+
+  <!-- 🎲 幫我揀餐廳（地區限定與隨機抽籤 Modal） -->
+  <div id="randomPickerModal" onclick="if(event.target === this) closeRandomPickerModal()" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-brand-card border border-brand-yellow/40 rounded-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto no-scrollbar shadow-2xl relative flex flex-col">
+      <div class="p-4 sm:p-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 sticky top-0 z-10">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🎲</span>
+          <div>
+            <h3 class="text-base sm:text-lg font-black text-white leading-tight">幫我揀餐廳（地區限定）</h3>
+            <p class="text-[11px] text-zinc-400">先揀想去嘅地區，再交畀命運決定今日食咩好！</p>
+          </div>
+        </div>
+        <button onclick="closeRandomPickerModal()" class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <div class="p-4 sm:p-5 space-y-4">
+        <!-- 1. 快速大區 -->
+        <div class="space-y-2">
+          <label class="text-xs font-black text-brand-yellow flex items-center justify-between">
+            <span>📍 1. 限定大區</span>
+            <span id="randomPoolCountBadge" class="bg-brand-yellow/15 border border-brand-yellow/50 text-brand-yellow px-2.5 py-0.5 rounded-full text-[11px]">候選 0 間</span>
+          </label>
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" onclick="setRandomRegion('all', this)" class="rand-region-pill pill-active px-3 py-1.5 rounded-xl border border-zinc-700 text-xs font-bold transition">🌍 全部地區</button>
+            <button type="button" onclick="setRandomRegion('港島', this)" class="rand-region-pill px-3 py-1.5 rounded-xl border border-zinc-700 text-xs font-bold text-zinc-200 hover:border-brand-yellow transition">🇭🇰 港島</button>
+            <button type="button" onclick="setRandomRegion('九龍', this)" class="rand-region-pill px-3 py-1.5 rounded-xl border border-zinc-700 text-xs font-bold text-zinc-200 hover:border-brand-yellow transition">🏮 九龍</button>
+            <button type="button" onclick="setRandomRegion('新界', this)" class="rand-region-pill px-3 py-1.5 rounded-xl border border-zinc-700 text-xs font-bold text-zinc-200 hover:border-brand-yellow transition">🌳 新界</button>
+            <button type="button" onclick="setRandomRegion('海外', this)" class="rand-region-pill px-3 py-1.5 rounded-xl border border-zinc-700 text-xs font-bold text-zinc-200 hover:border-brand-yellow transition">✈️ 海外</button>
+          </div>
+        </div>
+
+        <!-- 2. 細分商圈 / 城市 -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-zinc-300 block">🏙️ 2. 指定具體商圈／區份（選填）</label>
+          <select id="randomDistrictSelect" onchange="updateRandomPoolCount()"
+                  class="w-full bg-zinc-900 border border-zinc-700 focus:border-brand-yellow text-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-bold focus:outline-none">
+            <option value="all">不限具體商圈（包含所選大區全部）</option>
+          </select>
+        </div>
+
+        <!-- 3. 菜式與預算（可選） -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="text-[11px] font-bold text-zinc-400 block mb-1">🍜 菜式限制</label>
+            <select id="randomCuisineSelect" onchange="updateRandomPoolCount()"
+                    class="w-full bg-zinc-900 border border-zinc-700 focus:border-brand-yellow text-white rounded-xl px-3 py-2 text-xs font-bold focus:outline-none">
+              <option value="all">不限菜式</option>
+              <option value="日本">🇯🇵 日本料理</option>
+              <option value="Cafe">☕ Cafe / Brunch</option>
+              <option value="西式">🥩 西式料理</option>
+              <option value="火鍋">🍲 火鍋 / 雞煲</option>
+              <option value="東南亞">🌶️ 東南亞菜</option>
+              <option value="中菜">🥢 中式粵菜</option>
+              <option value="甜品">🍰 甜品烘焙</option>
+              <option value="酒吧">🍸 酒吧調酒</option>
+              <option value="快餐">🍔 小食 / 漢堡</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-zinc-400 block mb-1">💰 預算限制</label>
+            <select id="randomPriceSelect" onchange="updateRandomPoolCount()"
+                    class="w-full bg-zinc-900 border border-zinc-700 focus:border-brand-yellow text-white rounded-xl px-3 py-2 text-xs font-bold focus:outline-none">
+              <option value="all">不限預算</option>
+              <option value="under100">$100 以下</option>
+              <option value="100-300">$100 - $300</option>
+              <option value="300-600">$300 - $600</option>
+              <option value="above600">$600 以上</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 抽選按鈕 -->
+        <button type="button" id="btnSpinRandom" onclick="spinRandomRestaurant()"
+                class="w-full bg-brand-yellow hover:bg-brand-yellowHover text-black font-black py-3 rounded-xl text-sm shadow-lg transition active:scale-95 flex items-center justify-center gap-2">
+          <span>🎲</span> <span>立即幫我揀一間！</span>
+        </button>
+
+        <!-- 抽中結果卡片區 -->
+        <div id="randomPickerResult" class="hidden bg-zinc-900/95 border-2 border-brand-yellow/70 rounded-2xl p-3.5 space-y-3 shadow-xl">
+          <div class="flex items-center gap-3">
+            <img id="randResImg" src="logo.jpg" alt="" data-fallback-only="1" onerror="onImageError(this)"
+                 class="w-20 h-24 rounded-xl object-cover bg-zinc-800 border border-zinc-700 shrink-0" />
+            <div class="min-w-0 flex-grow space-y-1">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span id="randResDistrict" class="bg-black text-[10px] text-zinc-200 px-2 py-0.5 rounded border border-zinc-700">📍 地區</span>
+                <span id="randResCuisine" class="text-[10px] font-black text-brand-yellow">🍽️ 菜式</span>
+              </div>
+              <h4 id="randResName" class="text-base font-black text-white leading-snug line-clamp-2">餐廳名稱</h4>
+              <p id="randResMustTry" class="text-xs text-zinc-300 line-clamp-1">⭐ 必食推介</p>
+              <p id="randResPrice" class="text-[11px] text-brand-yellow font-bold">💰 預算</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button type="button" onclick="spinRandomRestaurant()"
+                    class="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-600 text-xs font-bold py-2.5 rounded-xl transition">
+              🔄 再抽過
+            </button>
+            <button type="button" id="randResOpenBtn"
+                    class="bg-brand-yellow hover:bg-brand-yellowHover text-black text-xs font-black py-2.5 rounded-xl transition shadow">
+              🎬 睇食評短片 →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📲 加到手機主畫面友善教學 Modal (PWA Guide) -->
+  <div id="pwaInstallModal" onclick="if(event.target === this) closePwaInstallModal()" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-brand-card border border-brand-yellow/40 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl relative">
+      <div class="p-4 sm:p-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 sticky top-0 z-10">
+        <div class="flex items-center gap-2.5">
+          <img src="logo.jpg" alt="FCA" class="w-9 h-9 rounded-xl object-contain border border-brand-yellow/60" />
+          <div>
+            <h3 class="text-base font-black text-white">📲 加到手機主畫面 (App 版)</h3>
+            <p class="text-[11px] text-zinc-400">免去 App Store 下載，一按即開搵食！</p>
+          </div>
+        </div>
+        <button onclick="closePwaInstallModal()" class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <div class="p-4 sm:p-5 space-y-4 text-xs sm:text-sm">
+        <!-- IG / FB 內置瀏覽器特別提示 -->
+        <div id="pwaInAppWarning" class="hidden bg-amber-500/15 border border-amber-400/60 rounded-xl p-3.5 space-y-1.5">
+          <p class="text-amber-300 font-black text-xs flex items-center gap-1.5">
+            <span>⚠️</span> <span>偵測到你正在使用 IG / Facebook 內置瀏覽器</span>
+          </p>
+          <p class="text-zinc-200 text-xs leading-relaxed">
+            內置瀏覽器不支援建立桌面捷徑。請先點擊畫面右上角 <strong class="text-brand-yellow">「•••」</strong>，選擇 <strong class="text-brand-yellow">「在系統瀏覽器中開啟 / Open in Safari / Chrome」</strong>，即可按照以下步驟加到主畫面！
+          </p>
+        </div>
+
+        <!-- 已支援原生一鍵安裝按鈕 (Android / Desktop Chrome) -->
+        <div id="pwaNativeInstallBox" class="hidden bg-brand-yellow/10 border border-brand-yellow/50 rounded-xl p-3.5 text-center space-y-2">
+          <p class="text-xs text-zinc-200 font-bold">你的裝置支援一鍵快速安裝！</p>
+          <button type="button" onclick="triggerNativePwaInstall()"
+                  class="w-full bg-brand-yellow hover:bg-brand-yellowHover text-black font-black py-2.5 rounded-xl text-sm shadow-lg transition active:scale-95">
+            ⚡ 立即安裝「FCA 搵食」到桌面
+          </button>
+        </div>
+
+        <!-- 分頁切換：iPhone / Android -->
+        <div class="flex items-center gap-1.5 bg-zinc-900 p-1 rounded-xl border border-zinc-800">
+          <button type="button" id="pwaTabIos" onclick="switchPwaGuideTab('ios')"
+                  class="flex-1 py-2 rounded-lg text-xs font-black transition bg-brand-yellow text-black">
+            🍎 iPhone (Safari)
+          </button>
+          <button type="button" id="pwaTabAndroid" onclick="switchPwaGuideTab('android')"
+                  class="flex-1 py-2 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition">
+            🤖 Android (Chrome)
+          </button>
+        </div>
+
+        <!-- iOS Safari 教學步驟 -->
+        <div id="pwaGuideIos" class="space-y-2.5">
+          <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 flex items-start gap-3">
+            <span class="w-6 h-6 rounded-full bg-brand-yellow text-black font-black text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+            <div class="space-y-0.5">
+              <p class="font-black text-white text-xs sm:text-sm">打開 Safari 並點擊底部「分享」掣</p>
+              <p class="text-zinc-400 text-xs">即最底工具列中間個 <strong class="text-brand-yellow">「方格加向上箭咀 ⬆️」</strong> 圖示。</p>
+            </div>
+          </div>
+
+          <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 flex items-start gap-3">
+            <span class="w-6 h-6 rounded-full bg-brand-yellow text-black font-black text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+            <div class="space-y-0.5">
+              <p class="font-black text-white text-xs sm:text-sm">向下拉，揀「加入主畫面」➕</p>
+              <p class="text-zinc-400 text-xs">英文版 iPhone 會顯示為 <strong class="text-white">Add to Home Screen</strong>。</p>
+            </div>
+          </div>
+
+          <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 flex items-start gap-3">
+            <span class="w-6 h-6 rounded-full bg-brand-yellow text-black font-black text-xs flex items-center justify-center shrink-0 mt-0.5">3</span>
+            <div class="space-y-0.5">
+              <p class="font-black text-white text-xs sm:text-sm">按右上角「新增」即完成！</p>
+              <p class="text-zinc-400 text-xs">桌面就會多咗一個黑金 <strong class="text-brand-yellow">「FCA 搵食」</strong> App 圖示，以後一按即開全螢幕使用！</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Android Chrome 教學步驟 -->
+        <div id="pwaGuideAndroid" class="hidden space-y-2.5">
+          <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 flex items-start gap-3">
+            <span class="w-6 h-6 rounded-full bg-brand-yellow text-black font-black text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+            <div class="space-y-0.5">
+              <p class="font-black text-white text-xs sm:text-sm">點擊 Chrome 右上角「⋮」選單</p>
+              <p class="text-zinc-400 text-xs">確保你正在使用 <strong class="text-white">Google Chrome</strong> 或系統瀏覽器開啟網站。</p>
+            </div>
+          </div>
+
+          <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 flex items-start gap-3">
+            <span class="w-6 h-6 rounded-full bg-brand-yellow text-black font-black text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+            <div class="space-y-0.5">
+              <p class="font-black text-white text-xs sm:text-sm">揀選「加到主畫面」或「安裝應用程式」</p>
+              <p class="text-zinc-400 text-xs">英文版會顯示 <strong class="text-white">Add to Home screen / Install app</strong>。</p>
+            </div>
+          </div>
+
+          <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 flex items-start gap-3">
+            <span class="w-6 h-6 rounded-full bg-brand-yellow text-black font-black text-xs flex items-center justify-center shrink-0 mt-0.5">3</span>
+            <div class="space-y-0.5">
+              <p class="font-black text-white text-xs sm:text-sm">按「新增 / 安裝」完成</p>
+              <p class="text-zinc-400 text-xs">之後可隨時由手機桌面一按開啟「FCA 搵食」，無須再重新搜尋網址！</p>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" onclick="copySiteUrlForBrowser()"
+                class="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1.5">
+          <span>🔗</span> <span>複製網站網址 (方便貼到 Safari / Chrome)</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- 詳情視窗 -->
   <div id="detailModal" onclick="if(event.target === this) closeModal()" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
@@ -766,11 +1008,17 @@
   </div>
 
   <!-- 頁尾 -->
-  <footer class="bg-black border-t border-brand-border py-8 px-6 text-center text-xs text-zinc-500 mt-auto">
-    <div class="flex justify-center items-center gap-2 mb-2">
+  <footer class="bg-black border-t border-brand-border py-8 px-6 text-center text-xs text-zinc-500 mt-auto space-y-3">
+    <div class="flex justify-center items-center gap-2">
       <span class="text-brand-yellow font-black text-sm">FCA</span>
       <span class="text-zinc-400">|</span>
       <span class="text-white font-bold tracking-wider">FOODCAFEALCOHOLIC</span>
+    </div>
+    <div>
+      <button type="button" onclick="openPwaInstallModal()"
+              class="inline-flex items-center gap-1.5 bg-zinc-900 hover:bg-brand-yellow text-zinc-300 hover:text-black border border-zinc-700 hover:border-brand-yellow px-3.5 py-1.5 rounded-full text-xs font-bold transition">
+        <span>📲</span> <span>將網站加到手機主畫面 (App 教學)</span>
+      </button>
     </div>
     <p>© 2026 @foodcafealcoholic • All Rights Reserved</p>
   </footer>
@@ -806,6 +1054,7 @@
     let restaurants = [];
     const FAVORITES_STORAGE_KEY = 'foodcafe_user_favorites_v2';
     const HISTORY_STORAGE_KEY = 'foodcafe_search_history_v1';
+    const PWA_DISMISS_KEY = 'fca_pwa_dismissed_at';
     
     let savedFavorites = new Set();
     let searchHistory = [];
@@ -816,6 +1065,22 @@
     let toastTimer = null;
     const reportedBrokenIds = new Set();
 
+    // PWA 與隨機抽籤狀態變數
+    let deferredInstallPrompt = null;
+    let randomPickerRegion = 'all';
+
+    function getHkDateString(offsetDays = 0) {
+      const target = new Date(Date.now() + offsetDays * 86400000);
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Hong_Kong',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(target);
+      const map = Object.fromEntries(parts.map(p => [p.type, p.value]));
+      return `${map.year}-${map.month}-${map.day}`;
+    }
+
     function escapeHtml(str) {
       return String(str ?? '')
         .replace(/&/g, '&amp;')
@@ -825,6 +1090,134 @@
         .replace(/'/g, '&#39;');
     }
 
+    // ================= PWA 引導與安裝邏輯 =================
+    function isRunningStandalone() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function detectDeviceEnvironment() {
+      const ua = navigator.userAgent || '';
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isAndroid = /Android/i.test(ua);
+      const isInAppBrowser = /Instagram|FBAN|FBAV|Line\/|MicroMessenger/i.test(ua);
+      return { isIOS, isAndroid, isInAppBrowser };
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      updatePwaModalEnvironmentUI();
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      try { localStorage.setItem(PWA_DISMISS_KEY, String(Date.now())); } catch (e) {}
+      const banner = document.getElementById('pwaTopBanner');
+      if (banner) banner.classList.add('hidden');
+      closePwaInstallModal();
+      showToast('🎉 已成功安裝「FCA 搵食」到手機主畫面！');
+    });
+
+    function initPwaBanner() {
+      const banner = document.getElementById('pwaTopBanner');
+      if (!banner) return;
+      if (isRunningStandalone()) {
+        banner.classList.add('hidden');
+        return;
+      }
+      try {
+        const dismissedAt = parseInt(localStorage.getItem(PWA_DISMISS_KEY) || '0', 10);
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+        if (dismissedAt && (Date.now() - dismissedAt) < sevenDaysMs) {
+          banner.classList.add('hidden');
+          return;
+        }
+      } catch (e) {}
+      banner.classList.remove('hidden');
+    }
+
+    function dismissPwaBanner() {
+      const banner = document.getElementById('pwaTopBanner');
+      if (banner) banner.classList.add('hidden');
+      try {
+        localStorage.setItem(PWA_DISMISS_KEY, String(Date.now()));
+      } catch (e) {}
+    }
+
+    function updatePwaModalEnvironmentUI() {
+      const { isIOS, isAndroid, isInAppBrowser } = detectDeviceEnvironment();
+      const warningBox = document.getElementById('pwaInAppWarning');
+      const nativeBox = document.getElementById('pwaNativeInstallBox');
+
+      if (warningBox) warningBox.classList.toggle('hidden', !isInAppBrowser);
+      if (nativeBox) nativeBox.classList.toggle('hidden', !deferredInstallPrompt);
+
+      if (isAndroid && !isIOS) {
+        switchPwaGuideTab('android');
+      } else {
+        switchPwaGuideTab('ios');
+      }
+    }
+
+    function switchPwaGuideTab(tab) {
+      const iosTab = document.getElementById('pwaTabIos');
+      const androidTab = document.getElementById('pwaTabAndroid');
+      const iosGuide = document.getElementById('pwaGuideIos');
+      const androidGuide = document.getElementById('pwaGuideAndroid');
+      const isIos = tab === 'ios';
+
+      if (iosGuide) iosGuide.classList.toggle('hidden', !isIos);
+      if (androidGuide) androidGuide.classList.toggle('hidden', isIos);
+
+      if (iosTab && androidTab) {
+        if (isIos) {
+          iosTab.className = 'flex-1 py-2 rounded-lg text-xs font-black transition bg-brand-yellow text-black';
+          androidTab.className = 'flex-1 py-2 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition';
+        } else {
+          androidTab.className = 'flex-1 py-2 rounded-lg text-xs font-black transition bg-brand-yellow text-black';
+          iosTab.className = 'flex-1 py-2 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition';
+        }
+      }
+    }
+
+    function openPwaInstallModal() {
+      updatePwaModalEnvironmentUI();
+      setFloatingMapBtnVisible(false);
+      document.getElementById('pwaInstallModal').classList.remove('hidden');
+    }
+
+    function closePwaInstallModal() {
+      document.getElementById('pwaInstallModal').classList.add('hidden');
+      setFloatingMapBtnVisible(true);
+    }
+
+    async function triggerNativePwaInstall() {
+      if (!deferredInstallPrompt) {
+        showToast('請按照下方步驟手動加到主畫面');
+        return;
+      }
+      deferredInstallPrompt.prompt();
+      const choiceResult = await deferredInstallPrompt.userChoice;
+      if (choiceResult && choiceResult.outcome === 'accepted') {
+        deferredInstallPrompt = null;
+      }
+    }
+
+    async function copySiteUrlForBrowser() {
+      const siteUrl = window.location.protocol.startsWith('http')
+        ? `${window.location.origin}${window.location.pathname}`
+        : 'https://foodcafealcoholic.com/';
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(siteUrl);
+          showToast('🔗 已複製網址！請到 Safari / Chrome 貼上開啟');
+          return;
+        }
+      } catch (e) {}
+      prompt('請長按複製以下網址，並用 Safari 或 Chrome 開啟：', siteUrl);
+    }
+
+    // ================= 圖片修復與壞圖通報 =================
     function reportBrokenImageToManager(item, failedSrc) {
       if (!item || !item.id || reportedBrokenIds.has(item.id)) return;
       reportedBrokenIds.add(item.id);
@@ -874,7 +1267,6 @@
       const restId = img.getAttribute('data-rest-id') || (cardEl && cardEl.getAttribute('data-rest-id'));
       const item = restId ? restaurants.find(r => String(r.id) === String(restId)) : null;
 
-      // 1. 若尚未嘗試過本地 images/{shortCode}.jpg，優先補救嘗試本地封面圖
       if (item && img.dataset.triedLocal !== '1') {
         const code = item.shortCode || extractShortcode(item.url);
         if (code) {
@@ -890,7 +1282,6 @@
 
       img.onerror = null;
 
-      // 2. 預覽背景圖或地圖釘僅套用替代圖（同時若屬壞圖也上報後台）
       if (fallbackOnly || img.dataset.pinImg === '1') {
         if (item && img.dataset.pinImg === '1') {
           reportBrokenImageToManager(item, img.getAttribute('src') || '');
@@ -899,7 +1290,6 @@
         return;
       }
 
-      // 3. 主卡片圖片真壞圖：在前台徹底隱藏整張卡片並上報 Firebase 通報後台管理員
       const failedSrc = img.getAttribute('src') || '';
       if (item) {
         item._brokenImage = true;
@@ -1142,7 +1532,11 @@
       '屯門': ['屯門', 'tuen mun'],
       '大埔': ['大埔', '太和', '粉嶺', '上水', 'tai po'],
       '將軍澳': ['將軍澳', '坑口', '寶琳', '調景嶺', '康城', 'tko', 'tseung kwan o'],
-      '西貢': ['西貢', '清水灣', 'sai kung']
+      '西貢': ['西貢', '清水灣', 'sai kung'],
+      '澳門': ['澳門', '氹仔', '路氹', '路環', '官也街', 'macau', 'macao'],
+      '台北': ['台北', '台灣', 'taipei', 'taiwan'],
+      '深圳': ['深圳', 'shenzhen'],
+      '日本': ['東京', '大阪', '京都', '日本', '橫濱', '福岡', '北海道', '沖繩', 'tokyo', 'osaka', 'kyoto', 'japan']
     };
 
     const CUISINE_SYNONYM_MAP = {
@@ -1416,7 +1810,12 @@
       if (rtdb && item.id) {
         rtdb.ref('restaurant_clicks/' + item.id).transaction((currentClicks) => {
           return (currentClicks || 0) + 1;
-        });
+        }).catch(() => {});
+
+        // 同步記錄每日瀏覽流量（香港時區），供後台繪製走勢圖與日增減分析
+        const todayKey = getHkDateString(0);
+        rtdb.ref(`daily_clicks/${todayKey}/total`).transaction(c => (c || 0) + 1).catch(() => {});
+        rtdb.ref(`daily_clicks/${todayKey}/by_id/${item.id}`).transaction(c => (c || 0) + 1).catch(() => {});
       }
 
       document.getElementById('modalTitle').innerText = item.restaurant_name;
@@ -1506,20 +1905,172 @@
       }
     }
 
-    function pickRandomRestaurant() {
-      const pool = restaurants.filter(item => !item._brokenImage && matchRestaurantByFilters(item, filters));
+    // ================= 🎲 幫我揀（地區限定抽籤功能） =================
+    const REGION_DISTRICT_GROUPS = {
+      '港島': ['中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '天后', '鰂魚涌', '西環', '黃竹坑'],
+      '九龍': ['尖沙咀', '佐敦', '旺角', '太子', '深水埗', '紅磡', '九龍城', '觀塘', '大角咀'],
+      '新界': ['荃灣', '沙田', '元朗', '屯門', '大埔', '將軍澳', '西貢'],
+      '海外': ['澳門', '台北', '深圳', '日本']
+    };
+
+    function populateRandomDistrictOptions() {
+      const sel = document.getElementById('randomDistrictSelect');
+      if (!sel) return;
+      const currentVal = sel.value || 'all';
+      const regionsToShow = randomPickerRegion === 'all'
+        ? ['港島', '九龍', '新界', '海外']
+        : [randomPickerRegion];
+
+      let html = '<option value="all">不限具體商圈（包含所選大區全部）</option>';
+      const validRestaurants = restaurants.filter(r => !r._brokenImage);
+
+      regionsToShow.forEach(reg => {
+        const list = REGION_DISTRICT_GROUPS[reg] || [];
+        const optionsHtml = list.map(distName => {
+          const count = validRestaurants.filter(item =>
+            matchRestaurantByFilters(item, {
+              search: '',
+              region: randomPickerRegion,
+              district: distName,
+              occasion: 'all',
+              price: 'all',
+              cuisine: 'all'
+            })
+          ).length;
+          if (count === 0) return '';
+          return `<option value="${escapeHtml(distName)}">${escapeHtml(distName)} (${count} 間)</option>`;
+        }).filter(Boolean).join('');
+
+        if (optionsHtml) {
+          html += `<optgroup label="── ${reg} ──">${optionsHtml}</optgroup>`;
+        }
+      });
+
+      sel.innerHTML = html;
+      const optionExists = Array.from(sel.options).some(opt => opt.value === currentVal);
+      sel.value = optionExists ? currentVal : 'all';
+    }
+
+    function getRandomPickerFilterObj() {
+      const distVal = document.getElementById('randomDistrictSelect')?.value || 'all';
+      const cuisVal = document.getElementById('randomCuisineSelect')?.value || 'all';
+      const priceVal = document.getElementById('randomPriceSelect')?.value || 'all';
+      return {
+        search: '',
+        region: randomPickerRegion,
+        district: distVal,
+        occasion: 'all',
+        price: priceVal,
+        cuisine: cuisVal
+      };
+    }
+
+    function getRandomPickerPool() {
+      const fObj = getRandomPickerFilterObj();
+      return restaurants.filter(item => !item._brokenImage && matchRestaurantByFilters(item, fObj));
+    }
+
+    function updateRandomPoolCount() {
+      const pool = getRandomPickerPool();
+      const badge = document.getElementById('randomPoolCountBadge');
+      const btn = document.getElementById('btnSpinRandom');
+      if (badge) badge.innerText = `候選 ${pool.length} 間`;
+      if (btn) {
+        btn.disabled = pool.length === 0;
+        btn.classList.toggle('opacity-50', pool.length === 0);
+      }
+    }
+
+    function setRandomRegion(region, btnEl) {
+      randomPickerRegion = region;
+      document.querySelectorAll('.rand-region-pill').forEach(b => {
+        b.classList.remove('pill-active');
+        b.classList.add('text-zinc-200');
+      });
+      if (btnEl) {
+        btnEl.classList.add('pill-active');
+        btnEl.classList.remove('text-zinc-200');
+      }
+      const distSel = document.getElementById('randomDistrictSelect');
+      if (distSel) distSel.value = 'all';
+      populateRandomDistrictOptions();
+      updateRandomPoolCount();
+    }
+
+    function openRandomPickerModal() {
+      const modal = document.getElementById('randomPickerModal');
+      if (!modal) return;
+      const regionBtns = document.querySelectorAll('.rand-region-pill');
+      const targetRegion = filters.region !== 'all' ? filters.region : 'all';
+      const idxMap = { 'all': 0, '港島': 1, '九龍': 2, '新界': 3, '海外': 4 };
+      setRandomRegion(targetRegion, regionBtns[idxMap[targetRegion] ?? 0]);
+
+      const distSel = document.getElementById('randomDistrictSelect');
+      if (distSel && filters.district !== 'all') {
+        const hasOpt = Array.from(distSel.options).some(o => o.value === filters.district);
+        if (hasOpt) distSel.value = filters.district;
+      }
+      const cuisSel = document.getElementById('randomCuisineSelect');
+      if (cuisSel) cuisSel.value = filters.cuisine || 'all';
+      const priceSel = document.getElementById('randomPriceSelect');
+      if (priceSel) priceSel.value = filters.price || 'all';
+
+      updateRandomPoolCount();
+      setFloatingMapBtnVisible(false);
+      modal.classList.remove('hidden');
+    }
+
+    function closeRandomPickerModal() {
+      const modal = document.getElementById('randomPickerModal');
+      if (modal) modal.classList.add('hidden');
+      setFloatingMapBtnVisible(true);
+    }
+
+    function spinRandomRestaurant() {
+      const pool = getRandomPickerPool();
       if (pool.length === 0) {
-        showToast('⚠️ 目前篩選條件沒有餐廳，試下重設篩選！');
+        showToast('⚠️ 呢個地區／條件暫時沒有餐廳，試下放寬條件！');
         return;
       }
+
       let candidates = pool;
       if (pool.length > 1 && lastRandomPickedId) {
         candidates = pool.filter(item => String(item.id) !== String(lastRandomPickedId));
       }
       const chosen = candidates[Math.floor(Math.random() * candidates.length)];
       lastRandomPickedId = chosen.id;
-      openModalById(chosen.id);
+
+      const resBox = document.getElementById('randomPickerResult');
+      const imgEl = document.getElementById('randResImg');
+      const distEl = document.getElementById('randResDistrict');
+      const cuisEl = document.getElementById('randResCuisine');
+      const nameEl = document.getElementById('randResName');
+      const mustEl = document.getElementById('randResMustTry');
+      const priceEl = document.getElementById('randResPrice');
+      const openBtn = document.getElementById('randResOpenBtn');
+
+      if (imgEl) {
+        imgEl.setAttribute('data-rest-id', String(chosen.id));
+        delete imgEl.dataset.triedLocal;
+        imgEl.src = getReelThumbnail(chosen);
+      }
+      if (distEl) distEl.innerText = `📍 ${chosen.district || '香港'}`;
+      if (cuisEl) cuisEl.innerText = chosen.cuisine || '美食';
+      if (nameEl) nameEl.innerText = chosen.restaurant_name || '精選餐廳';
+      if (mustEl) mustEl.innerText = `⭐ 必食：${chosen.must_try || '人氣招牌菜'}`;
+      if (priceEl) priceEl.innerText = `💰 ${chosen.priceInfo ? chosen.priceInfo.text : (chosen.price || '依現場菜單')}`;
+      if (openBtn) {
+        openBtn.onclick = () => {
+          closeRandomPickerModal();
+          openModalById(chosen.id);
+        };
+      }
+      if (resBox) resBox.classList.remove('hidden');
       showToast(`🎲 為你抽中：《${chosen.restaurant_name}》`);
+    }
+
+    function pickRandomRestaurant() {
+      openRandomPickerModal();
     }
 
     function updateFavBadge() {
@@ -2053,8 +2604,15 @@
       const detailModal = document.getElementById('detailModal');
       const mapModal = document.getElementById('nearbyMapModal');
       const listModal = document.getElementById('myListModal');
+      const randomModal = document.getElementById('randomPickerModal');
+      const pwaModal = document.getElementById('pwaInstallModal');
+
       if (detailModal && !detailModal.classList.contains('hidden')) {
         closeModal();
+      } else if (randomModal && !randomModal.classList.contains('hidden')) {
+        closeRandomPickerModal();
+      } else if (pwaModal && !pwaModal.classList.contains('hidden')) {
+        closePwaInstallModal();
       } else if (listModal && !listModal.classList.contains('hidden')) {
         toggleMyListModal();
       } else if (mapModal && !mapModal.classList.contains('hidden')) {
@@ -2662,6 +3220,7 @@
       openModalById(id);
     }
 
+    initPwaBanner();
     loadSearchHistory();
     updateDropdownCounts();
     renderApp();
@@ -2670,4 +3229,3 @@
   </script>
 </body>
 </html>
-

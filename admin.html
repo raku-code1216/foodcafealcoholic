@@ -241,7 +241,7 @@
           <div class="flex items-center gap-1.5">
             <input type="text" id="manualAddress"
                    onkeydown="if(event.key==='Enter'){event.preventDefault(); autoGeocodeByAddress();}"
-                   placeholder="輸入詳細地址 / 商場（例：銅鑼灣勿地臣街1號時代廣場B1樓）..."
+                   placeholder="輸入街道門牌或商場（例：豉油街108號 或 時代廣場）..."
                    class="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-brand-yellow" />
             <button type="button" id="btnGeocodeAddress" onclick="autoGeocodeByAddress()"
                     class="bg-zinc-800 hover:bg-brand-yellow text-brand-yellow hover:text-black border border-brand-yellow/50 font-bold px-2.5 py-1.5 rounded-lg text-[11px] transition shrink-0">
@@ -250,9 +250,9 @@
           </div>
 
           <div class="grid grid-cols-2 gap-2">
-            <input type="text" id="lat" placeholder="緯度 Lat (例: 22.2693)"
+            <input type="text" id="lat" placeholder="緯度 Lat (例: 22.3150)"
                    class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-[11px] focus:outline-none focus:border-brand-yellow" />
-            <input type="text" id="lng" placeholder="經度 Lng (例: 114.1835)"
+            <input type="text" id="lng" placeholder="經度 Lng (例: 114.1700)"
                    class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-[11px] focus:outline-none focus:border-brand-yellow" />
           </div>
           <div id="geocodeMatchedRow" class="hidden flex items-center justify-between gap-2 text-[10px]">
@@ -606,7 +606,7 @@
           <label class="block text-zinc-300 font-bold mb-1">GitHub Token (Fine-grained PAT)</label>
           <input type="password" id="cfgToken" placeholder="github_pat_xxxx 或 ghp_xxxx"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
-          <p class="text-[10px] text-zinc-500 mt-1">建議僅授予單一 Repo 的 Contents: Read &amp; Write 權限。</p>
+          <p class="text-[10px] text-zinc-500 mt-1">建議僅授予單一 Repo 的 Contents: Read & Write 權限。</p>
         </div>
       </div>
       <div class="pt-2 flex justify-end gap-2">
@@ -810,11 +810,11 @@
 
     function escapeHtml(str) {
       return String(str ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"')
+        .replace(/'/g, ''');
     }
 
     function markUnsaved(dirty = true) {
@@ -2265,6 +2265,21 @@
       return Array.from(new Set(variants));
     }
 
+    function normalizeDistrictCheck(district) {
+      return String(district || '')
+        .replace(/(?:全區|商圈|站|區)$/g, '')
+        .trim()
+        .toLowerCase();
+    }
+
+    function isResultMatchingDistrict(matchedText, district) {
+      const target = normalizeDistrictCheck(district);
+      if (!target || target === '香港' || target === 'hong kong') return true;
+      const hay = String(matchedText || '').toLowerCase();
+      if (!hay) return true;
+      return hay.includes(target);
+    }
+
     async function searchGooglePlaces(query, apiKey) {
       const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
@@ -2278,8 +2293,12 @@
           languageCode: 'zh-HK'
         })
       });
-      const data = await res.json();
-      if (res.ok && data.places && data.places.length > 0) {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data?.error?.message || `HTTP ${res.status}`;
+        throw new Error(`Places API: ${msg}`);
+      }
+      if (data.places && data.places.length > 0) {
         return data.places[0];
       }
       return null;
@@ -2290,7 +2309,7 @@
         headers: { 'Accept': 'application/json' }
       });
       if (!res.ok) return null;
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       const list = data && data.SuggestedAddress;
       if (!Array.isArray(list) || list.length === 0) return null;
       const prem = list[0]?.Address?.PremisesAddress;
@@ -2325,52 +2344,61 @@
 
       const addrVariants = buildAddressVariants(captionAddr);
       const googleQueries = [];
-      const osmQueries = [];
+      let lastPlacesError = '';
 
       if (addrVariants.length > 0) {
         addrVariants.forEach(v => {
-          const withDist = dist && !v.includes(dist) ? `${dist} ${v}` : v;
+          const hasDistAlready = dist && v.toLowerCase().includes(String(dist).toLowerCase());
+          const withDist = dist && !hasDistAlready ? `${dist} ${v}` : v;
           if (prioritizeAddressOnly) {
             googleQueries.push(`${withDist}${regionSuffix}`.trim());
-            osmQueries.push(`${withDist}${regionSuffix}`.trim());
-          } else if (name) {
-            googleQueries.push(`${name} ${v}${regionSuffix}`.trim());
-            osmQueries.push(`${v}${regionSuffix}`.trim());
+            googleQueries.push(`${v}${regionSuffix}`.trim());
+          } else {
+            if (name) googleQueries.push(`${name} ${withDist}${regionSuffix}`.trim());
+            googleQueries.push(`${withDist}${regionSuffix}`.trim());
+            googleQueries.push(`${v}${regionSuffix}`.trim());
           }
-          googleQueries.push(`${v}${regionSuffix}`.trim());
-          osmQueries.push(`${v}${regionSuffix}`.trim());
         });
       }
       if (name || dist) {
-        googleQueries.push(`${name} ${dist}${regionSuffix}`.trim());
-        osmQueries.push(`${name} ${dist}${regionSuffix}`.trim());
+        googleQueries.push(`${name || ''} ${dist || ''}${regionSuffix}`.trim());
       }
 
       const uniqueGoogleQueries = Array.from(new Set(googleQueries.filter(Boolean)));
-      const uniqueOsmQueries = Array.from(new Set(osmQueries.filter(Boolean)));
 
-      // 1. Google Places API
+      // 1. Google Places API（不退回模糊猜測備援，避免誤抓跨區假座標）
       for (const q of uniqueGoogleQueries) {
         try {
           const foundPlace = await searchGooglePlaces(q, cfg.placesKey);
           if (foundPlace && foundPlace.location) {
             const latNum = foundPlace.location.latitude;
             const lngNum = foundPlace.location.longitude;
+            const matchedText = `${foundPlace.displayName?.text || ''} (${foundPlace.formattedAddress || ''})`;
             if (isCoordinateValidForScope(latNum, lngNum, expectedScope)) {
-              return {
-                lat: latNum.toFixed(6),
-                lng: lngNum.toFixed(6),
-                source: 'google',
-                matchedText: `${foundPlace.displayName?.text || ''} (${foundPlace.formattedAddress || ''})`
-              };
+              if (!prioritizeAddressOnly || isResultMatchingDistrict(matchedText, dist)) {
+                return {
+                  lat: latNum.toFixed(6),
+                  lng: lngNum.toFixed(6),
+                  source: 'google',
+                  matchedText
+                };
+              }
             }
           }
-        } catch (err) {}
+        } catch (err) {
+          lastPlacesError = err.message || '';
+        }
       }
 
       // 2. 香港政府官方 OGCIO 地址搜尋服務
       if (expectedScope !== 'overseas') {
-        const alsCandidates = Array.from(new Set([...addrVariants, `${dist} ${name}`.trim(), name].filter(Boolean)));
+        const alsCandidates = Array.from(new Set([
+          ...addrVariants,
+          dist && captionAddr ? `${dist} ${captionAddr}` : '',
+          `${dist || ''} ${name || ''}`.trim(),
+          name || ''
+        ].filter(Boolean)));
+
         for (const q of alsCandidates) {
           try {
             const alsHit = await searchHkOgcioAls(q);
@@ -2386,29 +2414,7 @@
         }
       }
 
-      // 3. OpenStreetMap Nominatim 備援
-      for (const q of uniqueOsmQueries) {
-        try {
-          const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`, {
-            headers: { 'Accept-Language': 'zh-HK,zh;q=0.9,en;q=0.8' }
-          });
-          const osmData = await osmRes.json();
-          if (Array.isArray(osmData) && osmData.length > 0) {
-            const latNum = parseFloat(osmData[0].lat);
-            const lngNum = parseFloat(osmData[0].lon);
-            if (isCoordinateValidForScope(latNum, lngNum, expectedScope)) {
-              return {
-                lat: latNum.toFixed(6),
-                lng: lngNum.toFixed(6),
-                source: 'osm',
-                matchedText: osmData[0].display_name || ''
-              };
-            }
-          }
-        } catch (err) {}
-      }
-
-      return null;
+      return { errorDetail: lastPlacesError };
     }
 
     function showMatchedGeocodeResult(result) {
@@ -2417,13 +2423,21 @@
       const mapVerifyLink = document.getElementById('geocodeVerifyMapLink');
       if (!rowEl || !addrHint || !mapVerifyLink) return;
 
-      let prefix = '✓ 備援定位：';
-      if (result.source === 'google') prefix = '✓ Google 定位：';
-      else if (result.source === 'ogcio') prefix = '✓ 官方地址庫：';
-
+      const prefix = result.source === 'google' ? '✓ Google 定位：' : '✓ 官方地址庫：';
       addrHint.innerText = `${prefix}${result.matchedText}`;
       addrHint.className = 'text-emerald-400 truncate';
       mapVerifyLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(result.lat + ',' + result.lng)}`;
+      rowEl.classList.remove('hidden');
+    }
+
+    function showGeocodeFailureMessage(message) {
+      const rowEl = document.getElementById('geocodeMatchedRow');
+      const addrHint = document.getElementById('geocodeMatchedAddress');
+      const mapVerifyLink = document.getElementById('geocodeVerifyMapLink');
+      if (!rowEl || !addrHint) return;
+      addrHint.innerText = `⚠️ ${message}`;
+      addrHint.className = 'text-amber-400 truncate font-bold';
+      if (mapVerifyLink) mapVerifyLink.classList.add('hidden');
       rowEl.classList.remove('hidden');
     }
 
@@ -2446,8 +2460,10 @@
 
       const btn = document.getElementById('btnGeocodeAddress');
       const rowEl = document.getElementById('geocodeMatchedRow');
+      const mapVerifyLink = document.getElementById('geocodeVerifyMapLink');
       if (btn) btn.innerText = '⏳ 換算中...';
       if (rowEl) rowEl.classList.add('hidden');
+      if (mapVerifyLink) mapVerifyLink.classList.remove('hidden');
 
       try {
         const result = await geocodeRestaurantData({
@@ -2458,15 +2474,18 @@
           prioritizeAddressOnly: true
         }, cfg);
 
-        if (result) {
+        if (result && result.lat && result.lng) {
           document.getElementById('lat').value = result.lat;
           document.getElementById('lng').value = result.lng;
           showMatchedGeocodeResult(result);
         } else {
-          alert('找不到該地址的座標，建議精簡至「街道＋門牌」或「商場名稱」（例如：時代廣場 或 勿地臣街1號）後重試。');
+          const msg = result?.errorDetail
+            ? `定位失敗（${result.errorDetail}）`
+            : '找不到精準門牌座標，請嘗試精簡為「街道＋門牌」或「商場名稱」（如：豉油街108號 或 旺角中心），或手動輸入座標。';
+          showGeocodeFailureMessage(msg);
         }
       } catch (e) {
-        alert('地址轉換服務連線逾時，請稍後重試。');
+        showGeocodeFailureMessage('地址轉換服務連線逾時，請稍後重試。');
       } finally {
         if (btn) btn.innerText = '🔍 地址轉座標';
       }
@@ -2497,8 +2516,10 @@
 
       const btn = document.getElementById('btnGeocode');
       const rowEl = document.getElementById('geocodeMatchedRow');
+      const mapVerifyLink = document.getElementById('geocodeVerifyMapLink');
       if (btn) btn.innerText = '⏳ 定位中...';
       if (rowEl) rowEl.classList.add('hidden');
+      if (mapVerifyLink) mapVerifyLink.classList.remove('hidden');
 
       try {
         const result = await geocodeRestaurantData({
@@ -2508,15 +2529,18 @@
           aiAddress: targetAddr
         }, cfg);
 
-        if (result) {
+        if (result && result.lat && result.lng) {
           document.getElementById('lat').value = result.lat;
           document.getElementById('lng').value = result.lng;
           showMatchedGeocodeResult(result);
         } else {
-          alert('未能直接找到符合該地區範圍的精準座標（已自動攔截跨區錯誤結果），建議在地址欄輸入「街道＋門牌」或「商場名」。');
+          const msg = result?.errorDetail
+            ? `定位失敗（${result.errorDetail}）`
+            : '未能找到符合該地區的精準座標，請在地址欄輸入「街道＋門牌」或「商場名」，或手動輸入座標。';
+          showGeocodeFailureMessage(msg);
         }
       } catch (e) {
-        alert('定位服務連線逾時，請稍後重試。');
+        showGeocodeFailureMessage('定位服務連線逾時，請稍後重試。');
       } finally {
         if (btn) btn.innerText = '📍 依店名自動定位';
       }
@@ -2576,7 +2600,7 @@
             caption: item.caption || ''
           }, cfg);
 
-          if (result) {
+          if (result && result.lat && result.lng) {
             adminList[idx].lat = result.lat;
             adminList[idx].lng = result.lng;
             successCount++;
@@ -2628,7 +2652,6 @@
       }
     }
 
-    // AI 智能提取：具備多重模型自動切換 + 高峰期 (503) 自動重試機制
     async function runAiExtraction() {
       const textToAnalyze = document.getElementById('caption').value.trim();
       const cfg = loadConfig();
@@ -2665,7 +2688,6 @@
 貼文內容如下：
 ${textToAnalyze}`;
 
-        // 梯隊模型陣列：涵蓋極低延遲高吞吐的 Flash-Lite 與主流 Flash，全面防止單一模型超載
         const candidateModels = [
           'gemini-2.5-flash-lite',
           'gemini-3.5-flash-lite',
@@ -2680,7 +2702,7 @@ ${textToAnalyze}`;
 
         for (const model of candidateModels) {
           let retryCount = 0;
-          const maxRetries = 1; // 若遇 503 短暫塞車自動等 1.2 秒重試
+          const maxRetries = 1;
 
           while (retryCount <= maxRetries) {
             try {
@@ -2863,6 +2885,7 @@ ${textToAnalyze}`;
       const mapVerifyLink = document.getElementById('geocodeVerifyMapLink');
       if (!isChain && item.lat && item.lng && rowEl && addrHint && mapVerifyLink) {
         const isAbnormal = getCoordStatus(item) === 'abnormal';
+        mapVerifyLink.classList.remove('hidden');
         addrHint.innerText = isAbnormal
           ? `⚠️ 現存座標異常：${item.lat}, ${item.lng}（建議輸入地址重新定位）`
           : `現存座標：${item.lat}, ${item.lng}`;
@@ -3051,4 +3074,3 @@ ${textToAnalyze}`;
   </script>
 </body>
 </html>
-

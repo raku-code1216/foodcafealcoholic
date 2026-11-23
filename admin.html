@@ -202,8 +202,9 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-zinc-400 font-bold mb-1">地區 * (例：跑馬地、中環、澳門)</label>
+            <label class="block text-zinc-400 font-bold mb-1">地區 * (例：跑馬地、全港連鎖)</label>
             <input type="text" id="district" required placeholder="AI 自動填寫"
+                   oninput="syncChainCheckboxFromDistrict(this.value)"
                    class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow" />
           </div>
           <div>
@@ -213,7 +214,7 @@
           </div>
         </div>
 
-        <!-- 精準門牌經緯度欄位 (支援輸入地址自動轉換 + 直接填寫座標) -->
+        <!-- 精準門牌經緯度欄位 (支援全港連鎖不上地圖 + 地址自動轉換 + 直接座標) -->
         <div class="p-2.5 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-2">
           <div class="flex items-center justify-between gap-2">
             <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準座標 (輸入地址自動填寫 / 手動座標)</label>
@@ -221,6 +222,13 @@
               📍 依店名自動定位
             </button>
           </div>
+
+          <label for="is_chain_nomap" class="flex items-center justify-between gap-2 p-2 rounded-lg bg-zinc-950/90 border border-sky-500/30 cursor-pointer hover:border-sky-400/60 transition">
+            <span class="text-[11px] font-bold text-sky-300 flex items-center gap-1.5">
+              <span>🏪</span> <span>全港連鎖 / 便利店通用新品 / 網店（不上地圖）</span>
+            </span>
+            <input type="checkbox" id="is_chain_nomap" onchange="toggleChainNoMap(this.checked)" class="w-4 h-4 accent-sky-400 rounded cursor-pointer shrink-0" />
+          </label>
 
           <div class="flex items-center gap-1.5">
             <input type="text" id="manualAddress"
@@ -663,6 +671,71 @@
       rtdb = firebase.database();
     } catch (e) {}
 
+    const CHAIN_DISTRICT_KEYWORDS = ['全港連鎖', '全港分店', '全線分店', '全港通用', '連鎖分店', '網購', '網店', '超市百貨'];
+
+    function isChainNoMap(item) {
+      if (!item) return false;
+      const latStr = String(item.lat || '').trim().toLowerCase();
+      const lngStr = String(item.lng || '').trim().toLowerCase();
+      if (latStr === 'chain' || lngStr === 'chain' || latStr === 'none' || lngStr === 'none') {
+        return true;
+      }
+      const distStr = String(item.district || '').trim().toLowerCase();
+      return CHAIN_DISTRICT_KEYWORDS.some(kw => distStr.includes(kw));
+    }
+
+    function applyChainUiState(isChain) {
+      const latInput = document.getElementById('lat');
+      const lngInput = document.getElementById('lng');
+      const manualInput = document.getElementById('manualAddress');
+      const btnGeo = document.getElementById('btnGeocode');
+      const btnGeoAddr = document.getElementById('btnGeocodeAddress');
+
+      [latInput, lngInput, manualInput, btnGeo, btnGeoAddr].forEach(el => {
+        if (!el) return;
+        el.disabled = isChain;
+        el.classList.toggle('opacity-45', isChain);
+        el.classList.toggle('cursor-not-allowed', isChain);
+      });
+    }
+
+    function toggleChainNoMap(checked) {
+      const latInput = document.getElementById('lat');
+      const lngInput = document.getElementById('lng');
+      const distInput = document.getElementById('district');
+      const rowEl = document.getElementById('geocodeMatchedRow');
+
+      if (checked) {
+        if (latInput) latInput.value = 'chain';
+        if (lngInput) lngInput.value = 'chain';
+        if (distInput) {
+          const curDist = distInput.value.trim();
+          if (!curDist || curDist === '香港') {
+            distInput.value = '全港連鎖';
+          }
+        }
+        if (rowEl) rowEl.classList.add('hidden');
+      } else {
+        if (latInput && ['chain', 'none'].includes(latInput.value.trim().toLowerCase())) latInput.value = '';
+        if (lngInput && ['chain', 'none'].includes(lngInput.value.trim().toLowerCase())) lngInput.value = '';
+        if (distInput && distInput.value.trim() === '全港連鎖') distInput.value = '';
+      }
+      applyChainUiState(checked);
+    }
+
+    function syncChainCheckboxFromDistrict(val) {
+      const chk = document.getElementById('is_chain_nomap');
+      if (!chk) return;
+      const distStr = String(val || '').trim().toLowerCase();
+      const matched = CHAIN_DISTRICT_KEYWORDS.some(kw => distStr.includes(kw));
+      if (matched && !chk.checked) {
+        chk.checked = true;
+        document.getElementById('lat').value = 'chain';
+        document.getElementById('lng').value = 'chain';
+        applyChainUiState(true);
+      }
+    }
+
     function getHkDateString(offsetDays = 0) {
       const target = new Date(Date.now() + offsetDays * 86400000);
       const parts = new Intl.DateTimeFormat('en-CA', {
@@ -704,6 +777,7 @@
     }
 
     function getCoordStatus(item) {
+      if (isChainNoMap(item)) return 'chain';
       const hasRaw = Boolean(item.lat !== '' && item.lng !== '' && item.lat !== undefined && item.lng !== undefined);
       if (!hasRaw) return 'missing';
       const lat = parseFloat(item.lat);
@@ -1467,18 +1541,22 @@
     }
 
     function exportAnalyticsReportCsv() {
-      const rows = adminList.map((item, idx) => ({
-        restaurant_name: item.restaurant_name || '',
-        district: item.district || '',
-        cuisine: item.cuisine || '',
-        price: item.price || '',
-        occasion: item.occasion || '',
-        is_editor_pick: item.is_editor_pick === '1' ? '是' : '否',
-        total_clicks: getItemClickCount(item, idx),
-        coord_status: getCoordStatus(item),
-        image_status: brokenIdSet.has(getItemSafeId(item, idx)) ? '壞圖' : '正常',
-        url: item.url || ''
-      })).sort((a, b) => b.total_clicks - a.total_clicks);
+      const rows = adminList.map((item, idx) => {
+        const cStatus = getCoordStatus(item);
+        const statusLabel = cStatus === 'chain' ? '全港連鎖(不上地圖)' : cStatus;
+        return {
+          restaurant_name: item.restaurant_name || '',
+          district: item.district || '',
+          cuisine: item.cuisine || '',
+          price: item.price || '',
+          occasion: item.occasion || '',
+          is_editor_pick: item.is_editor_pick === '1' ? '是' : '否',
+          total_clicks: getItemClickCount(item, idx),
+          coord_status: statusLabel,
+          image_status: brokenIdSet.has(getItemSafeId(item, idx)) ? '壞圖' : '正常',
+          url: item.url || ''
+        };
+      }).sort((a, b) => b.total_clicks - a.total_clicks);
 
       const csvText = Papa.unparse(rows);
       const blob = new Blob(["\uFEFF" + csvText], { type: 'text/csv;charset=utf-8;' });
@@ -1523,7 +1601,9 @@
         if (brokenIdSet.has(safeId)) brokenCount++;
 
         const coordStatus = getCoordStatus(item);
-        if (coordStatus !== 'ok') missingItems.push({ item, idx, coordStatus });
+        if (coordStatus === 'missing' || coordStatus === 'abnormal') {
+          missingItems.push({ item, idx, coordStatus });
+        }
 
         const distKey = (item.district || '未分類').trim() || '未分類';
         if (!districtStats[distKey]) districtStats[distKey] = { count: 0, clicks: 0 };
@@ -1642,7 +1722,7 @@
       const healthScoreBadge = document.getElementById('dataHealthScoreBadge');
       if (healthListEl) {
         const checks = [
-          { label: '精準座標完整度', missing: missingItems.length, action: () => jumpToManageIssue('coords'), actionText: '去補座標' },
+          { label: '精準座標完整度（含全港連鎖）', missing: missingItems.length, action: () => jumpToManageIssue('coords'), actionText: '去補座標' },
           { label: '封面圖片正常率', missing: brokenCount, action: () => jumpToManageIssue('broken'), actionText: '去修壞圖' },
           { label: '人均預算填寫', missing: missingPriceCount },
           { label: '必食招牌菜推介', missing: missingMustTryCount },
@@ -1755,7 +1835,7 @@
       const missingListEl = document.getElementById('analyticsMissingCoordsList');
       if (missingListEl) {
         if (missingItems.length === 0) {
-          missingListEl.innerHTML = `<p class="py-8 text-center text-emerald-400 font-bold">✓ 所有餐廳都已設定正確的經緯度座標！</p>`;
+          missingListEl.innerHTML = `<p class="py-8 text-center text-emerald-400 font-bold">✓ 所有餐廳都已設定正確的經緯度座標（全港連鎖已自動略過）！</p>`;
         } else {
           const sortedMissing = [...missingItems].sort((a, b) => (a.coordStatus === 'abnormal' ? -1 : 1) - (b.coordStatus === 'abnormal' ? -1 : 1));
           missingListEl.innerHTML = sortedMissing.slice(0, 60).map(({ item, idx, coordStatus }) => `
@@ -1968,7 +2048,10 @@
       }
 
       if (filterMissingCoords) {
-        filtered = filtered.filter(({ item }) => getCoordStatus(item) !== 'ok');
+        filtered = filtered.filter(({ item }) => {
+          const st = getCoordStatus(item);
+          return st === 'missing' || st === 'abnormal';
+        });
       }
 
       if (filterBrokenImages) {
@@ -2003,6 +2086,8 @@
         let coordHtml = '<span class="text-zinc-500 font-mono">預設</span>';
         if (coordStatus === 'ok') {
           coordHtml = '<span class="text-emerald-400 font-mono">✓ 已定位</span>';
+        } else if (coordStatus === 'chain') {
+          coordHtml = '<span class="text-sky-400 font-mono font-bold">🏪 全港通用</span>';
         } else if (coordStatus === 'abnormal') {
           coordHtml = `<span class="text-red-400 font-mono font-bold" title="現存座標 (${escapeHtml(item.lat)}, ${escapeHtml(item.lng)}) 與地區不符">⚠️ 異常</span>`;
         }
@@ -2320,6 +2405,11 @@
     }
 
     async function autoGeocodeByAddress() {
+      if (document.getElementById('is_chain_nomap')?.checked) {
+        alert('已勾選「全港連鎖 / 網店（不上地圖）」，無需設定單一門牌座標。');
+        return;
+      }
+
       const manualAddr = document.getElementById('manualAddress').value.trim();
       const name = document.getElementById('restaurant_name').value.trim();
       const dist = document.getElementById('district').value.trim();
@@ -2360,11 +2450,21 @@
     }
 
     async function autoGeocodeRestaurant(aiAddress = '') {
+      if (document.getElementById('is_chain_nomap')?.checked) {
+        return;
+      }
+
       const name = document.getElementById('restaurant_name').value.trim();
       const dist = document.getElementById('district').value.trim();
       const caption = document.getElementById('caption').value.trim();
       const manualAddr = document.getElementById('manualAddress')?.value.trim() || '';
       const cfg = loadConfig();
+
+      if (isChainNoMap({ district: dist })) {
+        document.getElementById('is_chain_nomap').checked = true;
+        toggleChainNoMap(true);
+        return;
+      }
 
       const targetAddr = aiAddress || manualAddr || lastExtractedAddress;
       if (!name && !dist && !targetAddr) {
@@ -2411,14 +2511,17 @@
 
       const targetIndices = adminList
         .map((item, idx) => ({ item, idx }))
-        .filter(({ item }) => getCoordStatus(item) !== 'ok');
+        .filter(({ item }) => {
+          const st = getCoordStatus(item);
+          return st === 'missing' || st === 'abnormal';
+        });
 
       if (targetIndices.length === 0) {
         alert('目前沒有缺少或異常座標的餐廳！');
         return;
       }
 
-      if (!confirm(`即將為 ${targetIndices.length} 間缺少或座標異常的餐廳自動重新抓取定位座標，完成後請記得按「🚀 一鍵自動同步到網站」。是否開始？`)) {
+      if (!confirm(`即將為 ${targetIndices.length} 間缺少或座標異常的餐廳自動重新抓取定位座標（全港連鎖/網店將自動略過），完成後請記得按「🚀 一鍵自動同步到網站」。是否開始？`)) {
         return;
       }
 
@@ -2527,9 +2630,9 @@
 {
   "title": "精選貼文中最吸引人的吸睛大標題/爆款金句 (保留Emoji，去除Hashtag與地區分類，控制在15字以內)",
   "restaurant_name": "餐廳名稱 (去除多餘形容詞或店鋪代號)",
-  "district": "地區 (例如：中環、跑馬地、尖沙咀、旺角、太古、澳門、台北，若未明確說明請推斷)",
-  "address": "詳細地址或商場名稱 (例如：太古城中心二期中庭、尖沙咀海港城，若內文沒有則留空字串)",
-  "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋)",
+  "district": "地區 (例如：中環、跑馬地、尖沙咀、旺角、太古、澳門、台北；若是7-Eleven/麥當勞/OK便利店/IKEA等無指定單一分店的全港通用新品請填「全港連鎖」，若是網店外賣請填「網購」)",
+  "address": "詳細地址或商場名稱 (例如：太古城中心二期中庭、尖沙咀海港城，若內文沒有或屬全港連鎖則留空字串)",
+  "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋、甜品烘焙、快餐)",
   "price": "人均價格預算 (格式如：100-200 或 400-600，只填數字範圍)",
   "occasion": "請嚴格從這4個詞中選出1至3個最適合的場景，用「 • 」分隔：拍拖約會、朋友聚會、打卡必到、深夜食堂",
   "must_try": "招牌菜式或必食推介 (精選 1-3 個重點菜名，用頓號、分開)"
@@ -2610,9 +2713,19 @@ ${textToAnalyze}`;
           }
           lastInjectedTitle = extracted.title;
         }
-        
-        await autoGeocodeRestaurant(lastExtractedAddress);
-        alert(`🎉 AI 提取成功！\n\n餐廳名：${extracted.restaurant_name || '-'}\n地區：${extracted.district || '-'}`);
+
+        const chainDetected = isChainNoMap({ district: extracted.district || '' });
+        const chainChk = document.getElementById('is_chain_nomap');
+        if (chainChk) {
+          chainChk.checked = chainDetected;
+          toggleChainNoMap(chainDetected);
+        }
+
+        if (!chainDetected) {
+          await autoGeocodeRestaurant(lastExtractedAddress);
+        }
+
+        alert(`🎉 AI 提取成功！\n\n餐廳名：${extracted.restaurant_name || '-'}\n地區：${extracted.district || '-'}${chainDetected ? '\n（已自動識別為全港連鎖／網店，設定為不上地圖）' : ''}`);
       } catch (err) {
         alert('AI 解析異常: ' + err.message);
       } finally {
@@ -2637,6 +2750,8 @@ ${textToAnalyze}`;
         displayUrlVal = `images/${code}.jpg`;
       }
 
+      const isChainChecked = Boolean(document.getElementById('is_chain_nomap')?.checked);
+
       const itemData = {
         restaurant_name: document.getElementById('restaurant_name').value.trim(),
         district: document.getElementById('district').value.trim(),
@@ -2650,8 +2765,8 @@ ${textToAnalyze}`;
         videoUrl: document.getElementById('videoUrl').value.trim(),
         caption: document.getElementById('caption').value.trim(),
         is_editor_pick: document.getElementById('is_editor_pick').checked ? '1' : '0',
-        lat: document.getElementById('lat').value.trim(),
-        lng: document.getElementById('lng').value.trim()
+        lat: isChainChecked ? 'chain' : document.getElementById('lat').value.trim(),
+        lng: isChainChecked ? 'chain' : document.getElementById('lng').value.trim()
       };
 
       if (!itemData.occasion) {
@@ -2687,15 +2802,22 @@ ${textToAnalyze}`;
       document.getElementById('must_try').value = item.must_try || '';
       document.getElementById('url').value = item.url || '';
       document.getElementById('shortCode').value = item.shortCode || '';
-      document.getElementById('lat').value = item.lat || '';
-      document.getElementById('lng').value = item.lng || '';
-      document.getElementById('manualAddress').value = extractAddressFromCaption(item.caption || '');
+
+      const isChain = isChainNoMap(item);
+      const chainChk = document.getElementById('is_chain_nomap');
+      if (chainChk) chainChk.checked = isChain;
+
+      document.getElementById('lat').value = isChain ? 'chain' : (item.lat || '');
+      document.getElementById('lng').value = isChain ? 'chain' : (item.lng || '');
+      document.getElementById('manualAddress').value = isChain ? '' : extractAddressFromCaption(item.caption || '');
+      applyChainUiState(isChain);
+
       document.getElementById('duplicatePostNotice')?.classList.add('hidden');
 
       const rowEl = document.getElementById('geocodeMatchedRow');
       const addrHint = document.getElementById('geocodeMatchedAddress');
       const mapVerifyLink = document.getElementById('geocodeVerifyMapLink');
-      if (item.lat && item.lng && rowEl && addrHint && mapVerifyLink) {
+      if (!isChain && item.lat && item.lng && rowEl && addrHint && mapVerifyLink) {
         const isAbnormal = getCoordStatus(item) === 'abnormal';
         addrHint.innerText = isAbnormal
           ? `⚠️ 現存座標異常：${item.lat}, ${item.lng}（建議輸入地址重新定位）`
@@ -2740,6 +2862,10 @@ ${textToAnalyze}`;
       document.getElementById('postForm').reset();
       document.getElementById('editIndex').value = '-1';
       document.getElementById('is_editor_pick').checked = false;
+      const chainChk = document.getElementById('is_chain_nomap');
+      if (chainChk) chainChk.checked = false;
+      applyChainUiState(false);
+
       document.getElementById('formTitle').innerHTML = `<span class="text-brand-yellow">✨</span> 新增餐廳食評`;
       document.getElementById('submitBtn').innerText = '暫存至列表';
       document.getElementById('cancelEditBtn').classList.add('hidden');

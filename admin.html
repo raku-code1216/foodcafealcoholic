@@ -54,7 +54,7 @@
             <span>🔄</span><span class="hidden sm:inline">重整</span>
           </span>
         </div>
-        <span class="hidden md:inline text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • Google + 政府官方精準定位 • 流量分析儀表板</span>
+        <span class="hidden md:inline text-xs text-zinc-500 border-l border-zinc-700 pl-3">食評管理 • 地政總署官方精準定位 • 流量分析儀表板</span>
       </div>
 
       <!-- 視圖切換頁籤 -->
@@ -240,7 +240,7 @@
             <input type="text" id="manualAddress"
                    oninput="handleAddressOrCoordInput(this.value)"
                    onkeydown="if(event.key==='Enter'){event.preventDefault(); autoGeocodeByAddress();}"
-                   placeholder="中英地址（如：2-24 Pak Po Street / 豉油街108號）或貼座標..."
+                   placeholder="中英地址（如：太子道西193號 / MOKO新世紀廣場）或貼座標..."
                    class="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-brand-yellow" />
             <button type="button" id="btnGeocodeAddress" onclick="autoGeocodeByAddress()"
                     class="bg-zinc-800 hover:bg-brand-yellow text-brand-yellow hover:text-black border border-brand-yellow/50 font-bold px-2.5 py-1.5 rounded-lg text-[11px] transition shrink-0">
@@ -585,7 +585,7 @@
         </div>
         <div>
           <label class="block text-emerald-400 font-bold mb-1">Google Places API Key (選填，需於 Google Cloud 啟用 Places API New)</label>
-          <input type="password" id="cfgPlacesKey" placeholder="留空即優先使用香港政府官方門牌地址庫"
+          <input type="password" id="cfgPlacesKey" placeholder="留空即優先使用香港地政總署官方資料庫"
                  class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
         </div>
         <div class="border-t border-zinc-800 pt-3">
@@ -855,6 +855,51 @@
       if (scope === 'overseas' && inHK) return 'abnormal';
       if (!isCoordinateConsistentWithDistrict(lat, lng, item.district)) return 'abnormal';
       return 'ok';
+    }
+
+    // 香港地政總署官方參數：HK1980 方格網 (E, N) -> WGS84 (lat, lng)
+    function hk1980ToWgs84(easting, northing) {
+      const E = parseFloat(easting);
+      const N = parseFloat(northing);
+      if (isNaN(E) || isNaN(N)) return null;
+
+      const E0 = 836694.05;
+      const N0 = 819069.80;
+      const lng0 = 114.178555556 * Math.PI / 180;
+      const m0 = 1.0;
+      const M0 = 2468395.723;
+      const a = 6378388.0;
+      const e2 = 6.722670022e-3;
+
+      const A0 = 1 - e2 / 4 - (3 * e2 * e2) / 64;
+      const A2 = (3 / 8) * (e2 + (e2 * e2) / 4);
+      const A4 = (15 / 256) * (e2 * e2);
+
+      const dE = E - E0;
+      const dN = N - N0;
+      const Mp = (dN + M0) / m0;
+
+      let latP = Mp / (a * A0);
+      for (let i = 0; i < 6; i++) {
+        const f = a * (A0 * latP - A2 * Math.sin(2 * latP) + A4 * Math.sin(4 * latP)) - Mp;
+        const df = a * (A0 - 2 * A2 * Math.cos(2 * latP) + 4 * A4 * Math.cos(4 * latP));
+        latP -= f / df;
+      }
+
+      const sinP = Math.sin(latP);
+      const cosP = Math.cos(latP);
+      const tanP = Math.tan(latP);
+      const nuP = a / Math.sqrt(1 - e2 * sinP * sinP);
+      const rhoP = (a * (1 - e2)) / Math.pow(1 - e2 * sinP * sinP, 1.5);
+      const psiP = nuP / rhoP;
+      const x = dE / (m0 * nuP);
+
+      const latHk80 = latP - (tanP / (m0 * rhoP)) * (dE * x / 2);
+      const lngHk80 = lng0 + (x / cosP) - (Math.pow(x, 3) / (6 * cosP)) * (psiP + 2 * tanP * tanP);
+
+      const wgsLat = (latHk80 * 180 / Math.PI) - (5.5 / 3600);
+      const wgsLng = (lngHk80 * 180 / Math.PI) + (8.8 / 3600);
+      return { lat: wgsLat, lng: wgsLng };
     }
 
     function escapeHtml(str) {
@@ -2402,7 +2447,6 @@
       return /(\d+|街|道|路|里|巷|坊|徑|廣場|大廈|中心|商場|樓|舖|鋪|street|\bst\b|road|\brd\b|avenue|\bave\b|lane|square|plaza|centre|center|mall|tower|g\/f|lg\/f|ug\/f|shop)/i.test(line);
     }
 
-    // 同時支援「📍 地址」同行，以及「📍餐廳名\n詳細地址」換行兩段式格式
     function extractAddressFromCaption(caption) {
       if (!caption) return '';
       const lines = String(caption).split('\n').map(l => l.trim());
@@ -2413,7 +2457,6 @@
           const sameLine = (match[1] || '').trim();
           const nextLine = (lines[i + 1] || '').trim();
 
-          // 如果同行只有短短的店名（無門牌/街道字眼），而下一行正正是中/英文地址，取下一行！
           if (nextLine && !looksLikeStreetAddress(sameLine) && looksLikeStreetAddress(nextLine)) {
             return nextLine;
           }
@@ -2426,6 +2469,16 @@
           if (sameLine && sameLine.length > 3) {
             return sameLine;
           }
+        }
+      }
+
+      // 若貼文沒有寫 📍，自動掃描底部的香港地址行（例如「旺角太子道西193號MOKO新世紀廣場3樓301-302號舖」）
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i];
+        if (!line || line.startsWith('#') || line.startsWith('地區分類')) continue;
+        if (/[\u4e00-\u9fa5]{2,8}(?:街|道|路|里|巷|坊|徑)[東西南北中]?\s*\d+\s*號/.test(line) ||
+            /\b\d+(?:\s*[-–]\s*\d+)?\s+[A-Za-z][A-Za-z\s.'-]+\s+(?:Street|St|Road|Rd|Avenue|Ave)\b/i.test(line)) {
+          return line;
         }
       }
       return '';
@@ -2448,7 +2501,6 @@
         .replace(/\bKwuntong\b/ig, 'Kwun Tong');
     }
 
-    // 全面支援英文 (Shop 9, G/F, 2-24 Pak Po Street, Mongkok) 與中文門牌清洗
     function buildAddressVariants(rawAddr, districtName = '') {
       const variants = [];
       const clean = normalizeEnglishHkDistrict(
@@ -2457,7 +2509,6 @@
       if (!clean) return variants;
       variants.push(clean);
 
-      // 1. 專門清洗英文開頭/逗號分隔的 Shop / Unit / G/F / 1/F 字眼（只移除該段，絕不誤刪後面街名！）
       let engCleaned = clean
         .replace(/(?:^|,\s*)(?:Shops?|Units?|Flats?|Rooms?|Rm|Stall|Kiosk)\s*[A-Z0-9&\/-]+(?:\s*[-–&,]\s*[A-Z0-9]+)*\s*,?\s*/ig, ' ')
         .replace(/(?:^|,\s*)(?:LG|UG|G|M|B\d*|\d+)\s*\/\s*F\s*,?\s*/ig, ' ')
@@ -2471,7 +2522,6 @@
         variants.push(engCleaned);
       }
 
-      // 2. 精準匹配英文門牌「門牌號碼 + 英文街名」（例：2-24 Pak Po Street -> 2 Pak Po Street）
       const engStreetMatch = (engCleaned || clean).match(/\b(\d+)(?:\s*[-–]\s*(\d+))?[A-Z]?\s+([A-Za-z][A-Za-z\s.'-]{1,40}?\s+(?:Street|St|Road|Rd|Avenue|Ave|Lane|Alley|Square|Sq|Terrace|Crescent|Drive|Dr|Path|Walk|Way|Promenade))\b/i);
       if (engStreetMatch) {
         const num1 = engStreetMatch[1];
@@ -2483,7 +2533,6 @@
         variants.push(stName);
       }
 
-      // 3. 針對中文地址尾綴（如：旺角豉油街108號地舖 / 尖沙咀中間道15號H Zentre UG樓1-3號舖）
       if (/[\u4e00-\u9fa5]/.test(clean)) {
         const noChiFloorShop = clean
           .replace(/(?:地下?舖?|地下|地舖|地鋪|地庫|閣樓|天台|[A-Z]?\d+樓|LG\d*樓|UG\d*樓|B\d+樓).*$/i, '')
@@ -2504,15 +2553,24 @@
           variants.push(streetSource);
         }
 
-        const chiStreetMatch = streetSource.match(/([\u4e00-\u9fa5]{2,6}(?:街|道|路|里|巷|坊|徑|廣場))\s*(\d+(?:[-–]\d+)?)\s*號?/);
+        // 正則支援「太子道西193號」、「皇后大道中」、「德輔道東」等 [東西南北中] 路名
+        const chiStreetMatch = streetSource.match(/([\u4e00-\u9fa5]{2,7}(?:街|道|路|里|巷|坊|徑|廣場)[東西南北中]?)\s*(\d+(?:[-–]\d+)?)\s*號?/);
         if (chiStreetMatch && chiStreetMatch[1]) {
           const stName = chiStreetMatch[1];
           const stNo = chiStreetMatch[2].split(/[-–]/)[0];
           variants.push(`${stName} ${stNo}號`);
-          variants.push(`${stName} ${stNo}`);
           variants.push(`${stName}${stNo}號`);
+          variants.push(`${stName} ${stNo}`);
           if (districtName) {
             variants.push(`${districtName} ${stName} ${stNo}`);
+          }
+        }
+
+        // 若門牌號後面跟商場或大廈名（例：太子道西193號MOKO新世紀廣場），亦拆分出商場名供地政總署搜尋
+        if (noChiFloorShop.includes('號')) {
+          const afterNo = noChiFloorShop.split('號').slice(1).join('').trim();
+          if (afterNo && afterNo.length >= 2) {
+            variants.push(afterNo);
           }
         }
       }
@@ -2520,27 +2578,31 @@
       return Array.from(new Set(variants.filter(Boolean)));
     }
 
-    async function searchGooglePlaces(query, apiKey) {
-      if (!apiKey) return null;
-      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': apiKey,
-          'X-Goog-FieldMask': 'places.location,places.formattedAddress,places.displayName'
-        },
-        body: JSON.stringify({
-          textQuery: query,
-          languageCode: 'zh-HK'
-        })
+    // 1. 香港地政總署 GeoData 官方公開 API（完全免 Key，支援中英文門牌與商場名）
+    async function searchHkGeoData(query, districtStr = '') {
+      const cleanQ = String(query || '').replace(/[舖鋪]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!cleanQ) return null;
+      const res = await fetch(`https://geodata.gov.hk/gs/api/v1.0.0/locationSearch?q=${encodeURIComponent(cleanQ)}`, {
+        headers: { 'Accept': 'application/json' }
       });
-      const data = await res.json();
-      if (res.ok && data.places && data.places.length > 0) {
-        return data.places[0];
+      if (!res.ok) return null;
+      const list = await res.json();
+      if (!Array.isArray(list) || list.length === 0) return null;
+
+      for (const item of list) {
+        if (item.x === undefined || item.y === undefined) continue;
+        const coords = hk1980ToWgs84(item.x, item.y);
+        if (!coords) continue;
+        if (districtStr && !isCoordinateConsistentWithDistrict(coords.lat, coords.lng, districtStr, query)) {
+          continue;
+        }
+        const label = [item.nameZH || item.nameEN, item.addressZH || item.addressEN].filter(Boolean).join(' · ') || cleanQ;
+        return { lat: coords.lat, lng: coords.lng, label };
       }
       return null;
     }
 
+    // 2. 香港政府 OGCIO ALS 地址搜尋服務
     async function searchHkOgcioAls(query, districtStr = '') {
       const cleanQ = String(query || '').replace(/[舖鋪]/g, ' ').replace(/\s+/g, ' ').trim();
       if (!cleanQ) return null;
@@ -2576,6 +2638,27 @@
       return null;
     }
 
+    async function searchGooglePlaces(query, apiKey) {
+      if (!apiKey) return null;
+      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': 'places.location,places.formattedAddress,places.displayName'
+        },
+        body: JSON.stringify({
+          textQuery: query,
+          languageCode: 'zh-HK'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.places && data.places.length > 0) {
+        return data.places[0];
+      }
+      return null;
+    }
+
     function isCoordinateValidForScope(lat, lng, expectedScope, districtStr = '', captionAddr = '') {
       if (isNaN(lat) || isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) {
         return false;
@@ -2592,7 +2675,6 @@
     function isSafeNameForAddressLookup(name) {
       const clean = String(name || '').trim();
       if (!clean) return false;
-      // 防止 1 個中文字（如「道」、「一」）被當成馬路名亂搜
       if (/^[\u4e00-\u9fa5]$/.test(clean)) return false;
       if (/^[道路街里巷號樓]$/.test(clean)) return false;
       return clean.length >= 2;
@@ -2621,16 +2703,17 @@
 
       if (addrVariants.length > 0) {
         addrVariants.forEach(v => {
-          const withDist = dist && !v.toLowerCase().includes(dist.toLowerCase()) ? `${v}, ${dist}` : v;
+          const cleanForOsm = v.replace(/(\d+)\s*號/g, '$1');
+          const withDist = dist && !cleanForOsm.toLowerCase().includes(dist.toLowerCase()) ? `${cleanForOsm}, ${dist}` : cleanForOsm;
           if (prioritizeAddressOnly) {
-            googleQueries.push(`${withDist}${regionSuffix}`.trim());
+            googleQueries.push(`${v}${regionSuffix}`.trim());
             osmQueries.push(`${withDist}${regionSuffix}`.trim());
           } else if (safeName) {
             googleQueries.push(`${safeName} ${v}${regionSuffix}`.trim());
-            osmQueries.push(`${v}${regionSuffix}`.trim());
+            osmQueries.push(`${withDist}${regionSuffix}`.trim());
           }
           googleQueries.push(`${v}${regionSuffix}`.trim());
-          osmQueries.push(`${v}${regionSuffix}`.trim());
+          osmQueries.push(`${cleanForOsm}${regionSuffix}`.trim());
         });
       }
       if (safeName) {
@@ -2643,14 +2726,30 @@
       const uniqueGoogleQueries = Array.from(new Set(googleQueries.filter(Boolean)));
       const uniqueOsmQueries = Array.from(new Set(osmQueries.filter(Boolean)));
 
-      const tryAls = async () => {
+      const tryHkOfficial = async () => {
         if (expectedScope === 'overseas') return null;
-        // 若已有門牌地址，只用清洗後的地址查 ALS；無地址時才允許用安全店名（且排除 1 字店名如「道」）
-        const alsCandidates = addrVariants.length > 0
+        const hkCandidates = addrVariants.length > 0
           ? [...addrVariants]
           : (safeName ? [`${dist} ${safeName}`.trim(), safeName] : []);
+        const uniqueHk = Array.from(new Set(hkCandidates.filter(Boolean)));
 
-        for (const q of Array.from(new Set(alsCandidates.filter(Boolean)))) {
+        // 先試地政總署 GeoData（對中英街道門牌＋商場名最全面，支援 CORS）
+        for (const q of uniqueHk) {
+          try {
+            const gdHit = await searchHkGeoData(q, dist);
+            if (gdHit && isCoordinateValidForScope(gdHit.lat, gdHit.lng, expectedScope, dist, captionAddr)) {
+              return {
+                lat: gdHit.lat.toFixed(6),
+                lng: gdHit.lng.toFixed(6),
+                source: 'geodata',
+                matchedText: `${gdHit.label} (香港地政總署 GeoData)`
+              };
+            }
+          } catch (err) {}
+        }
+
+        // 再試政府 OGCIO ALS 地址庫
+        for (const q of uniqueHk) {
           try {
             const alsHit = await searchHkOgcioAls(q, dist);
             if (alsHit && isCoordinateValidForScope(alsHit.lat, alsHit.lng, expectedScope, dist, captionAddr)) {
@@ -2688,17 +2787,16 @@
         return null;
       };
 
-      // 當有真實門牌地址且在香港時，先試香港政府 ALS（門牌極準）或已設定的自訂 Google Places Key
       if (expectedScope !== 'overseas' && (prioritizeAddressOnly || addrVariants.length > 0 || !cfg.hasCustomPlacesKey)) {
-        const alsFirst = await tryAls();
-        if (alsFirst) return alsFirst;
+        const hkFirst = await tryHkOfficial();
+        if (hkFirst) return hkFirst;
         const googleSecond = await tryGoogle();
         if (googleSecond) return googleSecond;
       } else {
         const googleFirst = await tryGoogle();
         if (googleFirst) return googleFirst;
-        const alsSecond = await tryAls();
-        if (alsSecond) return alsSecond;
+        const hkSecond = await tryHkOfficial();
+        if (hkSecond) return hkSecond;
       }
 
       for (const q of uniqueOsmQueries) {
@@ -2735,6 +2833,7 @@
 
       let prefix = '✓ 備援定位：';
       if (result.source === 'google') prefix = '✓ Google 定位：';
+      else if (result.source === 'geodata') prefix = '✓ 地政總署定位：';
       else if (result.source === 'ogcio') prefix = '✓ 官方地址庫：';
       else if (result.source === 'manual') prefix = '✓ ';
 
@@ -2780,7 +2879,7 @@
           document.getElementById('lng').value = result.lng;
           showMatchedGeocodeResult(result);
         } else {
-          alert(`找不到符合「${dist || '香港'}」範圍的精準門牌座標（已自動攔截跨區錯誤位置）。\n\n建議：\n1. 精簡至「街道＋門牌」（例如：2 Pak Po Street 或 豉油街 108號）\n2. 或直接喺 Google Maps 複製座標貼入此欄！`);
+          alert(`找不到符合「${dist || '香港'}」範圍的精準門牌座標（已自動攔截跨區錯誤位置）。\n\n建議：\n1. 輸入商場名稱（例如：MOKO新世紀廣場）或英文街名\n2. 或直接喺 Google Maps 複製座標貼入此欄！`);
         }
       } catch (e) {
         alert('地址轉換服務連線逾時，請稍後重試。');
@@ -2830,7 +2929,7 @@
           document.getElementById('lng').value = result.lng;
           showMatchedGeocodeResult(result);
         } else {
-          alert(`未能找到符合「${dist || '該地區'}」範圍的精準座標（已攔截跨區誤判結果）。\n建議喺地址欄輸入「街道＋門牌」（如：2 Pak Po Street 或 豉油街 108號），或直接貼上 Google Maps 座標。`);
+          alert(`未能找到符合「${dist || '該地區'}」範圍的精準座標（已攔截跨區誤判結果）。\n建議喺地址欄輸入「商場名 / 街道＋門牌」（如：MOKO新世紀廣場 或 2 Pak Po Street），或直接貼上 Google Maps 座標。`);
         }
       } catch (e) {
         alert('定位服務連線逾時，請稍後重試。');
@@ -2971,7 +3070,7 @@
   "title": "精選貼文中最吸引人的吸睛大標題/爆款金句 (保留Emoji，去除Hashtag與地區分類，控制在15字以內)",
   "restaurant_name": "餐廳名稱 (去除多餘形容詞或店鋪代號)",
   "district": "地區 (例如：中環、跑馬地、尖沙咀、旺角、太古、澳門、台北；若是7-Eleven/麥當勞/OK便利店/IKEA等無指定單一分店的全港通用新品請填「全港連鎖」，若是網店外賣請填「網購」)",
-  "address": "詳細門牌地址或商場名稱 (支援英文或中文，例如：Shop 9, G/F, 2-24 Pak Po Street, Mongkok 或 旺角豉油街108號，若內文沒有或屬全港連鎖則留空字串)",
+  "address": "詳細門牌地址或商場名稱 (支援英文或中文，例如：Shop 9, G/F, 2-24 Pak Po Street, Mongkok 或 旺角太子道西193號MOKO新世紀廣場，若內文沒有或屬全港連鎖則留空字串)",
   "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋、甜品烘焙、快餐)",
   "price": "人均價格預算 (格式如：100-200 或 400-600，只填數字範圍)",
   "occasion": "請嚴格從這4個詞中選出1至3個最適合的場景，用「 • 」分隔：拍拖約會、朋友聚會、打卡必到、深夜食堂",

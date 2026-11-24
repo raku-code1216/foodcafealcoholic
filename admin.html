@@ -223,7 +223,7 @@
         <!-- 精準門牌經緯度欄位 -->
         <div class="p-2.5 bg-zinc-900/80 rounded-xl border border-zinc-800 space-y-2">
           <div class="flex items-center justify-between gap-2">
-            <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準座標 (輸入地址 / 直接貼 Google 座標)</label>
+            <label class="text-[11px] font-bold text-zinc-300">🗺️ 門牌精準座標 (中英地址 / 直接貼 Google 座標)</label>
             <button type="button" id="btnGeocode" onclick="autoGeocodeRestaurant()" class="text-brand-yellow hover:underline text-[11px] font-bold shrink-0">
               📍 依店名自動定位
             </button>
@@ -240,7 +240,7 @@
             <input type="text" id="manualAddress"
                    oninput="handleAddressOrCoordInput(this.value)"
                    onkeydown="if(event.key==='Enter'){event.preventDefault(); autoGeocodeByAddress();}"
-                   placeholder="輸入地址（例：旺角豉油街108號）或直接貼 Google 座標..."
+                   placeholder="中英地址（如：2-24 Pak Po Street / 豉油街108號）或貼座標..."
                    class="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-white text-[11px] focus:outline-none focus:border-brand-yellow" />
             <button type="button" id="btnGeocodeAddress" onclick="autoGeocodeByAddress()"
                     class="bg-zinc-800 hover:bg-brand-yellow text-brand-yellow hover:text-black border border-brand-yellow/50 font-bold px-2.5 py-1.5 rounded-lg text-[11px] transition shrink-0">
@@ -779,7 +779,7 @@
       '港島', '中環', '上環', '灣仔', '銅鑼灣', '跑馬地', '大坑', '天后', '北角', '炮台山', '鰂魚涌', '太古', '西環', '西營盤', '堅尼地城', '石塘咀', '黃竹坑', '金鐘', '香港仔', '鴨脷洲', '海怡', '赤柱', '淺水灣', '薄扶林', '數碼港', '柴灣', '筲箕灣', '西灣河', '杏花邨', '山頂', '半山', '蘭桂坊', '蘇豪', 'soho', '大館', 'pmq',
       '九龍', '尖沙咀', '尖東', '佐敦', '油麻地', '旺角', '太子', '深水埗', '長沙灣', '大角咀', '紅磡', '黃埔', '九龍城', '啟德', '觀塘', '九龍灣', '牛頭角', '藍田', '油塘', '何文田', '土瓜灣', '九龍塘', '黃大仙', '鑽石山', '新蒲崗', '慈雲山', '彩虹', '樂富', '荔枝角', '美孚', '石硤尾', '南昌', '奧運', '西九龍', '柯士甸', '圓方', '海港城', '朗豪坊', '又一城', 'airside', 'k11', 'apm', 'megabox', 'd2 place',
       '新界', '荃灣', '葵芳', '葵興', '葵涌', '青衣', '深井', '沙田', '大圍', '火炭', '馬鞍山', '烏溪沙', '元朗', '天水圍', '錦田', '屯門', '大埔', '太和', '粉嶺', '上水', '將軍澳', '坑口', '寶琳', '調景嶺', '康城', '西貢', '清水灣', '東涌', '機場', '大嶼山', '離島', '愉景灣', '長洲', '南丫島', '坪洲', '大澳', '馬灣',
-      'central', 'sheung wan', 'wan chai', 'causeway bay', 'happy valley', 'tin hau', 'north point', 'quarry bay', 'tai koo', 'sai ying pun', 'kennedy town', 'tsim sha tsui', 'tst', 'mong kok', 'jordan', 'sham shui po', 'kwun tong', 'tsuen wan', 'sha tin', 'yuen long', 'tuen mun', 'tai po', 'sai kung', 'tseung kwan o', 'tung chung'
+      'central', 'sheung wan', 'wan chai', 'causeway bay', 'happy valley', 'tin hau', 'north point', 'quarry bay', 'tai koo', 'sai ying pun', 'kennedy town', 'tsim sha tsui', 'tst', 'mong kok', 'mongkok', 'jordan', 'sham shui po', 'kwun tong', 'tsuen wan', 'sha tin', 'shatin', 'yuen long', 'tuen mun', 'tai po', 'sai kung', 'tseung kwan o', 'tung chung'
     ];
 
     const DISTRICT_GEO_BOUNDS = {
@@ -2397,56 +2397,123 @@
       rowEl.classList.remove('hidden');
     }
 
+    function looksLikeStreetAddress(line) {
+      if (!line) return false;
+      return /(\d+|街|道|路|里|巷|坊|徑|廣場|大廈|中心|商場|樓|舖|鋪|street|\bst\b|road|\brd\b|avenue|\bave\b|lane|square|plaza|centre|center|mall|tower|g\/f|lg\/f|ug\/f|shop)/i.test(line);
+    }
+
+    // 同時支援「📍 地址」同行，以及「📍餐廳名\n詳細地址」換行兩段式格式
     function extractAddressFromCaption(caption) {
       if (!caption) return '';
-      const regex = /(?:📍|地址[：:]|Address[：:]|地點[：:])\s*([^\n]+)/i;
-      const match = caption.match(regex);
-      if (match && match[1] && match[1].trim().length > 3) {
-        return match[1].trim();
+      const lines = String(caption).split('\n').map(l => l.trim());
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const match = line.match(/^(?:📍|地址[：:]|Address[：:]|地點[：:])\s*(.*)$/i);
+        if (match) {
+          const sameLine = (match[1] || '').trim();
+          const nextLine = (lines[i + 1] || '').trim();
+
+          // 如果同行只有短短的店名（無門牌/街道字眼），而下一行正正是中/英文地址，取下一行！
+          if (nextLine && !looksLikeStreetAddress(sameLine) && looksLikeStreetAddress(nextLine)) {
+            return nextLine;
+          }
+          if (sameLine && sameLine.length > 3 && looksLikeStreetAddress(sameLine)) {
+            return sameLine;
+          }
+          if (nextLine && looksLikeStreetAddress(nextLine)) {
+            return nextLine;
+          }
+          if (sameLine && sameLine.length > 3) {
+            return sameLine;
+          }
+        }
       }
       return '';
     }
 
+    function normalizeEnglishHkDistrict(str) {
+      return String(str || '')
+        .replace(/\bMongkok\b/ig, 'Mong Kok')
+        .replace(/\bTsimshatsui\b/ig, 'Tsim Sha Tsui')
+        .replace(/\bCausewaybay\b/ig, 'Causeway Bay')
+        .replace(/\bSheungwan\b/ig, 'Sheung Wan')
+        .replace(/\bWanchai\b/ig, 'Wan Chai')
+        .replace(/\bShatin\b/ig, 'Sha Tin')
+        .replace(/\bTaipo\b/ig, 'Tai Po')
+        .replace(/\bTsuenwan\b/ig, 'Tsuen Wan')
+        .replace(/\bTuenmun\b/ig, 'Tuen Mun')
+        .replace(/\bYuenlong\b/ig, 'Yuen Long')
+        .replace(/\bSaikung\b/ig, 'Sai Kung')
+        .replace(/\bKowloonbay\b/ig, 'Kowloon Bay')
+        .replace(/\bKwuntong\b/ig, 'Kwun Tong');
+    }
+
+    // 全面支援英文 (Shop 9, G/F, 2-24 Pak Po Street, Mongkok) 與中文門牌清洗
     function buildAddressVariants(rawAddr, districtName = '') {
       const variants = [];
-      const clean = String(rawAddr || '').replace(/[（(][^）)]*[）)]/g, ' ').replace(/\s+/g, ' ').trim();
+      const clean = normalizeEnglishHkDistrict(
+        String(rawAddr || '').replace(/[（(][^）)]*[）)]/g, ' ').replace(/\s+/g, ' ').trim()
+      );
       if (!clean) return variants;
       variants.push(clean);
 
-      const noFloorShop = clean
-        .replace(/(?:地下?舖?|地下|地舖|地鋪|地庫|閣樓|天台|[A-Z]?\d+樓|\d+\s*\/\s*F|G\s*\/\s*F|LG\s*\/\s*F|UG\s*\/\s*F|M\s*\/\s*F|B\d+\s*樓?).*$/i, '')
-        .replace(/(?:Shop|Unit|Flat|Rm|Room)\s*[A-Z0-9-]+.*$/i, '')
-        .replace(/[A-Z]?\d+[A-Z]?(?:[-–]\d+[A-Z]?)?\s*號?[舖鋪室座].*$/i, '')
+      // 1. 專門清洗英文開頭/逗號分隔的 Shop / Unit / G/F / 1/F 字眼（只移除該段，絕不誤刪後面街名！）
+      let engCleaned = clean
+        .replace(/(?:^|,\s*)(?:Shops?|Units?|Flats?|Rooms?|Rm|Stall|Kiosk)\s*[A-Z0-9&\/-]+(?:\s*[-–&,]\s*[A-Z0-9]+)*\s*,?\s*/ig, ' ')
+        .replace(/(?:^|,\s*)(?:LG|UG|G|M|B\d*|\d+)\s*\/\s*F\s*,?\s*/ig, ' ')
+        .replace(/(?:^|,\s*)(?:Ground|Lower Ground|Upper Ground|Mezzanine|Basement)\s*Floor\s*,?\s*/ig, ' ')
+        .replace(/,\s*Shops?\s+[A-Z0-9&-\s]+$/ig, '')
+        .replace(/^\s*,+\s*|\s*,+\s*$/g, '')
+        .replace(/\s+/g, ' ')
         .trim();
-      if (noFloorShop && noFloorShop.length >= 3) variants.push(noFloorShop);
 
-      let streetSource = noFloorShop || clean;
-      for (const kw of HK_KEYWORDS) {
-        if (/^[\u4e00-\u9fa5]+$/.test(kw) && streetSource.startsWith(kw) && streetSource.length > kw.length + 2) {
-          streetSource = streetSource.slice(kw.length).trim();
-          break;
+      if (engCleaned && engCleaned.length >= 4) {
+        variants.push(engCleaned);
+      }
+
+      // 2. 精準匹配英文門牌「門牌號碼 + 英文街名」（例：2-24 Pak Po Street -> 2 Pak Po Street）
+      const engStreetMatch = (engCleaned || clean).match(/\b(\d+)(?:\s*[-–]\s*(\d+))?[A-Z]?\s+([A-Za-z][A-Za-z\s.'-]{1,40}?\s+(?:Street|St|Road|Rd|Avenue|Ave|Lane|Alley|Square|Sq|Terrace|Crescent|Drive|Dr|Path|Walk|Way|Promenade))\b/i);
+      if (engStreetMatch) {
+        const num1 = engStreetMatch[1];
+        const num2 = engStreetMatch[2];
+        const stName = engStreetMatch[3].trim();
+        variants.push(`${num1} ${stName}`);
+        if (num2) variants.push(`${num2} ${stName}`);
+        variants.push(`${num1}${num2 ? '-' + num2 : ''} ${stName}`);
+        variants.push(stName);
+      }
+
+      // 3. 針對中文地址尾綴（如：旺角豉油街108號地舖 / 尖沙咀中間道15號H Zentre UG樓1-3號舖）
+      if (/[\u4e00-\u9fa5]/.test(clean)) {
+        const noChiFloorShop = clean
+          .replace(/(?:地下?舖?|地下|地舖|地鋪|地庫|閣樓|天台|[A-Z]?\d+樓|LG\d*樓|UG\d*樓|B\d+樓).*$/i, '')
+          .replace(/[A-Z]?\d+[A-Z]?(?:[-–]\d+[A-Z]?)?\s*號?[舖鋪室座].*$/i, '')
+          .trim();
+        if (noChiFloorShop && noChiFloorShop.length >= 3) {
+          variants.push(noChiFloorShop);
         }
-      }
-      if (streetSource && streetSource !== noFloorShop) {
-        variants.push(streetSource);
-      }
 
-      const streetMatch = streetSource.match(/([\u4e00-\u9fa5]{2,6}(?:街|道|路|里|巷|坊|徑|廣場))\s*(\d+(?:[-–]\d+)?)\s*號?/);
-      if (streetMatch && streetMatch[1]) {
-        const stName = streetMatch[1];
-        const stNo = streetMatch[2];
-        variants.push(`${stName} ${stNo}號`);
-        variants.push(`${stName} ${stNo}`);
-        variants.push(`${stName}${stNo}號`);
-        if (districtName) {
-          variants.push(`${districtName} ${stName} ${stNo}`);
+        let streetSource = noChiFloorShop || clean;
+        for (const kw of HK_KEYWORDS) {
+          if (/^[\u4e00-\u9fa5]+$/.test(kw) && streetSource.startsWith(kw) && streetSource.length > kw.length + 2) {
+            streetSource = streetSource.slice(kw.length).trim();
+            break;
+          }
         }
-      }
+        if (streetSource && streetSource !== noChiFloorShop) {
+          variants.push(streetSource);
+        }
 
-      if (noFloorShop.includes('號')) {
-        const afterNo = noFloorShop.split('號').slice(1).join('').trim();
-        if (afterNo && afterNo.length >= 2) {
-          variants.push(afterNo);
+        const chiStreetMatch = streetSource.match(/([\u4e00-\u9fa5]{2,6}(?:街|道|路|里|巷|坊|徑|廣場))\s*(\d+(?:[-–]\d+)?)\s*號?/);
+        if (chiStreetMatch && chiStreetMatch[1]) {
+          const stName = chiStreetMatch[1];
+          const stNo = chiStreetMatch[2].split(/[-–]/)[0];
+          variants.push(`${stName} ${stNo}號`);
+          variants.push(`${stName} ${stNo}`);
+          variants.push(`${stName}${stNo}號`);
+          if (districtName) {
+            variants.push(`${districtName} ${stName} ${stNo}`);
+          }
         }
       }
 
@@ -2502,7 +2569,8 @@
         const chi = prem.ChiPremisesAddress || {};
         const eng = prem.EngPremisesAddress || {};
         const streetPart = chi.ChiStreet ? `${chi.ChiStreet.StreetName || ''}${chi.ChiStreet.BuildingNoFrom ? chi.ChiStreet.BuildingNoFrom + '號' : ''}` : '';
-        const label = [chi.BuildingName || eng.BuildingName || '', streetPart].filter(Boolean).join(' ') || cleanQ;
+        const engStreetPart = eng.EngStreet ? `${eng.EngStreet.BuildingNoFrom || ''} ${eng.EngStreet.StreetName || ''}`.trim() : '';
+        const label = [chi.BuildingName || eng.BuildingName || '', streetPart || engStreetPart].filter(Boolean).join(' ') || cleanQ;
         return { lat, lng, label };
       }
       return null;
@@ -2521,6 +2589,15 @@
       return true;
     }
 
+    function isSafeNameForAddressLookup(name) {
+      const clean = String(name || '').trim();
+      if (!clean) return false;
+      // 防止 1 個中文字（如「道」、「一」）被當成馬路名亂搜
+      if (/^[\u4e00-\u9fa5]$/.test(clean)) return false;
+      if (/^[道路街里巷號樓]$/.test(clean)) return false;
+      return clean.length >= 2;
+    }
+
     async function geocodeRestaurantData({ name, dist, caption, aiAddress = '', prioritizeAddressOnly = false }, cfg) {
       const captionAddr = aiAddress || extractAddressFromCaption(caption);
 
@@ -2535,29 +2612,32 @@
       }
 
       const expectedScope = getExpectedScope(dist, captionAddr);
-      const regionSuffix = expectedScope === 'overseas' ? '' : ' 香港';
+      const regionSuffix = expectedScope === 'overseas' ? '' : ' Hong Kong';
 
       const addrVariants = buildAddressVariants(captionAddr, dist);
       const googleQueries = [];
       const osmQueries = [];
+      const safeName = isSafeNameForAddressLookup(name) ? name : '';
 
       if (addrVariants.length > 0) {
         addrVariants.forEach(v => {
-          const withDist = dist && !v.includes(dist) ? `${dist} ${v}` : v;
+          const withDist = dist && !v.toLowerCase().includes(dist.toLowerCase()) ? `${v}, ${dist}` : v;
           if (prioritizeAddressOnly) {
             googleQueries.push(`${withDist}${regionSuffix}`.trim());
             osmQueries.push(`${withDist}${regionSuffix}`.trim());
-          } else if (name) {
-            googleQueries.push(`${name} ${v}${regionSuffix}`.trim());
+          } else if (safeName) {
+            googleQueries.push(`${safeName} ${v}${regionSuffix}`.trim());
             osmQueries.push(`${v}${regionSuffix}`.trim());
           }
           googleQueries.push(`${v}${regionSuffix}`.trim());
           osmQueries.push(`${v}${regionSuffix}`.trim());
         });
       }
-      if (name || dist) {
-        googleQueries.push(`${name} ${dist}${regionSuffix}`.trim());
-        osmQueries.push(`${name} ${dist}${regionSuffix}`.trim());
+      if (safeName) {
+        googleQueries.push(`${safeName} ${dist}${regionSuffix}`.trim());
+        if (addrVariants.length === 0) {
+          osmQueries.push(`${safeName} ${dist}${regionSuffix}`.trim());
+        }
       }
 
       const uniqueGoogleQueries = Array.from(new Set(googleQueries.filter(Boolean)));
@@ -2565,8 +2645,12 @@
 
       const tryAls = async () => {
         if (expectedScope === 'overseas') return null;
-        const alsCandidates = Array.from(new Set([...addrVariants, `${dist} ${name}`.trim(), name].filter(Boolean)));
-        for (const q of alsCandidates) {
+        // 若已有門牌地址，只用清洗後的地址查 ALS；無地址時才允許用安全店名（且排除 1 字店名如「道」）
+        const alsCandidates = addrVariants.length > 0
+          ? [...addrVariants]
+          : (safeName ? [`${dist} ${safeName}`.trim(), safeName] : []);
+
+        for (const q of Array.from(new Set(alsCandidates.filter(Boolean)))) {
           try {
             const alsHit = await searchHkOgcioAls(q, dist);
             if (alsHit && isCoordinateValidForScope(alsHit.lat, alsHit.lng, expectedScope, dist, captionAddr)) {
@@ -2604,7 +2688,8 @@
         return null;
       };
 
-      if (prioritizeAddressOnly && expectedScope !== 'overseas') {
+      // 當有真實門牌地址且在香港時，先試香港政府 ALS（門牌極準）或已設定的自訂 Google Places Key
+      if (expectedScope !== 'overseas' && (prioritizeAddressOnly || addrVariants.length > 0 || !cfg.hasCustomPlacesKey)) {
         const alsFirst = await tryAls();
         if (alsFirst) return alsFirst;
         const googleSecond = await tryGoogle();
@@ -2695,7 +2780,7 @@
           document.getElementById('lng').value = result.lng;
           showMatchedGeocodeResult(result);
         } else {
-          alert(`找不到符合「${dist || '香港'}」範圍的精準門牌座標（已自動攔截跨區錯誤位置）。\n\n建議：\n1. 精簡至「街道＋門牌」（例如：豉油街 108號）\n2. 或直接喺 Google Maps 複製座標（如 22.3168, 114.1715）貼入此欄！`);
+          alert(`找不到符合「${dist || '香港'}」範圍的精準門牌座標（已自動攔截跨區錯誤位置）。\n\n建議：\n1. 精簡至「街道＋門牌」（例如：2 Pak Po Street 或 豉油街 108號）\n2. 或直接喺 Google Maps 複製座標貼入此欄！`);
         }
       } catch (e) {
         alert('地址轉換服務連線逾時，請稍後重試。');
@@ -2745,7 +2830,7 @@
           document.getElementById('lng').value = result.lng;
           showMatchedGeocodeResult(result);
         } else {
-          alert(`未能找到符合「${dist || '該地區'}」範圍的精準座標（已攔截跨區誤判結果）。\n建議喺地址欄輸入「街道＋門牌」（如：豉油街 108號），或直接貼上 Google Maps 座標。`);
+          alert(`未能找到符合「${dist || '該地區'}」範圍的精準座標（已攔截跨區誤判結果）。\n建議喺地址欄輸入「街道＋門牌」（如：2 Pak Po Street 或 豉油街 108號），或直接貼上 Google Maps 座標。`);
         }
       } catch (e) {
         alert('定位服務連線逾時，請稍後重試。');
@@ -2886,7 +2971,7 @@
   "title": "精選貼文中最吸引人的吸睛大標題/爆款金句 (保留Emoji，去除Hashtag與地區分類，控制在15字以內)",
   "restaurant_name": "餐廳名稱 (去除多餘形容詞或店鋪代號)",
   "district": "地區 (例如：中環、跑馬地、尖沙咀、旺角、太古、澳門、台北；若是7-Eleven/麥當勞/OK便利店/IKEA等無指定單一分店的全港通用新品請填「全港連鎖」，若是網店外賣請填「網購」)",
-  "address": "詳細地址或商場名稱 (例如：太古城中心二期中庭、尖沙咀海港城，若內文沒有或屬全港連鎖則留空字串)",
+  "address": "詳細門牌地址或商場名稱 (支援英文或中文，例如：Shop 9, G/F, 2-24 Pak Po Street, Mongkok 或 旺角豉油街108號，若內文沒有或屬全港連鎖則留空字串)",
   "cuisine": "菜式種類 (例如：日本料理、西式、酒吧、Cafe、燒肉、火鍋、甜品烘焙、快餐)",
   "price": "人均價格預算 (格式如：100-200 或 400-600，只填數字範圍)",
   "occasion": "請嚴格從這4個詞中選出1至3個最適合的場景，用「 • 」分隔：拍拖約會、朋友聚會、打卡必到、深夜食堂",
@@ -2965,7 +3050,11 @@ ${textToAnalyze}`;
         if (extracted.price) document.getElementById('price').value = extracted.price;
         if (extracted.occasion) document.getElementById('occasion').value = extracted.occasion;
         if (extracted.must_try) document.getElementById('must_try').value = extracted.must_try;
-        lastExtractedAddress = extracted.address || extractAddressFromCaption(textToAnalyze) || '';
+
+        const captionExtractedAddr = extractAddressFromCaption(textToAnalyze);
+        lastExtractedAddress = (extracted.address && looksLikeStreetAddress(extracted.address))
+          ? extracted.address
+          : (captionExtractedAddr || extracted.address || '');
         document.getElementById('manualAddress').value = lastExtractedAddress;
 
         if (extracted.title) {

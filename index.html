@@ -1036,6 +1036,7 @@
 
     let rtdb = null;
     let globalClicksMap = {};
+    const knownBrokenInFirebase = new Set();
 
     try {
       firebase.initializeApp(firebaseConfig);
@@ -1093,10 +1094,7 @@
       const nameStr = String(item.restaurant_name || '').trim().toLowerCase();
       const capStr = String(item.caption || '').trim().toLowerCase();
 
-      // 檢查內文或地址是否標明全線分店有售
       const hasChainText = CHAIN_DIST_KEYWORDS.some(kw => capStr.includes(kw));
-
-      // 檢查是否屬知名大連鎖品牌
       const isChainBrand = CHAIN_BRAND_KEYWORDS.some(kw => nameStr.includes(kw));
 
       if (isChainBrand) {
@@ -1267,9 +1265,10 @@
       prompt('請長按複製以下網址，並用 Safari 或 Chrome 開啟：', siteUrl);
     }
 
-    // ================= 圖片修復與壞圖通報 =================
+    // ================= 圖片修復、重試與自癒消警 =================
     function reportBrokenImageToManager(item, failedSrc) {
       if (!item || !item.id || reportedBrokenIds.has(item.id)) return;
+      if (navigator.onLine === false || document.hidden) return;
       reportedBrokenIds.add(item.id);
       if (rtdb) {
         rtdb.ref('broken_images/' + item.id).set({
@@ -1283,6 +1282,23 @@
         }).catch(() => {});
       }
     }
+
+    function onImageLoadSuccess(img) {
+      if (!img) return;
+      const cardEl = img.closest('.card-zoom');
+      const restId = img.getAttribute('data-rest-id') || (cardEl && cardEl.getAttribute('data-rest-id'));
+      if (!restId) return;
+      const safeId = String(restId);
+
+      // 若之前曾被誤報在 broken_images 中，今次正常載入即自動清除該筆假警報
+      if (knownBrokenInFirebase.has(safeId)) {
+        knownBrokenInFirebase.delete(safeId);
+        if (rtdb) {
+          rtdb.ref('broken_images/' + safeId).remove().catch(() => {});
+        }
+      }
+    }
+    window.onImageLoadSuccess = onImageLoadSuccess;
 
     function hideBrokenCardsById(restId) {
       const safeStr = String(restId);
@@ -1317,6 +1333,7 @@
       const restId = img.getAttribute('data-rest-id') || (cardEl && cardEl.getAttribute('data-rest-id'));
       const item = restId ? restaurants.find(r => String(r.id) === String(restId)) : null;
 
+      // 1. 先嘗試切換至本地 images/{shortCode}.jpg（應對 IG CDN 過期）
       if (item && img.dataset.triedLocal !== '1') {
         const code = item.shortCode || extractShortcode(item.url);
         if (code) {
@@ -1327,6 +1344,20 @@
             img.src = localPath;
             return;
           }
+        }
+      }
+
+      // 2. 防止多圖同時載入導致偶發超時誤殺：延遲 600ms 重試一次本地圖片
+      if (item && img.dataset.triedRetry !== '1' && navigator.onLine !== false) {
+        const code = item.shortCode || extractShortcode(item.url);
+        const retryBase = code ? `images/${code}.jpg` : (img.getAttribute('src') || '').split('?')[0];
+        if (retryBase && !retryBase.startsWith('data:')) {
+          img.dataset.triedRetry = '1';
+          setTimeout(() => {
+            if (!document.body.contains(img)) return;
+            img.src = `${retryBase}?r=${Date.now()}`;
+          }, 600);
+          return;
         }
       }
 
@@ -1341,13 +1372,13 @@
       }
 
       const failedSrc = img.getAttribute('src') || '';
-      if (item) {
+      if (item && navigator.onLine !== false && !document.hidden) {
         item._brokenImage = true;
         reportBrokenImageToManager(item, failedSrc);
       }
-      if (restId) {
+      if (restId && navigator.onLine !== false && !document.hidden) {
         hideBrokenCardsById(restId);
-      } else if (cardEl) {
+      } else if (cardEl && navigator.onLine !== false && !document.hidden) {
         cardEl.style.display = 'none';
         cardEl.classList.remove('flex');
         cardEl.classList.add('hidden');
@@ -1758,6 +1789,8 @@
           <div class="relative w-full aspect-[4/5] bg-zinc-950 overflow-hidden">
             <img src="${escapeHtml(img)}" alt="${safeName}" 
                  loading="lazy" decoding="async"
+                 data-rest-id="${safeId}"
+                 onload="onImageLoadSuccess(this)"
                  onerror="onImageError(this)" 
                  class="food-card-img w-full h-full object-cover object-center transition-transform duration-500 ease-out" />
             
@@ -1888,6 +1921,7 @@
       if (posterEl) {
         posterEl.setAttribute('data-rest-id', safeId);
         delete posterEl.dataset.triedLocal;
+        delete posterEl.dataset.triedRetry;
         posterEl.src = getReelThumbnail(item);
       }
       if (loadingHintEl) loadingHintEl.classList.remove('hidden');
@@ -2120,6 +2154,7 @@
       if (imgEl) {
         imgEl.setAttribute('data-rest-id', String(chosen.id));
         delete imgEl.dataset.triedLocal;
+        delete imgEl.dataset.triedRetry;
         imgEl.src = getReelThumbnail(chosen);
       }
       if (distEl) distEl.innerText = `${isChainNoMap(chosen) ? '🏪' : '📍'} ${chosen.district || '全港分店'}`;
@@ -2571,7 +2606,6 @@
             lng: r.lng || ''
           };
 
-          // 自動連鎖識別：若是連鎖且地區原本為空白或「-」，自動美化為「全港分店」
           const isChain = isChainNoMap(tempItem);
           if (isChain && (!distStr || distStr === '香港' || distStr === '-')) {
             distStr = '全港分店';
@@ -2644,9 +2678,15 @@
           });
           renderApp();
         }).catch(err => console.log('讀取雲端點擊數提示:', err));
+
+        // 載入既有壞圖名單（僅用於當正常出圖時自動幫後台消警）
+        rtdb.ref('broken_images').once('value').then(snapshot => {
+          const val = snapshot.val() || {};
+          Object.keys(val).forEach(k => knownBrokenInFirebase.add(String(k)));
+        }).catch(() => {});
       }
 
-      fetch('cleaned_data_final.csv?t=' + Date.now())
+      fetch('cleaned_data_final.csv?t=' + Date.now(), { cache: 'no-store' })
         .then(response => {
           if (!response.ok) throw new Error('未找到 cleaned_data_final.csv');
           return response.text();
@@ -3188,7 +3228,7 @@
 
         const photoPinIcon = L.divIcon({
           html: `<div class="food-photo-pin" title="${safeName}">
-                   <img src="${safeThumb}" alt="${safeName}" data-rest-id="${safeId}" data-pin-img="1" loading="lazy" decoding="async" onerror="onImageError(this)" />
+                   <img src="${safeThumb}" alt="${safeName}" data-rest-id="${safeId}" data-pin-img="1" loading="lazy" decoding="async" onload="onImageLoadSuccess(this)" onerror="onImageError(this)" />
                  </div>`,
           className: '',
           iconSize: [48, 54],
@@ -3203,7 +3243,7 @@
         const popupHtml = `
           <div class="w-56 font-sans overflow-hidden">
             <div class="relative w-full h-28 rounded-lg overflow-hidden mb-2 bg-zinc-900">
-              <img src="${safeThumb}" alt="${safeName}" data-rest-id="${safeId}" data-pin-img="1" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-full h-full object-cover" />
+              <img src="${safeThumb}" alt="${safeName}" data-rest-id="${safeId}" data-pin-img="1" loading="lazy" decoding="async" onload="onImageLoadSuccess(this)" onerror="onImageError(this)" class="w-full h-full object-cover" />
               <div class="absolute bottom-1.5 left-1.5 flex items-center gap-1">
                 <span class="bg-black/85 text-white text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-700">📍 ${safeDistrict}</span>
                 ${distLabel}
@@ -3246,7 +3286,7 @@
           let railHtml = enriched.slice(0, 30).map(item => `
             <div data-rest-id="${escapeHtml(item.id)}" onclick="focusPinAndPopup(this.getAttribute('data-rest-id'), ${item.coords.lat}, ${item.coords.lng})" 
                  class="flex-none w-52 bg-zinc-900 border border-zinc-800 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
-              <img src="${escapeHtml(getReelThumbnail(item))}" alt="${escapeHtml(item.restaurant_name)}" data-rest-id="${escapeHtml(item.id)}" data-pin-img="1" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
+              <img src="${escapeHtml(getReelThumbnail(item))}" alt="${escapeHtml(item.restaurant_name)}" data-rest-id="${escapeHtml(item.id)}" data-pin-img="1" loading="lazy" decoding="async" onload="onImageLoadSuccess(this)" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
               <div class="overflow-hidden">
                 <div class="flex items-center gap-1">
                   ${item.distKm !== null ? `<span class="text-[10px] bg-brand-yellow text-black font-black px-1.5 rounded">${formatDistance(item.distKm)}</span>` : ''}
@@ -3262,7 +3302,7 @@
             railHtml += chainMatches.slice(0, 10).map(item => `
               <div data-rest-id="${escapeHtml(item.id)}" onclick="openModalFromMap(this.getAttribute('data-rest-id'))" 
                    class="flex-none w-52 bg-zinc-900 border border-brand-yellow/40 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
-                <img src="${escapeHtml(getReelThumbnail(item))}" alt="${escapeHtml(item.restaurant_name)}" data-rest-id="${escapeHtml(item.id)}" data-pin-img="1" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
+                <img src="${escapeHtml(getReelThumbnail(item))}" alt="${escapeHtml(item.restaurant_name)}" data-rest-id="${escapeHtml(item.id)}" data-pin-img="1" loading="lazy" decoding="async" onload="onImageLoadSuccess(this)" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
                 <div class="overflow-hidden">
                   <span class="text-[9px] bg-brand-yellow/20 text-brand-yellow font-black px-1.5 py-0.2 rounded">🏪 全港通用</span>
                   <h4 class="text-xs font-bold text-white truncate mt-0.5">${escapeHtml(item.restaurant_name)}</h4>
@@ -3276,7 +3316,7 @@
           rail.innerHTML = chainMatches.slice(0, 15).map(item => `
             <div data-rest-id="${escapeHtml(item.id)}" onclick="openModalFromMap(this.getAttribute('data-rest-id'))" 
                  class="flex-none w-56 bg-zinc-900 border border-brand-yellow/50 hover:border-brand-yellow rounded-xl p-2 cursor-pointer transition flex items-center gap-2.5">
-              <img src="${escapeHtml(getReelThumbnail(item))}" alt="${escapeHtml(item.restaurant_name)}" data-rest-id="${escapeHtml(item.id)}" data-pin-img="1" loading="lazy" decoding="async" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
+              <img src="${escapeHtml(getReelThumbnail(item))}" alt="${escapeHtml(item.restaurant_name)}" data-rest-id="${escapeHtml(item.id)}" data-pin-img="1" loading="lazy" decoding="async" onload="onImageLoadSuccess(this)" onerror="onImageError(this)" class="w-11 h-11 rounded-lg object-cover shrink-0 bg-zinc-800" />
               <div class="overflow-hidden">
                 <span class="text-[9px] bg-brand-yellow text-black font-black px-1.5 py-0.2 rounded">🏪 全港分店 / 網購</span>
                 <h4 class="text-xs font-bold text-white truncate mt-0.5">${escapeHtml(item.restaurant_name)}</h4>

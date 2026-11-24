@@ -46,8 +46,6 @@
   <!-- 頂部導航列 -->
   <header class="bg-brand-card border-b border-brand-border px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30">
     <div class="flex items-center gap-3 flex-wrap">
-      
-      <!-- 點擊 Logo 重新整理後台 (PWA iPhone 一鍵 Reboost) -->
       <div onclick="handleAdminLogoRefresh()" class="flex items-center gap-2.5 cursor-pointer group select-none active:scale-95 transition" title="點擊重新整理後台 (Reboost 重啟)">
         <img src="logo.jpg" alt="FCA" class="w-7 h-7 rounded-lg object-contain border border-brand-yellow/50 group-hover:border-brand-yellow group-hover:scale-105 transition shadow shrink-0" />
         <div class="flex items-center gap-2">
@@ -635,6 +633,7 @@
     let loadedRemoteRowCount = 0;
     let batchGeocodeRunning = false;
     let batchGeocodeStopRequested = false;
+    let isVerifyingBroken = false;
 
     let isCurrentlyNewPost = false;
 
@@ -783,7 +782,6 @@
       'central', 'sheung wan', 'wan chai', 'causeway bay', 'happy valley', 'tin hau', 'north point', 'quarry bay', 'tai koo', 'sai ying pun', 'kennedy town', 'tsim sha tsui', 'tst', 'mong kok', 'jordan', 'sham shui po', 'kwun tong', 'tsuen wan', 'sha tin', 'yuen long', 'tuen mun', 'tai po', 'sai kung', 'tseung kwan o', 'tung chung'
     ];
 
-    // 香港各區中心點與最大合理半徑 (km)，用於攔截跨區誤判的假座標
     const DISTRICT_GEO_BOUNDS = {
       '旺角': [22.3193, 114.1694, 4.5], '太子': [22.3245, 114.1683, 4.5], '油麻地': [22.3129, 114.1706, 4.5], '佐敦': [22.3049, 114.1717, 4.5],
       '尖沙咀': [22.2988, 114.1722, 4.5], '尖東': [22.2958, 114.1765, 4.5], '大角咀': [22.3218, 114.1627, 4.5], '深水埗': [22.3307, 114.1622, 4.5],
@@ -970,6 +968,46 @@
       });
       renderBrokenAlertBanner();
       renderTable();
+      verifyReportedBrokenImages();
+    }
+
+    async function verifyReportedBrokenImages() {
+      if (isVerifyingBroken || adminList.length === 0 || brokenIdSet.size === 0) return;
+      isVerifyingBroken = true;
+      try {
+        const targets = adminList
+          .map((item, idx) => ({ item, idx, safeId: getItemSafeId(item, idx) }))
+          .filter(({ safeId }) => brokenIdSet.has(safeId));
+
+        let changedAny = false;
+        for (const { item, idx, safeId } of targets) {
+          const code = item.shortCode || extractShortcode(item.url);
+          const localPath = code ? `images/${code}.jpg` : '';
+          const curUrl = item.displayUrl || localPath;
+
+          let ok = await testImageUrl(curUrl);
+          if (!ok && localPath && curUrl !== localPath) {
+            const localOk = await testImageUrl(localPath);
+            if (localOk) {
+              adminList[idx].displayUrl = localPath;
+              markUnsaved(true);
+              ok = true;
+            }
+          }
+
+          if (ok) {
+            brokenIdSet.delete(safeId);
+            changedAny = true;
+            if (rtdb) rtdb.ref('broken_images/' + safeId).remove().catch(() => {});
+          }
+        }
+        if (changedAny) {
+          renderBrokenAlertBanner();
+          renderTable();
+        }
+      } finally {
+        isVerifyingBroken = false;
+      }
     }
 
     function renderBrokenAlertBanner() {
@@ -1053,6 +1091,9 @@
 
           if (ok) {
             brokenIdSet.delete(safeId);
+            if (rtdb && brokenImagesMap[safeId]) {
+              rtdb.ref('broken_images/' + safeId).remove().catch(() => {});
+            }
           } else {
             brokenIdSet.add(safeId);
             brokenCount++;
@@ -2045,6 +2086,7 @@
               markUnsaved(false);
               renderBrokenAlertBanner();
               renderTable();
+              verifyReportedBrokenImages();
               if (!document.getElementById('analyticsView').classList.contains('hidden')) {
                 renderAnalytics();
               }
@@ -2279,14 +2321,10 @@
       checkDuplicatePost(postUrl, code);
     }
 
-    // =========================================================================
-    // 📍 智能座標解析：支援直接貼上 Google 十進制 / 度分秒 / Google Maps 網址
-    // =========================================================================
     function parseCoordinatesFromText(rawText) {
       if (!rawText) return null;
       const str = String(rawText).trim();
 
-      // 1. 度分秒格式 (DMS): 22°15'08.1"N 114°08'01.6"E
       const dmsRegex = /(\d+)[°\s]+(\d+)['′\s]+([\d.]+)["″]?\s*([NS])[\s,]+(\d+)[°\s]+(\d+)['′\s]+([\d.]+)["″]?\s*([EW])/i;
       const dmsMatch = str.match(dmsRegex);
       if (dmsMatch) {
@@ -2299,7 +2337,6 @@
         }
       }
 
-      // 2. Google Maps 網址 @22.252262,114.133787 或 !3d22.25!4d114.13
       const gmaps3d4d = str.match(/!3d([-+]?\d{1,2}\.\d+)!4d([-+]?\d{1,3}\.\d+)/);
       if (gmaps3d4d) {
         return { lat: parseFloat(gmaps3d4d[1]).toFixed(6), lng: parseFloat(gmaps3d4d[2]).toFixed(6), source: 'url' };
@@ -2309,7 +2346,6 @@
         return { lat: parseFloat(urlAtMatch[1]).toFixed(6), lng: parseFloat(urlAtMatch[2]).toFixed(6), source: 'url' };
       }
 
-      // 3. 純數字十進制: 22.252262, 114.133787
       const decMatch = str.match(/^([-+]?\d{1,2}\.\d{3,})[,\s]+([-+]?\d{1,3}\.\d{3,})$/);
       if (decMatch) {
         const lat = parseFloat(decMatch[1]);
@@ -2371,14 +2407,12 @@
       return '';
     }
 
-    // 針對香港門牌「地舖 / 地下舖 / 號地下 / 旺角豉油街108號」進行專業洗淨與分拆
     function buildAddressVariants(rawAddr, districtName = '') {
       const variants = [];
       const clean = String(rawAddr || '').replace(/[（(][^）)]*[）)]/g, ' ').replace(/\s+/g, ' ').trim();
       if (!clean) return variants;
       variants.push(clean);
 
-      // 去除所有樓層與舖位字樣（包含地舖、地鋪、地下舖、地下、G/F、Shop等）
       const noFloorShop = clean
         .replace(/(?:地下?舖?|地下|地舖|地鋪|地庫|閣樓|天台|[A-Z]?\d+樓|\d+\s*\/\s*F|G\s*\/\s*F|LG\s*\/\s*F|UG\s*\/\s*F|M\s*\/\s*F|B\d+\s*樓?).*$/i, '')
         .replace(/(?:Shop|Unit|Flat|Rm|Room)\s*[A-Z0-9-]+.*$/i, '')
@@ -2386,7 +2420,6 @@
         .trim();
       if (noFloorShop && noFloorShop.length >= 3) variants.push(noFloorShop);
 
-      // 先去掉開頭的區名（如「旺角」、「銅鑼灣」），避免黏住街名導致 OGCIO 查不到
       let streetSource = noFloorShop || clean;
       for (const kw of HK_KEYWORDS) {
         if (/^[\u4e00-\u9fa5]+$/.test(kw) && streetSource.startsWith(kw) && streetSource.length > kw.length + 2) {
@@ -2398,7 +2431,6 @@
         variants.push(streetSource);
       }
 
-      // 精準匹配「街名 + 門牌號」，產生標準有空格/無空格組合（OGCIO ALS 最愛「豉油街 108」）
       const streetMatch = streetSource.match(/([\u4e00-\u9fa5]{2,6}(?:街|道|路|里|巷|坊|徑|廣場))\s*(\d+(?:[-–]\d+)?)\s*號?/);
       if (streetMatch && streetMatch[1]) {
         const stName = streetMatch[1];
@@ -2463,7 +2495,6 @@
         const lng = parseFloat(geo.Longitude);
         if (isNaN(lat) || isNaN(lng)) continue;
 
-        // 確保政府庫傳回的多筆候選中，真正符合目標商圈
         if (districtStr && !isCoordinateConsistentWithDistrict(lat, lng, districtStr, query)) {
           continue;
         }
@@ -2493,7 +2524,6 @@
     async function geocodeRestaurantData({ name, dist, caption, aiAddress = '', prioritizeAddressOnly = false }, cfg) {
       const captionAddr = aiAddress || extractAddressFromCaption(caption);
 
-      // 0. 若直接貼入了 Google 經緯度 / 度分秒 / 地圖網址，立即採用
       const directParsed = parseCoordinatesFromText(captionAddr);
       if (directParsed) {
         return {
@@ -2533,7 +2563,6 @@
       const uniqueGoogleQueries = Array.from(new Set(googleQueries.filter(Boolean)));
       const uniqueOsmQueries = Array.from(new Set(osmQueries.filter(Boolean)));
 
-      // 1A. 若為香港「地址轉座標」或使用者尚未設定專用 Google Places Key，優先使用香港政府官方 OGCIO ALS 地址庫（門牌最準且免 Key）
       const tryAls = async () => {
         if (expectedScope === 'overseas') return null;
         const alsCandidates = Array.from(new Set([...addrVariants, `${dist} ${name}`.trim(), name].filter(Boolean)));
@@ -2587,7 +2616,6 @@
         if (alsSecond) return alsSecond;
       }
 
-      // 3. OpenStreetMap Nominatim 備援（加入嚴格地區半徑防呆，絕不接受飄去大埔/沙田的假座標！）
       for (const q of uniqueOsmQueries) {
         try {
           const osmRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=3`, {
@@ -2832,7 +2860,6 @@
       }
     }
 
-    // AI 智能提取：具備多重模型自動切換 + 高峰期 (503) 自動重試機制
     async function runAiExtraction() {
       const textToAnalyze = document.getElementById('caption').value.trim();
       const cfg = loadConfig();

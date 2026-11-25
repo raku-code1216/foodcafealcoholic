@@ -294,9 +294,9 @@
       </div>
 
       <div class="hidden lg:flex items-center space-x-5 text-xs tracking-wider text-zinc-300 shrink-0">
-        <a href="#leaderboard-section" class="hover:text-brand-yellow transition">🔥 每週熱門榜</a>
-        <a href="#editor-section" class="hover:text-brand-yellow transition">🏆 專屬嚴選</a>
         <a href="#new-section" class="hover:text-brand-yellow transition">🆕 最新上架</a>
+        <a href="#editor-section" class="hover:text-brand-yellow transition">🏆 專屬嚴選</a>
+        <a href="#leaderboard-section" class="hover:text-brand-yellow transition">🔥 每週熱門榜</a>
       </div>
     </div>
 
@@ -309,7 +309,7 @@
       </button>
 
       <button onclick="openRandomPickerModal()" title="設定地區並隨機抽一間餐廳"
-              class="bg-zinc-900 hover:bg-brand-yellow text-white hover:text-black border border-zinc-700 hover:border-brand-yellow text-xs sm:text-sm font-black px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full transition flex items-center gap-1 whitespace-nowrap shadow active:scale-95">
+              class="bg-zinc-900 hover:bg-brand-yellow text-white hover:text-black border border-zinc-700 hover:border-brand-yellow text-xs sm:text-sm font-black px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full transition hidden sm:flex items-center gap-1 whitespace-nowrap shadow active:scale-95">
         <span>🎲</span>
         <span class="hidden md:inline">幫我揀</span>
       </button>
@@ -413,82 +413,73 @@
         </button>
       </div>
 
-      <!-- 細分選單 -->
+      <!-- 細分選單（支援黑金複選） -->
       <div id="advancedFilterRow" class="hidden sm:flex flex-wrap items-center gap-3 pt-1">
         
         <!-- 地區篩選 -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-200 font-extrabold text-sm sm:text-base shrink-0">📍 地區：</span>
-          <select id="districtRegionSelect" onchange="onDistrictChange(this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
-            <option value="all" id="opt-all">🗺️ 所有地區 (All)</option>
-            <optgroup label="── 快速大區 ──">
-              <option value="region:港島" id="opt-reg-hk">🇭🇰 港島全區 (Hong Kong Island)</option>
-              <option value="region:九龍" id="opt-reg-kln">🏮 九龍全區 (Kowloon)</option>
-              <option value="region:新界" id="opt-reg-nt">🌳 新界全區 (New Territories)</option>
-              <option value="region:海外" id="opt-reg-overseas">✈️ 海外 / 旅遊推介 (Overseas)</option>
-              <option value="region:連鎖網購" id="opt-reg-chain">🏪 全港連鎖 / 網購 (Chains &amp; Online)</option>
-            </optgroup>
-            <optgroup label="── 港島熱門商圈 ──">
-              <option value="中環">中環 (Central / SOHO / 大館)</option>
-              <option value="上環">上環 (Sheung Wan / PMQ)</option>
-              <option value="灣仔">灣仔 (Wan Chai)</option>
-              <option value="銅鑼灣">銅鑼灣 (Causeway Bay)</option>
-              <option value="跑馬地">跑馬地 (Happy Valley)</option>
-              <option value="天后">天后 / 炮台山 / 北角</option>
-              <option value="鰂魚涌">鰂魚涌 / 太古</option>
-              <option value="西環">西環 / 堅尼地城 / 西營盤</option>
-              <option value="黃竹坑">黃竹坑 / 南區</option>
-            </optgroup>
-            <optgroup label="── 九龍熱門商圈 ──">
-              <option value="尖沙咀">尖沙咀 (Tsim Sha Tsui)</option>
-              <option value="佐敦">佐敦 / 油麻地</option>
-              <option value="旺角">旺角 (Mong Kok)</option>
-              <option value="太子">太子 (Prince Edward)</option>
-              <option value="深水埗">深水埗 (Sham Shui Po)</option>
-              <option value="紅磡">紅磡 / 黃埔</option>
-              <option value="九龍城">九龍城 / 啟德</option>
-              <option value="觀塘">觀塘 / 九龍灣</option>
-              <option value="大角咀">大角咀</option>
-            </optgroup>
-            <optgroup label="── 新界熱門商圈 ──">
-              <option value="荃灣">荃灣 (Tsuen Wan)</option>
-              <option value="沙田">沙田 / 大圍</option>
-              <option value="元朗">元朗 (Yuen Long)</option>
-              <option value="屯門">屯門 (Tuen Mun)</option>
-              <option value="大埔">大埔 (Tai Po)</option>
-              <option value="將軍澳">將軍澳 (TKO)</option>
-              <option value="西貢">西貢 (Sai Kung)</option>
-            </optgroup>
-          </select>
+          <div id="districtRegionSelect" data-ms="location" class="fca-multi-select relative w-full sm:w-auto">
+            <button type="button" id="districtRegionBtn" onclick="toggleMultiSelect('location', event)" aria-expanded="false"
+                    class="w-full sm:w-auto min-w-[205px] max-w-full bg-zinc-900 border-2 border-zinc-700 hover:border-brand-yellow/70 text-zinc-100 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-bold transition shadow-inner flex items-center justify-between gap-2 text-left">
+              <span id="opt-all" class="ms-btn-label truncate">🗺️ 所有地區 (All)</span>
+              <span class="flex items-center gap-1.5 shrink-0">
+                <span class="ms-btn-count hidden bg-brand-yellow text-black text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">0</span>
+                <span class="ms-btn-arrow text-[10px] text-zinc-400 transition-transform duration-200">▼</span>
+              </span>
+            </button>
+            <div id="districtRegionPanel" class="ms-panel hidden absolute left-0 mt-2 w-full sm:w-80 min-w-[260px] max-w-[calc(100vw-2rem)] bg-[#0A0A0A] border-2 border-brand-yellow/75 rounded-2xl shadow-[0_18px_42px_rgba(0,0,0,0.95)] z-50 overflow-hidden">
+              <div class="flex items-center justify-between px-3.5 py-2.5 bg-zinc-900/95 border-b border-zinc-800">
+                <span class="ms-panel-status text-[11px] font-bold text-zinc-300">目前：所有地區（可複選）</span>
+                <button type="button" onclick="clearMultiSelect('location', event)" class="text-xs font-black text-brand-yellow hover:underline shrink-0">全部 / 清除</button>
+              </div>
+              <div id="districtRegionOptions" class="max-h-72 overflow-y-auto p-1.5 space-y-0.5"></div>
+            </div>
+          </div>
         </div>
 
         <!-- 預算篩選 -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-200 font-extrabold text-sm sm:text-base shrink-0">💰 預算：</span>
-          <select id="priceSelect" onchange="setFilter('price', this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
-            <option value="all">不限預算 (全部價格)</option>
-            <option value="under100">$100 以下 (平民/輕食)</option>
-            <option value="100-300">$100 - $300 (人氣抵食)</option>
-            <option value="300-600">$300 - $600 (聚會/Cafe/特色菜)</option>
-            <option value="above600">$600 以上 (精緻/約會/高級)</option>
-          </select>
+          <div id="priceSelect" data-ms="price" class="fca-multi-select relative w-full sm:w-auto">
+            <button type="button" id="priceBtn" onclick="toggleMultiSelect('price', event)" aria-expanded="false"
+                    class="w-full sm:w-auto min-w-[190px] max-w-full bg-zinc-900 border-2 border-zinc-700 hover:border-brand-yellow/70 text-zinc-100 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-bold transition shadow-inner flex items-center justify-between gap-2 text-left">
+              <span class="ms-btn-label truncate">不限預算 (全部價格)</span>
+              <span class="flex items-center gap-1.5 shrink-0">
+                <span class="ms-btn-count hidden bg-brand-yellow text-black text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">0</span>
+                <span class="ms-btn-arrow text-[10px] text-zinc-400 transition-transform duration-200">▼</span>
+              </span>
+            </button>
+            <div id="pricePanel" class="ms-panel hidden absolute left-0 mt-2 w-full sm:w-72 min-w-[240px] max-w-[calc(100vw-2rem)] bg-[#0A0A0A] border-2 border-brand-yellow/75 rounded-2xl shadow-[0_18px_42px_rgba(0,0,0,0.95)] z-50 overflow-hidden">
+              <div class="flex items-center justify-between px-3.5 py-2.5 bg-zinc-900/95 border-b border-zinc-800">
+                <span class="ms-panel-status text-[11px] font-bold text-zinc-300">目前：不限預算（可複選）</span>
+                <button type="button" onclick="clearMultiSelect('price', event)" class="text-xs font-black text-brand-yellow hover:underline shrink-0">全部 / 清除</button>
+              </div>
+              <div id="priceOptions" class="max-h-72 overflow-y-auto p-1.5 space-y-0.5"></div>
+            </div>
+          </div>
         </div>
 
         <!-- 菜式種類 -->
         <div class="flex items-center gap-1.5 flex-1 min-w-[200px] sm:flex-initial">
           <span class="text-zinc-200 font-extrabold text-sm sm:text-base shrink-0">🍜 菜式：</span>
-          <select id="cuisineSelect" onchange="setFilter('cuisine', this.value)" class="w-full sm:w-auto bg-zinc-900 border-2 border-zinc-700 text-zinc-100 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-brand-yellow font-bold transition shadow-inner">
-            <option value="all">🍽️ 所有菜式 (All Cuisines)</option>
-            <option value="日本">🇯🇵 日本料理 (壽司/燒肉/居酒屋/拉麵)</option>
-            <option value="Cafe">☕ Cafe 咖啡 / 早午餐 Brunch</option>
-            <option value="西式">🥩 西式料理 (牛扒/意粉/Bistro)</option>
-            <option value="火鍋">🍲 火鍋 / 放題 / 雞煲</option>
-            <option value="東南亞">🌶️ 東南亞菜 (泰國/越南/南洋)</option>
-            <option value="中菜">🥢 中式粵菜 (小炒/點心/大牌檔/川菜)</option>
-            <option value="甜品">🍰 甜品烘焙 (蛋糕/蛋撻/麵包/糖水)</option>
-            <option value="酒吧">🍸 酒吧 / 微醺調酒 (Cocktails)</option>
-            <option value="快餐">🍔 街頭小食 / 漢堡 / 車仔麵</option>
-          </select>
+          <div id="cuisineSelect" data-ms="cuisine" class="fca-multi-select relative w-full sm:w-auto">
+            <button type="button" id="cuisineBtn" onclick="toggleMultiSelect('cuisine', event)" aria-expanded="false"
+                    class="w-full sm:w-auto min-w-[205px] max-w-full bg-zinc-900 border-2 border-zinc-700 hover:border-brand-yellow/70 text-zinc-100 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-bold transition shadow-inner flex items-center justify-between gap-2 text-left">
+              <span class="ms-btn-label truncate">🍽️ 所有菜式 (All Cuisines)</span>
+              <span class="flex items-center gap-1.5 shrink-0">
+                <span class="ms-btn-count hidden bg-brand-yellow text-black text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none">0</span>
+                <span class="ms-btn-arrow text-[10px] text-zinc-400 transition-transform duration-200">▼</span>
+              </span>
+            </button>
+            <div id="cuisinePanel" class="ms-panel hidden absolute left-0 mt-2 w-full sm:w-80 min-w-[260px] max-w-[calc(100vw-2rem)] bg-[#0A0A0A] border-2 border-brand-yellow/75 rounded-2xl shadow-[0_18px_42px_rgba(0,0,0,0.95)] z-50 overflow-hidden">
+              <div class="flex items-center justify-between px-3.5 py-2.5 bg-zinc-900/95 border-b border-zinc-800">
+                <span class="ms-panel-status text-[11px] font-bold text-zinc-300">目前：所有菜式（可複選）</span>
+                <button type="button" onclick="clearMultiSelect('cuisine', event)" class="text-xs font-black text-brand-yellow hover:underline shrink-0">全部 / 清除</button>
+              </div>
+              <div id="cuisineOptions" class="max-h-72 overflow-y-auto p-1.5 space-y-0.5"></div>
+            </div>
+          </div>
         </div>
 
         <button onclick="resetAllFilters()" class="text-zinc-400 hover:text-brand-yellow text-xs sm:text-sm font-bold underline ml-auto transition py-2">
@@ -512,15 +503,15 @@
       <span class="hidden sm:inline text-zinc-500 text-xs">電腦端滑鼠滾輪支援橫向滑動</span>
     </div>
 
-    <!-- 每週最多點擊排行榜 -->
-    <section id="leaderboard-section">
+    <!-- 最新上架 -->
+    <section id="new-section">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 tracking-wide text-white">
-          <span class="text-brand-yellow">🔥</span> 每週熱門點擊排行榜 TOP 10 (Trending Leaderboard)
+          <span class="text-brand-yellow">🆕</span> 最新上架食評 (New Arrivals)
         </h2>
-        <span class="text-[11px] text-zinc-400">熱度即時更新</span>
+        <span class="text-[11px] text-zinc-400">同步最新 IG 短片發布</span>
       </div>
-      <div id="railLeaderboard" class="flex space-x-4 overflow-x-auto no-scrollbar py-3 scroll-smooth"></div>
+      <div id="railNew" class="flex space-x-4 overflow-x-auto no-scrollbar py-3 scroll-smooth"></div>
     </section>
 
     <!-- 專屬嚴選推介 -->
@@ -534,15 +525,15 @@
       <div id="railEditor" class="flex space-x-4 overflow-x-auto no-scrollbar py-3 scroll-smooth"></div>
     </section>
 
-    <!-- 最新上架 -->
-    <section id="new-section">
+    <!-- 每週最多點擊排行榜 -->
+    <section id="leaderboard-section">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 tracking-wide text-white">
-          <span class="text-brand-yellow">🆕</span> 最新上架食評 (New Arrivals)
+          <span class="text-brand-yellow">🔥</span> 每週熱門點擊排行榜 TOP 10 (Trending Leaderboard)
         </h2>
-        <span class="text-[11px] text-zinc-400">同步最新 IG 短片發布</span>
+        <span class="text-[11px] text-zinc-400">熱度即時更新</span>
       </div>
-      <div id="railNew" class="flex space-x-4 overflow-x-auto no-scrollbar py-3 scroll-smooth"></div>
+      <div id="railLeaderboard" class="flex space-x-4 overflow-x-auto no-scrollbar py-3 scroll-smooth"></div>
     </section>
 
     <!-- 篩選結果展示區 -->
@@ -908,8 +899,8 @@
         </div>
       </div>
 
-      <!-- 可收合篩選列 -->
-      <div id="mapFilterPanel" class="hidden sm:flex px-3 sm:px-4 py-2 bg-zinc-950 border-b border-zinc-800/90 flex-wrap items-center gap-2 text-xs shrink-0">
+      <!-- 可收合篩選列（支援黑金複選） -->
+      <div id="mapFilterPanel" class="hidden sm:flex relative z-30 px-3 sm:px-4 py-2 bg-zinc-950 border-b border-zinc-800/90 flex-wrap items-center gap-2 text-xs shrink-0">
         <div class="relative flex-1 min-w-[150px] sm:max-w-[220px]">
           <span class="absolute inset-y-0 left-2.5 flex items-center text-brand-yellow text-xs pointer-events-none">🔍</span>
           <input type="text" id="mapSearchInput" oninput="onMapFilterChange(true)"
@@ -918,34 +909,59 @@
           <button type="button" onclick="clearMapSearch()" class="absolute inset-y-0 right-2 flex items-center text-zinc-500 hover:text-white text-[10px]">✕</button>
         </div>
 
-        <select id="mapCuisineSelect" onchange="onMapFilterChange(true)" class="bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-brand-yellow font-semibold">
-          <option value="all">🍜 所有菜式</option>
-          <option value="日本">🇯🇵 日本料理</option>
-          <option value="Cafe">☕ Cafe / Brunch</option>
-          <option value="西式">🥩 西式料理</option>
-          <option value="火鍋">🍲 火鍋 / 雞煲</option>
-          <option value="東南亞">🌶️ 東南亞菜</option>
-          <option value="中菜">🥢 中式粵菜</option>
-          <option value="甜品">🍰 甜品烘焙</option>
-          <option value="酒吧">🍸 酒吧調酒</option>
-          <option value="快餐">🍔 小食 / 漢堡</option>
-        </select>
+        <div id="mapCuisineSelect" data-ms="mapCuisine" class="fca-multi-select sm:relative">
+          <button type="button" id="mapCuisineBtn" onclick="toggleMultiSelect('mapCuisine', event)" aria-expanded="false"
+                  class="bg-zinc-900 border border-zinc-700 hover:border-brand-yellow/70 text-zinc-100 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition flex items-center justify-between gap-1.5 min-w-[125px] max-w-[190px] text-left">
+            <span class="ms-btn-label truncate">🍜 所有菜式</span>
+            <span class="flex items-center gap-1 shrink-0">
+              <span class="ms-btn-count hidden bg-brand-yellow text-black text-[10px] font-black px-1.5 py-0.2 rounded-full leading-tight">0</span>
+              <span class="ms-btn-arrow text-[9px] text-zinc-400 transition-transform duration-200">▼</span>
+            </span>
+          </button>
+          <div id="mapCuisinePanel" class="ms-panel hidden absolute left-3 right-3 top-full mt-1 sm:top-auto sm:left-0 sm:right-auto sm:mt-1.5 sm:w-64 bg-[#0A0A0A] border-2 border-brand-yellow/75 rounded-2xl shadow-[0_18px_42px_rgba(0,0,0,0.95)] z-[1100] overflow-hidden">
+            <div class="flex items-center justify-between px-3 py-2 bg-zinc-900/95 border-b border-zinc-800">
+              <span class="ms-panel-status text-[11px] font-bold text-zinc-300">目前：所有菜式（可複選）</span>
+              <button type="button" onclick="clearMultiSelect('mapCuisine', event)" class="text-[11px] font-black text-brand-yellow hover:underline shrink-0">全部 / 清除</button>
+            </div>
+            <div id="mapCuisineOptions" class="max-h-64 overflow-y-auto p-1.5 space-y-0.5"></div>
+          </div>
+        </div>
 
-        <select id="mapPriceSelect" onchange="onMapFilterChange(true)" class="bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-brand-yellow font-semibold">
-          <option value="all">💰 不限預算</option>
-          <option value="under100">$100 以下</option>
-          <option value="100-300">$100 - $300</option>
-          <option value="300-600">$300 - $600</option>
-          <option value="above600">$600 以上</option>
-        </select>
+        <div id="mapPriceSelect" data-ms="mapPrice" class="fca-multi-select sm:relative">
+          <button type="button" id="mapPriceBtn" onclick="toggleMultiSelect('mapPrice', event)" aria-expanded="false"
+                  class="bg-zinc-900 border border-zinc-700 hover:border-brand-yellow/70 text-zinc-100 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition flex items-center justify-between gap-1.5 min-w-[115px] max-w-[180px] text-left">
+            <span class="ms-btn-label truncate">💰 不限預算</span>
+            <span class="flex items-center gap-1 shrink-0">
+              <span class="ms-btn-count hidden bg-brand-yellow text-black text-[10px] font-black px-1.5 py-0.2 rounded-full leading-tight">0</span>
+              <span class="ms-btn-arrow text-[9px] text-zinc-400 transition-transform duration-200">▼</span>
+            </span>
+          </button>
+          <div id="mapPricePanel" class="ms-panel hidden absolute left-3 right-3 top-full mt-1 sm:top-auto sm:left-0 sm:right-auto sm:mt-1.5 sm:w-64 bg-[#0A0A0A] border-2 border-brand-yellow/75 rounded-2xl shadow-[0_18px_42px_rgba(0,0,0,0.95)] z-[1100] overflow-hidden">
+            <div class="flex items-center justify-between px-3 py-2 bg-zinc-900/95 border-b border-zinc-800">
+              <span class="ms-panel-status text-[11px] font-bold text-zinc-300">目前：不限預算（可複選）</span>
+              <button type="button" onclick="clearMultiSelect('mapPrice', event)" class="text-[11px] font-black text-brand-yellow hover:underline shrink-0">全部 / 清除</button>
+            </div>
+            <div id="mapPriceOptions" class="max-h-64 overflow-y-auto p-1.5 space-y-0.5"></div>
+          </div>
+        </div>
 
-        <select id="mapOccasionSelect" onchange="onMapFilterChange(true)" class="bg-zinc-900 border border-zinc-700 text-zinc-100 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-brand-yellow font-semibold">
-          <option value="all">🎉 所有場景</option>
-          <option value="拍拖約會">💑 拍拖約會</option>
-          <option value="聚會">🍻 大班聚會</option>
-          <option value="打卡必到">📸 打卡必到</option>
-          <option value="深夜食堂">🌙 深夜食堂</option>
-        </select>
+        <div id="mapOccasionSelect" data-ms="mapOccasion" class="fca-multi-select sm:relative">
+          <button type="button" id="mapOccasionBtn" onclick="toggleMultiSelect('mapOccasion', event)" aria-expanded="false"
+                  class="bg-zinc-900 border border-zinc-700 hover:border-brand-yellow/70 text-zinc-100 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition flex items-center justify-between gap-1.5 min-w-[115px] max-w-[180px] text-left">
+            <span class="ms-btn-label truncate">🎉 所有場景</span>
+            <span class="flex items-center gap-1 shrink-0">
+              <span class="ms-btn-count hidden bg-brand-yellow text-black text-[10px] font-black px-1.5 py-0.2 rounded-full leading-tight">0</span>
+              <span class="ms-btn-arrow text-[9px] text-zinc-400 transition-transform duration-200">▼</span>
+            </span>
+          </button>
+          <div id="mapOccasionPanel" class="ms-panel hidden absolute left-3 right-3 top-full mt-1 sm:top-auto sm:left-0 sm:right-auto sm:mt-1.5 sm:w-56 bg-[#0A0A0A] border-2 border-brand-yellow/75 rounded-2xl shadow-[0_18px_42px_rgba(0,0,0,0.95)] z-[1100] overflow-hidden">
+            <div class="flex items-center justify-between px-3 py-2 bg-zinc-900/95 border-b border-zinc-800">
+              <span class="ms-panel-status text-[11px] font-bold text-zinc-300">目前：所有場景（可複選）</span>
+              <button type="button" onclick="clearMultiSelect('mapOccasion', event)" class="text-[11px] font-black text-brand-yellow hover:underline shrink-0">全部 / 清除</button>
+            </div>
+            <div id="mapOccasionOptions" class="max-h-64 overflow-y-auto p-1.5 space-y-0.5"></div>
+          </div>
+        </div>
 
         <button onclick="resetMapFilters()" class="text-brand-yellow hover:underline text-xs font-bold ml-auto shrink-0 px-1">
           重設
@@ -1310,14 +1326,7 @@
         }
       });
 
-      const isFiltering = Boolean(
-        filters.search ||
-        filters.region !== 'all' ||
-        filters.district !== 'all' ||
-        filters.occasion !== 'all' ||
-        filters.price !== 'all' ||
-        filters.cuisine !== 'all'
-      );
+      const isFiltering = hasActiveMainFilters();
       const validRestaurants = restaurants.filter(r => !r._brokenImage);
       const visibleFiltered = validRestaurants.filter(item => matchRestaurantByFilters(item, filters));
       const totalEl = document.getElementById('totalCount');
@@ -1423,10 +1432,11 @@
       const badge = document.getElementById('mobileFilterBadge');
       const btn = document.getElementById('mobileFilterToggleBtn');
       if (!badge || !btn) return;
-      let count = 0;
-      if (filters.region !== 'all' || filters.district !== 'all') count++;
-      if (filters.price !== 'all') count++;
-      if (filters.cuisine !== 'all') count++;
+      const count =
+        (filters.regions ? filters.regions.length : 0) +
+        (filters.districts ? filters.districts.length : 0) +
+        (filters.prices ? filters.prices.length : 0) +
+        (filters.cuisines ? filters.cuisines.length : 0);
 
       badge.textContent = String(count);
       badge.classList.toggle('hidden', count === 0);
@@ -1549,11 +1559,182 @@
 
     let filters = {
       search: "",
-      region: "all",
-      district: "all",
+      regions: [],
+      districts: [],
       occasion: "all",
-      price: "all",
-      cuisine: "all"
+      prices: [],
+      cuisines: []
+    };
+
+    const MULTI_SELECT_CONFIG = {
+      location: {
+        containerId: 'districtRegionSelect',
+        btnId: 'districtRegionBtn',
+        panelId: 'districtRegionPanel',
+        optionsId: 'districtRegionOptions',
+        defaultLabel: () => restaurants.length > 0 ? `🗺️ 所有地區 (共 ${restaurants.length} 間)` : '🗺️ 所有地區 (All)',
+        emptyStatus: '目前：所有地區（可複選）',
+        groups: [
+          {
+            label: '── 快速大區 ──',
+            options: [
+              { value: 'region:港島', label: '🇭🇰 港島全區 (Hong Kong Island)', short: '港島全區', countId: 'opt-reg-hk' },
+              { value: 'region:九龍', label: '🏮 九龍全區 (Kowloon)', short: '九龍全區', countId: 'opt-reg-kln' },
+              { value: 'region:新界', label: '🌳 新界全區 (New Territories)', short: '新界全區', countId: 'opt-reg-nt' },
+              { value: 'region:海外', label: '✈️ 海外 / 旅遊推介 (Overseas)', short: '海外推介', countId: 'opt-reg-overseas' },
+              { value: 'region:連鎖網購', label: '🏪 全港連鎖 / 網購 (Chains & Online)', short: '連鎖/網購', countId: 'opt-reg-chain' }
+            ]
+          },
+          {
+            label: '── 港島熱門商圈 ──',
+            options: [
+              { value: '中環', label: '中環 (Central / SOHO / 大館)', short: '中環' },
+              { value: '上環', label: '上環 (Sheung Wan / PMQ)', short: '上環' },
+              { value: '灣仔', label: '灣仔 (Wan Chai)', short: '灣仔' },
+              { value: '銅鑼灣', label: '銅鑼灣 (Causeway Bay)', short: '銅鑼灣' },
+              { value: '跑馬地', label: '跑馬地 (Happy Valley)', short: '跑馬地' },
+              { value: '天后', label: '天后 / 炮台山 / 北角', short: '天后/北角' },
+              { value: '鰂魚涌', label: '鰂魚涌 / 太古', short: '鰂魚涌/太古' },
+              { value: '西環', label: '西環 / 堅尼地城 / 西營盤', short: '西環' },
+              { value: '黃竹坑', label: '黃竹坑 / 南區', short: '黃竹坑/南區' }
+            ]
+          },
+          {
+            label: '── 九龍熱門商圈 ──',
+            options: [
+              { value: '尖沙咀', label: '尖沙咀 (Tsim Sha Tsui)', short: '尖沙咀' },
+              { value: '佐敦', label: '佐敦 / 油麻地', short: '佐敦/油麻地' },
+              { value: '旺角', label: '旺角 (Mong Kok)', short: '旺角' },
+              { value: '太子', label: '太子 (Prince Edward)', short: '太子' },
+              { value: '深水埗', label: '深水埗 (Sham Shui Po)', short: '深水埗' },
+              { value: '紅磡', label: '紅磡 / 黃埔', short: '紅磡/黃埔' },
+              { value: '九龍城', label: '九龍城 / 啟德', short: '九龍城/啟德' },
+              { value: '觀塘', label: '觀塘 / 九龍灣', short: '觀塘/九龍灣' },
+              { value: '大角咀', label: '大角咀', short: '大角咀' }
+            ]
+          },
+          {
+            label: '── 新界熱門商圈 ──',
+            options: [
+              { value: '荃灣', label: '荃灣 (Tsuen Wan)', short: '荃灣' },
+              { value: '沙田', label: '沙田 / 大圍', short: '沙田/大圍' },
+              { value: '元朗', label: '元朗 (Yuen Long)', short: '元朗' },
+              { value: '屯門', label: '屯門 (Tuen Mun)', short: '屯門' },
+              { value: '大埔', label: '大埔 (Tai Po)', short: '大埔' },
+              { value: '將軍澳', label: '將軍澳 (TKO)', short: '將軍澳' },
+              { value: '西貢', label: '西貢 (Sai Kung)', short: '西貢' }
+            ]
+          }
+        ]
+      },
+      price: {
+        containerId: 'priceSelect',
+        btnId: 'priceBtn',
+        panelId: 'pricePanel',
+        optionsId: 'priceOptions',
+        defaultLabel: () => '不限預算 (全部價格)',
+        emptyStatus: '目前：不限預算（可複選）',
+        groups: [
+          {
+            label: null,
+            options: [
+              { value: 'under100', label: '$100 以下 (平民/輕食)', short: '$100 以下' },
+              { value: '100-300', label: '$100 - $300 (人氣抵食)', short: '$100 - $300' },
+              { value: '300-600', label: '$300 - $600 (聚會/Cafe/特色菜)', short: '$300 - $600' },
+              { value: 'above600', label: '$600 以上 (精緻/約會/高級)', short: '$600 以上' }
+            ]
+          }
+        ]
+      },
+      cuisine: {
+        containerId: 'cuisineSelect',
+        btnId: 'cuisineBtn',
+        panelId: 'cuisinePanel',
+        optionsId: 'cuisineOptions',
+        defaultLabel: () => '🍽️ 所有菜式 (All Cuisines)',
+        emptyStatus: '目前：所有菜式（可複選）',
+        groups: [
+          {
+            label: null,
+            options: [
+              { value: '日本', label: '🇯🇵 日本料理 (壽司/燒肉/居酒屋/拉麵)', short: '日本料理' },
+              { value: 'Cafe', label: '☕ Cafe 咖啡 / 早午餐 Brunch', short: 'Cafe' },
+              { value: '西式', label: '🥩 西式料理 (牛扒/意粉/Bistro)', short: '西式料理' },
+              { value: '火鍋', label: '🍲 火鍋 / 放題 / 雞煲', short: '火鍋' },
+              { value: '東南亞', label: '🌶️ 東南亞菜 (泰國/越南/南洋)', short: '東南亞菜' },
+              { value: '中菜', label: '🥢 中式粵菜 (小炒/點心/大牌檔/川菜)', short: '中式粵菜' },
+              { value: '甜品', label: '🍰 甜品烘焙 (蛋糕/蛋撻/麵包/糖水)', short: '甜品烘焙' },
+              { value: '酒吧', label: '🍸 酒吧 / 微醺調酒 (Cocktails)', short: '酒吧' },
+              { value: '快餐', label: '🍔 街頭小食 / 漢堡 / 車仔麵', short: '街頭小食' }
+            ]
+          }
+        ]
+      },
+      mapCuisine: {
+        containerId: 'mapCuisineSelect',
+        btnId: 'mapCuisineBtn',
+        panelId: 'mapCuisinePanel',
+        optionsId: 'mapCuisineOptions',
+        defaultLabel: () => '🍜 所有菜式',
+        emptyStatus: '目前：所有菜式（可複選）',
+        onChange: () => renderMapPins(true),
+        groups: [
+          {
+            label: null,
+            options: [
+              { value: '日本', label: '🇯🇵 日本料理', short: '日本料理' },
+              { value: 'Cafe', label: '☕ Cafe / Brunch', short: 'Cafe' },
+              { value: '西式', label: '🥩 西式料理', short: '西式料理' },
+              { value: '火鍋', label: '🍲 火鍋 / 雞煲', short: '火鍋' },
+              { value: '東南亞', label: '🌶️ 東南亞菜', short: '東南亞菜' },
+              { value: '中菜', label: '🥢 中式粵菜', short: '中式粵菜' },
+              { value: '甜品', label: '🍰 甜品烘焙', short: '甜品烘焙' },
+              { value: '酒吧', label: '🍸 酒吧調酒', short: '酒吧' },
+              { value: '快餐', label: '🍔 小食 / 漢堡', short: '小食/漢堡' }
+            ]
+          }
+        ]
+      },
+      mapPrice: {
+        containerId: 'mapPriceSelect',
+        btnId: 'mapPriceBtn',
+        panelId: 'mapPricePanel',
+        optionsId: 'mapPriceOptions',
+        defaultLabel: () => '💰 不限預算',
+        emptyStatus: '目前：不限預算（可複選）',
+        onChange: () => renderMapPins(true),
+        groups: [
+          {
+            label: null,
+            options: [
+              { value: 'under100', label: '$100 以下', short: '$100 以下' },
+              { value: '100-300', label: '$100 - $300', short: '$100 - $300' },
+              { value: '300-600', label: '$300 - $600', short: '$300 - $600' },
+              { value: 'above600', label: '$600 以上', short: '$600 以上' }
+            ]
+          }
+        ]
+      },
+      mapOccasion: {
+        containerId: 'mapOccasionSelect',
+        btnId: 'mapOccasionBtn',
+        panelId: 'mapOccasionPanel',
+        optionsId: 'mapOccasionOptions',
+        defaultLabel: () => '🎉 所有場景',
+        emptyStatus: '目前：所有場景（可複選）',
+        onChange: () => renderMapPins(true),
+        groups: [
+          {
+            label: null,
+            options: [
+              { value: '拍拖約會', label: '💑 拍拖約會', short: '拍拖約會' },
+              { value: '聚會', label: '🍻 大班聚會', short: '大班聚會' },
+              { value: '打卡必到', label: '📸 打卡必到', short: '打卡必到' },
+              { value: '深夜食堂', label: '🌙 深夜食堂', short: '深夜食堂' }
+            ]
+          }
+        ]
+      }
     };
 
     const cuisineFallbacks = {
@@ -2103,19 +2284,27 @@
       const modal = document.getElementById('randomPickerModal');
       if (!modal) return;
       const regionBtns = document.querySelectorAll('.rand-region-pill');
-      const targetRegion = filters.region !== 'all' ? filters.region : 'all';
+      const targetRegion = Array.isArray(filters.regions) && filters.regions.length === 1 ? filters.regions[0] : 'all';
       const idxMap = { 'all': 0, '港島': 1, '九龍': 2, '新界': 3, '海外': 4, '連鎖網購': 5 };
       setRandomRegion(targetRegion, regionBtns[idxMap[targetRegion] ?? 0]);
 
       const distSel = document.getElementById('randomDistrictSelect');
-      if (distSel && filters.district !== 'all') {
-        const hasOpt = Array.from(distSel.options).some(o => o.value === filters.district);
-        if (hasOpt) distSel.value = filters.district;
+      if (distSel && Array.isArray(filters.districts) && filters.districts.length === 1) {
+        const hasOpt = Array.from(distSel.options).some(o => o.value === filters.districts[0]);
+        if (hasOpt) distSel.value = filters.districts[0];
       }
       const cuisSel = document.getElementById('randomCuisineSelect');
-      if (cuisSel) cuisSel.value = filters.cuisine || 'all';
+      if (cuisSel) {
+        const singleCuis = Array.isArray(filters.cuisines) && filters.cuisines.length === 1 ? filters.cuisines[0] : 'all';
+        const hasOpt = Array.from(cuisSel.options).some(o => o.value === singleCuis);
+        cuisSel.value = hasOpt ? singleCuis : 'all';
+      }
       const priceSel = document.getElementById('randomPriceSelect');
-      if (priceSel) priceSel.value = filters.price || 'all';
+      if (priceSel) {
+        const singlePrice = Array.isArray(filters.prices) && filters.prices.length === 1 ? filters.prices[0] : 'all';
+        const hasOpt = Array.from(priceSel.options).some(o => o.value === singlePrice);
+        priceSel.value = hasOpt ? singlePrice : 'all';
+      }
 
       updateRandomPoolCount();
       setFloatingMapBtnVisible(false);
@@ -2272,19 +2461,30 @@
         else counts['其他']++;
       });
 
-      const optAll = document.getElementById('opt-all');
       const optHk = document.getElementById('opt-reg-hk');
       const optKln = document.getElementById('opt-reg-kln');
       const optNt = document.getElementById('opt-reg-nt');
       const optOverseas = document.getElementById('opt-reg-overseas');
       const optChain = document.getElementById('opt-reg-chain');
 
-      if (optAll) optAll.innerText = `🗺️ 所有地區 (共 ${restaurants.length} 間)`;
       if (optHk) optHk.innerText = `🇭🇰 港島全區 (${counts['港島']} 間)`;
       if (optKln) optKln.innerText = `🏮 九龍全區 (${counts['九龍']} 間)`;
       if (optNt) optNt.innerText = `🌳 新界全區 (${counts['新界']} 間)`;
       if (optOverseas) optOverseas.innerText = `✈️ 海外 / 旅遊推介 (${counts['海外']} 間)`;
       if (optChain) optChain.innerText = `🏪 全港連鎖 / 網購 (${counts['連鎖網購']} 間)`;
+
+      syncMultiSelectUI('location');
+    }
+
+    function hasActiveMainFilters() {
+      return Boolean(
+        filters.search ||
+        (Array.isArray(filters.regions) && filters.regions.length > 0) ||
+        (Array.isArray(filters.districts) && filters.districts.length > 0) ||
+        (filters.occasion && filters.occasion !== 'all') ||
+        (Array.isArray(filters.prices) && filters.prices.length > 0) ||
+        (Array.isArray(filters.cuisines) && filters.cuisines.length > 0)
+      );
     }
 
     const HK_DISTRICTS = [
@@ -2317,49 +2517,81 @@
         }
       }
 
-      if (fObj.region && fObj.region !== 'all') {
-        const targetRegion = fObj.region;
-        const itemRegion = item.region || inferRegionFromItem(item);
-        if (itemRegion !== targetRegion) return false;
+      const usesArrayLocation = Array.isArray(fObj.regions) || Array.isArray(fObj.districts);
+      if (usesArrayLocation) {
+        const targetRegions = Array.isArray(fObj.regions) ? fObj.regions.filter(r => r && r !== 'all') : [];
+        const targetDistricts = Array.isArray(fObj.districts) ? fObj.districts.filter(d => d && d !== 'all') : [];
+        if (targetRegions.length > 0 || targetDistricts.length > 0) {
+          const itemRegion = item.region || inferRegionFromItem(item);
+          const cleanItemDist = String(item.district || '').toLowerCase();
+          const cleanName = String(item.restaurant_name || '').toLowerCase();
+
+          const matchesRegion = targetRegions.includes(itemRegion);
+          const matchesDistrict = targetDistricts.some(dist => {
+            const districtKeywords = DISTRICT_ALIAS_MAP[dist] || [dist.toLowerCase()];
+            return districtKeywords.some(kw => {
+              const k = kw.toLowerCase();
+              return cleanItemDist.includes(k) || cleanName.includes(k);
+            });
+          });
+          if (!matchesRegion && !matchesDistrict) return false;
+        }
+      } else {
+        if (fObj.region && fObj.region !== 'all') {
+          const targetRegion = fObj.region;
+          const itemRegion = item.region || inferRegionFromItem(item);
+          if (itemRegion !== targetRegion) return false;
+        }
+
+        if (fObj.district && fObj.district !== 'all') {
+          const cleanItemDist = String(item.district || '').toLowerCase();
+          const cleanName = String(item.restaurant_name || '').toLowerCase();
+          const districtKeywords = DISTRICT_ALIAS_MAP[fObj.district] || [fObj.district.toLowerCase()];
+          const inDistrict = districtKeywords.some(kw => {
+            const k = kw.toLowerCase();
+            return cleanItemDist.includes(k) || cleanName.includes(k);
+          });
+          if (!inDistrict) return false;
+        }
       }
 
-      if (fObj.district && fObj.district !== 'all') {
-        const cleanItemDist = String(item.district || '').toLowerCase();
-        const cleanName = String(item.restaurant_name || '').toLowerCase();
-        const districtKeywords = DISTRICT_ALIAS_MAP[fObj.district] || [fObj.district.toLowerCase()];
-        const inDistrict = districtKeywords.some(kw => {
-          const k = kw.toLowerCase();
-          return cleanItemDist.includes(k) || cleanName.includes(k);
-        });
-        if (!inDistrict) return false;
-      }
-
-      if (fObj.occasion && fObj.occasion !== 'all') {
-        const occTerm = fObj.occasion;
+      const targetOccasions = Array.isArray(fObj.occasions)
+        ? fObj.occasions.filter(o => o && o !== 'all')
+        : (fObj.occasion && fObj.occasion !== 'all' ? [fObj.occasion] : []);
+      if (targetOccasions.length > 0) {
         const occText = String(item.occasion || '');
         const capText = String(item.caption || '');
-        let occKeywords = [occTerm];
-        if (occTerm === '打卡必到' || occTerm === '打卡Cafe') occKeywords = ['打卡必到', '打卡Cafe', '打卡'];
-        else if (occTerm === '聚會') occKeywords = ['聚會', '朋友聚會', '大班聚會'];
-        const matchOcc = occKeywords.some(k => occText.includes(k) || capText.includes(k));
-        if (!matchOcc) return false;
+        const matchedAnyOcc = targetOccasions.some(occTerm => {
+          let occKeywords = [occTerm];
+          if (occTerm === '打卡必到' || occTerm === '打卡Cafe') occKeywords = ['打卡必到', '打卡Cafe', '打卡'];
+          else if (occTerm === '聚會') occKeywords = ['聚會', '朋友聚會', '大班聚會'];
+          return occKeywords.some(k => occText.includes(k) || capText.includes(k));
+        });
+        if (!matchedAnyOcc) return false;
       }
 
-      if (fObj.price && fObj.price !== 'all') {
+      const targetPrices = Array.isArray(fObj.prices)
+        ? fObj.prices.filter(p => p && p !== 'all')
+        : (fObj.price && fObj.price !== 'all' ? [fObj.price] : []);
+      if (targetPrices.length > 0) {
         const itemTier = item.priceCategory || (item.priceInfo ? item.priceInfo.tier : null);
-        if (itemTier !== fObj.price) return false;
+        if (!targetPrices.includes(itemTier)) return false;
       }
 
-      if (fObj.cuisine && fObj.cuisine !== 'all') {
-        const cTarget = fObj.cuisine;
+      const targetCuisines = Array.isArray(fObj.cuisines)
+        ? fObj.cuisines.filter(c => c && c !== 'all')
+        : (fObj.cuisine && fObj.cuisine !== 'all' ? [fObj.cuisine] : []);
+      if (targetCuisines.length > 0) {
         const cleanCuisine = String(item.cuisine || '').toLowerCase();
         const cleanName = String(item.restaurant_name || '').toLowerCase();
-        const cuisineKeywords = CUISINE_SYNONYM_MAP[cTarget] || [cTarget.toLowerCase()];
-        const matched = cuisineKeywords.some(kw => {
-          const k = kw.toLowerCase();
-          return cleanCuisine.includes(k) || cleanName.includes(k);
+        const matchedAnyCuisine = targetCuisines.some(cTarget => {
+          const cuisineKeywords = CUISINE_SYNONYM_MAP[cTarget] || [cTarget.toLowerCase()];
+          return cuisineKeywords.some(kw => {
+            const k = kw.toLowerCase();
+            return cleanCuisine.includes(k) || cleanName.includes(k);
+          });
         });
-        if (!matched) return false;
+        if (!matchedAnyCuisine) return false;
       }
 
       return true;
@@ -2376,14 +2608,7 @@
 
       const validRestaurants = restaurants.filter(r => !r._brokenImage);
 
-      const isFiltering = Boolean(
-        filters.search || 
-        filters.region !== 'all' || 
-        filters.district !== 'all' || 
-        filters.occasion !== 'all' || 
-        filters.price !== 'all' || 
-        filters.cuisine !== 'all'
-      );
+      const isFiltering = hasActiveMainFilters();
 
       const notice = document.getElementById('activeFilterNotice');
       if (notice) notice.classList.toggle('hidden', !isFiltering);
@@ -2521,6 +2746,203 @@
       window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     }
 
+    function getMultiSelectValues(type) {
+      if (type === 'location') {
+        return [
+          ...(filters.regions || []).map(r => `region:${r}`),
+          ...(filters.districts || [])
+        ];
+      }
+      if (type === 'price') return filters.prices || [];
+      if (type === 'cuisine') return filters.cuisines || [];
+      if (type === 'mapCuisine') return mapFilters.cuisines || [];
+      if (type === 'mapPrice') return mapFilters.prices || [];
+      if (type === 'mapOccasion') return mapFilters.occasions || [];
+      return [];
+    }
+
+    function initMultiSelectDropdowns() {
+      Object.entries(MULTI_SELECT_CONFIG).forEach(([type, cfg]) => {
+        const container = document.getElementById(cfg.optionsId);
+        if (!container) return;
+
+        let html = '';
+        cfg.groups.forEach(group => {
+          if (group.label) {
+            html += `<div class="px-2.5 pt-2 pb-1 text-[11px] font-black text-brand-yellow/80 tracking-wider select-none">${escapeHtml(group.label)}</div>`;
+          }
+          group.options.forEach(opt => {
+            const labelSpan = opt.countId
+              ? `<span id="${escapeHtml(opt.countId)}" class="truncate">${escapeHtml(opt.label)}</span>`
+              : `<span class="truncate">${escapeHtml(opt.label)}</span>`;
+            html += `
+              <label data-ms-row="${escapeHtml(type)}" data-ms-value="${escapeHtml(opt.value)}"
+                     class="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-zinc-900 cursor-pointer transition text-xs sm:text-sm text-zinc-200 select-none">
+                <input type="checkbox" value="${escapeHtml(opt.value)}"
+                       onchange="onMultiSelectChange('${escapeHtml(type)}', this.value, this.checked)"
+                       class="w-4 h-4 rounded border-zinc-600 bg-zinc-900 text-brand-yellow focus:ring-brand-yellow accent-[#FFC400] shrink-0 cursor-pointer" />
+                ${labelSpan}
+              </label>`;
+          });
+        });
+
+        container.innerHTML = html;
+        syncMultiSelectUI(type);
+      });
+    }
+
+    function syncMultiSelectUI(type) {
+      const cfg = MULTI_SELECT_CONFIG[type];
+      if (!cfg) return;
+      const selected = getMultiSelectValues(type);
+      const selectedSet = new Set(selected);
+
+      const optionsEl = document.getElementById(cfg.optionsId);
+      if (optionsEl) {
+        optionsEl.querySelectorAll('label[data-ms-row]').forEach(row => {
+          const val = row.getAttribute('data-ms-value');
+          const checked = selectedSet.has(val);
+          const cb = row.querySelector('input[type="checkbox"]');
+          if (cb) cb.checked = checked;
+          row.classList.toggle('bg-brand-yellow/10', checked);
+          row.classList.toggle('text-brand-yellow', checked);
+          row.classList.toggle('font-bold', checked);
+        });
+      }
+
+      const btn = document.getElementById(cfg.btnId);
+      const panel = document.getElementById(cfg.panelId);
+      if (btn) {
+        const labelEl = btn.querySelector('.ms-btn-label');
+        const countEl = btn.querySelector('.ms-btn-count');
+        const allOptions = cfg.groups.flatMap(g => g.options);
+        const selectedShorts = selected.map(val => {
+          const found = allOptions.find(o => o.value === val);
+          return found ? found.short : val;
+        });
+
+        if (labelEl) {
+          if (selected.length === 0) {
+            labelEl.textContent = cfg.defaultLabel();
+          } else if (selected.length === 1) {
+            labelEl.textContent = selectedShorts[0];
+          } else {
+            const preview = selectedShorts.slice(0, 2).join('、') + (selectedShorts.length > 2 ? '…' : '');
+            labelEl.textContent = `已選 ${selected.length} 項：${preview}`;
+          }
+        }
+        if (countEl) {
+          countEl.textContent = String(selected.length);
+          countEl.classList.toggle('hidden', selected.length === 0);
+        }
+        btn.classList.toggle('border-brand-yellow', selected.length > 0);
+        btn.classList.toggle('text-brand-yellow', selected.length > 0);
+        btn.classList.toggle('border-zinc-700', selected.length === 0);
+        btn.classList.toggle('text-zinc-100', selected.length === 0);
+      }
+
+      if (panel) {
+        const statusEl = panel.querySelector('.ms-panel-status');
+        if (statusEl) {
+          statusEl.textContent = selected.length === 0 ? cfg.emptyStatus : `已選 ${selected.length} 項條件`;
+          statusEl.classList.toggle('text-brand-yellow', selected.length > 0);
+          statusEl.classList.toggle('text-zinc-300', selected.length === 0);
+        }
+      }
+    }
+
+    function closeAllMultiSelects(exceptType = null) {
+      Object.entries(MULTI_SELECT_CONFIG).forEach(([type, cfg]) => {
+        if (exceptType && type === exceptType) return;
+        const panel = document.getElementById(cfg.panelId);
+        const btn = document.getElementById(cfg.btnId);
+        if (panel) panel.classList.add('hidden');
+        if (btn) {
+          btn.setAttribute('aria-expanded', 'false');
+          const arrow = btn.querySelector('.ms-btn-arrow');
+          if (arrow) arrow.classList.remove('rotate-180');
+        }
+      });
+    }
+
+    function toggleMultiSelect(type, event) {
+      if (event) event.stopPropagation();
+      const cfg = MULTI_SELECT_CONFIG[type];
+      if (!cfg) return;
+      const panel = document.getElementById(cfg.panelId);
+      const btn = document.getElementById(cfg.btnId);
+      if (!panel) return;
+
+      const willOpen = panel.classList.contains('hidden');
+      closeAllMultiSelects(willOpen ? type : null);
+      panel.classList.toggle('hidden', !willOpen);
+      if (btn) {
+        btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        const arrow = btn.querySelector('.ms-btn-arrow');
+        if (arrow) arrow.classList.toggle('rotate-180', willOpen);
+      }
+    }
+
+    function onMultiSelectChange(type, value, isChecked) {
+      const updateArray = (arr, val, checked) => {
+        const next = arr.filter(v => v !== val);
+        if (checked) next.push(val);
+        return next;
+      };
+
+      if (type === 'location') {
+        if (value.startsWith('region:')) {
+          const reg = value.slice(7);
+          filters.regions = updateArray(filters.regions, reg, isChecked);
+        } else {
+          filters.districts = updateArray(filters.districts, value, isChecked);
+        }
+      } else if (type === 'price') {
+        filters.prices = updateArray(filters.prices, value, isChecked);
+      } else if (type === 'cuisine') {
+        filters.cuisines = updateArray(filters.cuisines, value, isChecked);
+      } else if (type === 'mapCuisine') {
+        mapFilters.cuisines = updateArray(mapFilters.cuisines, value, isChecked);
+      } else if (type === 'mapPrice') {
+        mapFilters.prices = updateArray(mapFilters.prices, value, isChecked);
+      } else if (type === 'mapOccasion') {
+        mapFilters.occasions = updateArray(mapFilters.occasions, value, isChecked);
+      }
+
+      syncMultiSelectUI(type);
+      const cfg = MULTI_SELECT_CONFIG[type];
+      if (cfg && typeof cfg.onChange === 'function') cfg.onChange();
+      else renderApp();
+    }
+
+    function clearMultiSelect(type, event) {
+      if (event) event.stopPropagation();
+      if (type === 'location') {
+        filters.regions = [];
+        filters.districts = [];
+      } else if (type === 'price') {
+        filters.prices = [];
+      } else if (type === 'cuisine') {
+        filters.cuisines = [];
+      } else if (type === 'mapCuisine') {
+        mapFilters.cuisines = [];
+      } else if (type === 'mapPrice') {
+        mapFilters.prices = [];
+      } else if (type === 'mapOccasion') {
+        mapFilters.occasions = [];
+      }
+      syncMultiSelectUI(type);
+      const cfg = MULTI_SELECT_CONFIG[type];
+      if (cfg && typeof cfg.onChange === 'function') cfg.onChange();
+      else renderApp();
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.fca-multi-select')) {
+        closeAllMultiSelects();
+      }
+    });
+
     function setFilter(type, value, element = null) {
       if (type === 'occasion') {
         filters.occasion = value;
@@ -2529,37 +2951,22 @@
           element.classList.add('pill-active');
         }
       } else if (type === 'price') {
-        filters.price = value;
+        filters.prices = value && value !== 'all' ? [value] : [];
+        syncMultiSelectUI('price');
       } else if (type === 'cuisine') {
-        filters.cuisine = value;
-      }
-      renderApp();
-    }
-
-    function onDistrictChange(val) {
-      if (val === 'all') {
-        filters.region = 'all';
-        filters.district = 'all';
-      } else if (val.startsWith('region:')) {
-        filters.region = val.replace('region:', '');
-        filters.district = 'all';
-      } else {
-        filters.region = 'all';
-        filters.district = val;
+        filters.cuisines = value && value !== 'all' ? [value] : [];
+        syncMultiSelectUI('cuisine');
       }
       renderApp();
     }
 
     function resetAllFilters() {
-      filters = { search: "", region: "all", district: "all", occasion: "all", price: "all", cuisine: "all" };
+      filters = { search: "", regions: [], districts: [], occasion: "all", prices: [], cuisines: [] };
       const searchInp = document.getElementById('mainSearchInput');
       if (searchInp) searchInp.value = "";
-      const regSel = document.getElementById('districtRegionSelect');
-      if (regSel) regSel.value = "all";
-      const priceSel = document.getElementById('priceSelect');
-      if (priceSel) priceSel.value = "all";
-      const cuisSel = document.getElementById('cuisineSelect');
-      if (cuisSel) cuisSel.value = "all";
+
+      ['location', 'price', 'cuisine'].forEach(syncMultiSelectUI);
+      closeAllMultiSelects();
 
       document.querySelectorAll('.occasion-pill').forEach((el, idx) => {
         if (idx === 0) el.classList.add('pill-active');
@@ -2727,7 +3134,10 @@
       const randomModal = document.getElementById('randomPickerModal');
       const pwaModal = document.getElementById('pwaInstallModal');
 
-      if (detailModal && !detailModal.classList.contains('hidden')) {
+      const openMultiPanel = document.querySelector('.fca-multi-select .ms-panel:not(.hidden)');
+      if (openMultiPanel) {
+        closeAllMultiSelects();
+      } else if (detailModal && !detailModal.classList.contains('hidden')) {
         closeModal();
       } else if (randomModal && !randomModal.classList.contains('hidden')) {
         closeRandomPickerModal();
@@ -2763,9 +3173,9 @@
 
     let mapFilters = {
       search: '',
-      cuisine: 'all',
-      price: 'all',
-      occasion: 'all'
+      cuisines: [],
+      prices: [],
+      occasions: []
     };
 
     const DISTRICT_COORDS = {
@@ -3019,15 +3429,7 @@
 
     function onMapFilterChange(autoZoom = false) {
       const searchEl = document.getElementById('mapSearchInput');
-      const cuisEl = document.getElementById('mapCuisineSelect');
-      const priceEl = document.getElementById('mapPriceSelect');
-      const occEl = document.getElementById('mapOccasionSelect');
-
       mapFilters.search = searchEl ? searchEl.value.trim() : '';
-      mapFilters.cuisine = cuisEl ? cuisEl.value : 'all';
-      mapFilters.price = priceEl ? priceEl.value : 'all';
-      mapFilters.occasion = occEl ? occEl.value : 'all';
-
       renderMapPins(autoZoom);
     }
 
@@ -3041,15 +3443,11 @@
     }
 
     function resetMapFilters() {
-      mapFilters = { search: '', cuisine: 'all', price: 'all', occasion: 'all' };
+      mapFilters = { search: '', cuisines: [], prices: [], occasions: [] };
       const searchEl = document.getElementById('mapSearchInput');
       if (searchEl) searchEl.value = '';
-      const cuisEl = document.getElementById('mapCuisineSelect');
-      if (cuisEl) cuisEl.value = 'all';
-      const priceEl = document.getElementById('mapPriceSelect');
-      if (priceEl) priceEl.value = 'all';
-      const occEl = document.getElementById('mapOccasionSelect');
-      if (occEl) occEl.value = 'all';
+      ['mapCuisine', 'mapPrice', 'mapOccasion'].forEach(syncMultiSelectUI);
+      closeAllMultiSelects();
 
       currentMapRadius = 'all';
       document.querySelectorAll('.map-radius-pill').forEach((b, idx) => {
@@ -3109,6 +3507,7 @@
     }
 
     function closeNearbyMapModal() {
+      closeAllMultiSelects();
       document.getElementById('nearbyMapModal').classList.add('hidden');
       if (!openedDetailFromMap) {
         setFloatingMapBtnVisible(true);
@@ -3179,9 +3578,9 @@
 
       const isMapFiltering = Boolean(
         mapFilters.search ||
-        mapFilters.cuisine !== 'all' ||
-        mapFilters.price !== 'all' ||
-        mapFilters.occasion !== 'all'
+        (Array.isArray(mapFilters.cuisines) && mapFilters.cuisines.length > 0) ||
+        (Array.isArray(mapFilters.prices) && mapFilters.prices.length > 0) ||
+        (Array.isArray(mapFilters.occasions) && mapFilters.occasions.length > 0)
       );
 
       const matchedAll = restaurants.filter(item => matchRestaurantByFilters(item, mapFilters));
@@ -3366,6 +3765,7 @@
     }
 
     initPwaBanner();
+    initMultiSelectDropdowns();
     loadSearchHistory();
     updateDropdownCounts();
     renderApp();

@@ -580,8 +580,15 @@
       <div class="space-y-3 text-xs">
         <div>
           <label class="block text-brand-yellow font-bold mb-1">Google Gemini API Key</label>
-          <input type="password" id="cfgGeminiKey" placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxx"
-                 class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
+          <div class="relative">
+            <input type="password" id="cfgGeminiKey" placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxx"
+                   class="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-3 pr-10 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
+            <button type="button" id="toggleCfgGeminiKey" onclick="toggleSecretVisibility('cfgGeminiKey', this)"
+                    aria-label="顯示或隱藏 Google Gemini API Key" aria-pressed="false" title="顯示 / 隱藏密碼"
+                    class="absolute inset-y-0 right-0 px-2.5 flex items-center justify-center text-zinc-400 hover:text-brand-yellow transition select-none">
+              👁️
+            </button>
+          </div>
         </div>
         <div>
           <label class="block text-emerald-400 font-bold mb-1">Google Places API Key (選填，需於 Google Cloud 啟用 Places API New)</label>
@@ -605,8 +612,15 @@
         </div>
         <div>
           <label class="block text-zinc-300 font-bold mb-1">GitHub Token (Fine-grained PAT)</label>
-          <input type="password" id="cfgToken" placeholder="github_pat_xxxx 或 ghp_xxxx"
-                 class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
+          <div class="relative">
+            <input type="password" id="cfgToken" placeholder="github_pat_xxxx 或 ghp_xxxx"
+                   class="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-3 pr-10 py-2 text-white focus:outline-none focus:border-brand-yellow font-mono text-[11px]" />
+            <button type="button" id="toggleCfgToken" onclick="toggleSecretVisibility('cfgToken', this)"
+                    aria-label="顯示或隱藏 GitHub Token" aria-pressed="false" title="顯示 / 隱藏密碼"
+                    class="absolute inset-y-0 right-0 px-2.5 flex items-center justify-center text-zinc-400 hover:text-brand-yellow transition select-none">
+              👁️
+            </button>
+          </div>
           <p class="text-[10px] text-zinc-500 mt-1">建議僅授予單一 Repo 的 Contents: Read &amp; Write 權限。</p>
         </div>
       </div>
@@ -2029,6 +2043,31 @@
       };
     }
 
+    function resetSecretField(inputId, btnId) {
+      const input = document.getElementById(inputId);
+      const btn = document.getElementById(btnId);
+      if (input) input.type = 'password';
+      if (btn) {
+        btn.textContent = '👁️';
+        btn.classList.remove('text-brand-yellow');
+        btn.classList.add('text-zinc-400');
+        btn.setAttribute('aria-pressed', 'false');
+      }
+    }
+
+    function toggleSecretVisibility(inputId, btnEl) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      const showText = input.type === 'password';
+      input.type = showText ? 'text' : 'password';
+      if (btnEl) {
+        btnEl.textContent = showText ? '🙈' : '👁️';
+        btnEl.classList.toggle('text-brand-yellow', showText);
+        btnEl.classList.toggle('text-zinc-400', !showText);
+        btnEl.setAttribute('aria-pressed', showText ? 'true' : 'false');
+      }
+    }
+
     function openConfigModal() {
       const cfg = loadConfig();
       document.getElementById('cfgGeminiKey').value = cfg.geminiKey;
@@ -2037,6 +2076,8 @@
       document.getElementById('cfgRepo').value = cfg.repo;
       document.getElementById('cfgBranch').value = cfg.branch;
       document.getElementById('cfgToken').value = cfg.token;
+      resetSecretField('cfgGeminiKey', 'toggleCfgGeminiKey');
+      resetSecretField('cfgToken', 'toggleCfgToken');
       document.getElementById('configModal').classList.remove('hidden');
     }
 
